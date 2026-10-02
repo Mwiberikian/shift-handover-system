@@ -229,6 +229,7 @@ async function update(user, recordId, body) {
         WHERE record_id = $1 AND status = 'draft' RETURNING *`,
       [recordId, next.summary_notes, next.incoming_user_id],
     );
+    if (!updated) throw new AppError(409, 'Handover record is no longer a draft and is locked against edits');
     await writeAudit(client, {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId,
       action: 'update', previousValue: auditView(record), newValue: auditView(updated),
@@ -372,6 +373,7 @@ async function submit(user, recordId) {
         WHERE record_id = $1 AND status = 'draft' RETURNING *`,
       [recordId],
     );
+    if (!submitted) throw new AppError(409, 'Handover record is no longer a draft and is locked against edits');
     await writeAudit(client, {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'submit',
       previousValue: auditView(record),
