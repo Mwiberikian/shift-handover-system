@@ -3,6 +3,7 @@ const { body, param, query } = require('express-validator');
 const validate = require('../../middleware/validate');
 const { requireAuth, requireRole } = require('../../middleware/auth');
 const service = require('./handovers.service');
+const workflow = require('./workflow.service');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -22,6 +23,20 @@ router.get(
 );
 
 router.get('/meta', outgoingOnly, async (req, res) => res.json(await service.meta(req.user)));
+
+// Declared before '/:id' so 'search' isn't captured as an id.
+router.get(
+  '/search',
+  requireRole('supervisor', 'admin'),
+  query('from').optional().isISO8601().withMessage('from must be an ISO-8601 date'),
+  query('to').optional().isISO8601().withMessage('to must be an ISO-8601 date'),
+  query('department_id').optional().isUUID(),
+  query('department_code').optional().isString(),
+  query('status').optional().isIn(RECORD_STATUSES),
+  query('q').optional().isString().trim(),
+  validate,
+  async (req, res) => res.json(await workflow.search(req.user, req.query)),
+);
 
 router.post(
   '/',
@@ -85,6 +100,62 @@ router.post(
   recordId,
   validate,
   async (req, res) => res.json(await service.submit(req.user, req.params.id)),
+);
+
+// ---- Phase 4 ---------------------------------------------------------------
+
+const incomingOnly = requireRole('incoming_staff');
+const supervisorOnly = requireRole('supervisor');
+const optionalComments = body('comments').optional({ values: 'null' }).isString().trim();
+const requiredComments = (what) => body('comments').isString().withMessage(`comments (${what}) are required`).bail()
+  .trim().notEmpty().withMessage(`comments (${what}) are required`);
+
+router.get('/:id', recordId, validate, async (req, res) => res.json(await workflow.getById(req.user, req.params.id)));
+
+router.post(
+  '/:id/acknowledgement',
+  incomingOnly,
+  recordId,
+  optionalComments,
+  validate,
+  async (req, res) => res.json(await workflow.acknowledge(req.user, req.params.id, req.body)),
+);
+
+router.post(
+  '/:id/query',
+  incomingOnly,
+  recordId,
+  requiredComments('the query'),
+  validate,
+  async (req, res) => res.json(await workflow.raiseQuery(req.user, req.params.id, req.body)),
+);
+
+router.post(
+  '/:id/clarify',
+  outgoingOnly,
+  recordId,
+  requiredComments('the clarification'),
+  validate,
+  async (req, res) => res.json(await workflow.clarify(req.user, req.params.id, req.body)),
+);
+
+router.post(
+  '/:id/review',
+  supervisorOnly,
+  recordId,
+  body('decision').isIn(['approved', 'escalated']).withMessage("decision must be 'approved' or 'escalated'"),
+  optionalComments,
+  validate,
+  async (req, res) => res.json(await workflow.review(req.user, req.params.id, req.body)),
+);
+
+router.post(
+  '/:id/resolve',
+  supervisorOnly,
+  recordId,
+  optionalComments,
+  validate,
+  async (req, res) => res.json(await workflow.resolve(req.user, req.params.id, req.body)),
 );
 
 module.exports = router;
