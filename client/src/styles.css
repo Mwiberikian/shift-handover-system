@@ -1,0 +1,128 @@
+/* Deliberately plain styling: this is an academic prototype. */
+:root {
+  --bg: #f4f6f8;
+  --card: #fff;
+  --border: #d9dee3;
+  --text: #1f2933;
+  --muted: #6b7785;
+  --brand: #b0102b; /* generic red accent */
+  --ok: #1d7a46;
+  --warn: #b26a00;
+  --bad: #b3261e;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+h2 { margin: 0.5rem 0 1rem; }
+h3 { margin: 0 0 0.5rem; }
+h4 { margin: 1.2rem 0 0.4rem; }
+code, pre { font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; }
+pre { background: #f0f2f4; padding: 0.6rem; overflow-x: auto; border-radius: 4px; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
+.topbar {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+  padding: 0.6rem 1rem; background: var(--brand); color: #fff;
+}
+.topbar .muted { color: #f3c9d0; }
+.brand { font-weight: 700; font-size: 1.1rem; }
+.who { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.topbar button { background: transparent; color: #fff; border-color: #fff; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
+.card.warn { border-color: var(--warn); background: #fff8ec; }
+.muted { color: var(--muted); }
+.small { font-size: 0.82rem; }
+.notes { white-space: pre-wrap; }
+
+label { display: block; margin-bottom: 0.7rem; font-size: 0.9rem; }
+label > input, label > select, label > textarea { display: block; width: 100%; margin-top: 0.25rem; }
+.inline-label { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; }
+.inline-label > input, .inline-label > select { width: auto; margin: 0; }
+input, select, textarea {
+  font: inherit; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: #fff;
+}
+textarea { width: 100%; resize: vertical; }
+input.narrow { width: 6rem; }
+
+button {
+  font: inherit; padding: 0.4rem 0.8rem; border: 1px solid var(--border); border-radius: 4px; background: #fff; cursor: pointer;
+}
+button:hover { filter: brightness(0.96); }
+button:disabled { opacity: 0.6; cursor: default; }
+button.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+button.danger { color: var(--bad); border-color: var(--bad); }
+button.link { border: none; background: none; padding: 0; color: inherit; text-decoration: underline; }
+
+.inline { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin: 0.5rem 0; }
+.inline input:not([type='checkbox']) { flex: 1 1 12rem; }
+.stack { display: grid; gap: 0.5rem; }
+.row-between { display: flex; justify-content: space-between; align-items: center; }
+.grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: start; }
+@media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.error { white-space: pre-wrap; color: var(--bad); background: #fdecea; border: 1px solid #f5c2bd; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; }
+.success { color: var(--ok); background: #e8f5ee; border: 1px solid #b9e0c8; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: #fff; font-size: 0.9rem; }
+th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: #eef1f4; font-weight: 600; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover { background: #f7f9fb; }
+tr.selected { background: #fdf0f2; }
+tr.inactive { color: var(--muted); }
+td.actions { white-space: nowrap; }
+td.actions button { margin-right: 0.3rem; }
+
+.badge { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem; background: #e6e9ed; text-transform: capitalize; }
+.status-draft { background: #e6e9ed; }
+.status-submitted { background: #dbe8fb; color: #1b4f9c; }
+.status-queried { background: #fff0d4; color: var(--warn); }
+.status-acknowledged { background: #dcf1e4; color: var(--ok); }
+.status-under_review { background: #ece2fb; color: #5b2ea6; }
+.status-escalated { background: #fbdcda; color: var(--bad); }
+.status-closed { background: #d9dde2; color: #3c4650; }
+.prio-high, .sev-high, .sev-critical { background: #fbdcda; color: var(--bad); }
+.prio-medium, .sev-medium { background: #fff0d4; color: var(--warn); }
+.carried { background: #e5e0f8; color: #4b3a99; }
+
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: 0.25rem 0; }
+.checklist .ok { color: var(--ok); }
+.checklist .missing { color: var(--bad); }
+
+.stats { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: stretch; margin-bottom: 1rem; }
+.stats h3 { width: 100%; margin: 0; }
+.stat { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.9rem; min-width: 6.5rem; }
+.stat .n { font-size: 1.5rem; font-weight: 700; }
+.stat.alert { border-color: var(--bad); background: #fdecea; color: var(--bad); }
+.alert-box { border-color: var(--bad); background: #fff6f5; }
+
+.tabs { display: flex; gap: 0.3rem; margin: 1rem 0 0.6rem; border-bottom: 1px solid var(--border); }
+.tabs button { border-bottom: none; border-radius: 4px 4px 0 0; }
+.tabs button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+.detail-head { display: flex; gap: 0.6rem; align-items: center; }
+.thread, .versions { padding-left: 1.1rem; }
+.thread li { margin-bottom: 0.4rem; }
+.versions li { margin-bottom: 0.3rem; display: flex; gap: 0.5rem; align-items: center; }
+
+.notif { position: relative; }
+.notif .count { background: #fff; color: var(--brand); border-radius: 999px; padding: 0 0.4rem; margin-left: 0.3rem; font-size: 0.75rem; font-weight: 700; }
+.notif-list {
+  position: absolute; right: 0; top: 1.8rem; z-index: 10; width: min(26rem, 90vw); max-height: 24rem; overflow-y: auto;
+  list-style: none; margin: 0; padding: 0; background: #fff; color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+}
+.notif-list li { padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); cursor: pointer; }
+.notif-list li.read { opacity: 0.6; }
+.notif-list .muted { color: var(--muted); }
+
+.login { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
+.login .card { width: min(24rem, 100%); }
+.login h1 { margin: 0; color: var(--brand); }
+.login button { width: 100%; margin-top: 0.5rem; }
