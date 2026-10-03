@@ -1,13 +1,17 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { ROLE_HOME, useAuth } from './auth/AuthContext';
 import Layout from './components/Layout';
-import Landing from './pages/Landing';
 import Login from './pages/Login';
-import RequestAccess from './pages/RequestAccess';
-import OutgoingPage from './pages/OutgoingPage';
-import IncomingPage from './pages/IncomingPage';
-import SupervisorPage from './pages/SupervisorPage';
-import AdminPage from './pages/AdminPage';
+
+// Each area is its own chunk, so a visitor to the landing page or sign-in does
+// not download every dashboard.
+const Landing = lazy(() => import('./pages/Landing'));
+const RequestAccess = lazy(() => import('./pages/RequestAccess'));
+const OutgoingPage = lazy(() => import('./pages/OutgoingPage'));
+const IncomingPage = lazy(() => import('./pages/IncomingPage'));
+const SupervisorPage = lazy(() => import('./pages/SupervisorPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 // Only lets a user into the dashboard for the role in their JWT.
 function RequireRole({ role }) {
@@ -22,6 +26,7 @@ export default function App() {
   const home = claims ? ROLE_HOME[claims.role] : '/';
 
   return (
+    <Suspense fallback={null}>
     <Routes>
       <Route path="/" element={claims ? <Navigate to={home} replace /> : <Landing />} />
       <Route path="/request-access" element={claims ? <Navigate to={home} replace /> : <RequestAccess />} />
@@ -50,5 +55,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to={home} replace />} />
     </Routes>
+    </Suspense>
   );
 }
