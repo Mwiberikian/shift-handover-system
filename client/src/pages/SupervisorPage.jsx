@@ -38,8 +38,8 @@ function StatCard({ label, value, icon: Icon, tone = 'gray', alert = false, hint
     >
       {alert && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-brand-red" />}
       <div className="flex items-start justify-between gap-2">
-        <p className={cx('text-meta font-medium', alert ? 'text-status-red' : 'text-zinc-600')}>{label}</p>
-        <span className={cx('grid size-8 shrink-0 place-items-center rounded-lg', STAT_TONE[alert ? 'red' : tone])}>
+        <p className={cx('min-w-0 text-meta font-medium break-words', alert ? 'text-status-red' : 'text-zinc-600')}>{label}</p>
+        <span className={cx('hidden size-8 shrink-0 place-items-center rounded-lg min-[400px]:grid', STAT_TONE[alert ? 'red' : tone])}>
           <Icon aria-hidden className="size-4" />
         </span>
       </div>

@@ -7,15 +7,7 @@ import { ROLE_LABEL, initials } from '../lib/format';
 import { NAV } from './shell/nav';
 import SidebarNav from './shell/Sidebar';
 import NotificationsMenu from './shell/NotificationsMenu';
-
-function Wordmark() {
-  return (
-    <span className="flex items-baseline gap-2 select-none">
-      <span className="text-xl font-extrabold tracking-tight text-brand-red">SHMS</span>
-      <span className="hidden text-sm font-medium text-zinc-300 sm:inline">Shift Handover</span>
-    </span>
-  );
-}
+import Brand from './shell/Brand';
 
 function UserBlock({ profile, role, dark = true }) {
   const name = profile?.full_name ?? '…';
@@ -56,7 +48,8 @@ export default function Layout() {
         >
           <Menu aria-hidden className="size-5" />
         </button>
-        <Wordmark />
+        <Brand showName={false} className="sm:hidden" />
+        <Brand className="hidden sm:flex" />
 
         <div className="ml-auto flex items-center gap-1 sm:gap-3">
           <NotificationsMenu />
@@ -87,7 +80,7 @@ export default function Layout() {
           className="fixed inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-pop transition duration-200 ease-out data-closed:-translate-x-full"
         >
           <div className="flex h-14 items-center justify-between border-b-2 border-brand-red bg-brand-black px-4">
-            <Wordmark />
+            <Brand showName={false} />
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}

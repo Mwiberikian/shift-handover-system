@@ -4,6 +4,7 @@ import { Eye, EyeOff, LogIn, ShieldCheck } from 'lucide-react';
 import { errorMessage } from '../api';
 import { ROLE_HOME, useAuth } from '../auth/AuthContext';
 import { Button, Callout, Input } from '../components/ui';
+import Brand from '../components/shell/Brand';
 
 export default function Login() {
   const { login } = useAuth();
@@ -38,9 +39,9 @@ export default function Login() {
       <div aria-hidden className="pointer-events-none absolute -bottom-48 -left-40 size-[26rem] rounded-full bg-zinc-300/30 blur-3xl" />
 
       <main className="relative w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="text-3xl font-extrabold tracking-tight text-brand-red">SHMS</p>
-          <h1 className="mt-1 text-body font-medium text-zinc-600">Shift Handover Management System</h1>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Brand showName={false} size="lg" />
+          <h1 className="mt-3 text-body font-medium text-zinc-600">Shift Handover Management System</h1>
         </div>
 
         <form
