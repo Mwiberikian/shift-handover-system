@@ -1,8 +1,5 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/inter';
-/* Pre-Tailwind styles, shrinking phase by phase until removed. Layered so
-   Tailwind utilities always win over them. */
-@import './legacy.css' layer(components);
 
 /* Design tokens. Components use these names (bg-brand-red, text-status-amber…),
    never raw hex. */

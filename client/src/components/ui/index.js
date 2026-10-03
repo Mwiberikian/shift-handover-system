@@ -10,3 +10,4 @@ export { Checkbox, Field, Input, Select, Textarea } from './Field';
 export { ConfirmDialog, Modal } from './Modal';
 export { default as Drawer } from './Drawer';
 export { default as SegmentedPicker, PRIORITY_OPTIONS, SEVERITY_OPTIONS } from './SegmentedPicker';
+export { default as JsonView } from './JsonView';
