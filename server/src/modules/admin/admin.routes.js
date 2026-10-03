@@ -3,6 +3,7 @@ const { body, param, query } = require('express-validator');
 const validate = require('../../middleware/validate');
 const { requireAuth, requireRole } = require('../../middleware/auth');
 const service = require('./admin.service');
+const accessRequests = require('../accessRequests/accessRequests.service');
 
 const router = express.Router();
 router.use(requireAuth, requireRole('admin'));
@@ -73,6 +74,36 @@ router.put(
     const result = await service.updateTemplate(req.user, req.params.departmentCode, req.body.field_definition);
     res.status(result.changed ? 201 : 200).json(result);
   },
+);
+
+// ---- Access requests --------------------------------------------------------
+
+const requestId = param('id').isUUID().withMessage('id must be a UUID');
+
+router.get(
+  '/access-requests',
+  query('status').optional().isIn(['pending', 'approved', 'rejected', 'all']),
+  validate,
+  async (req, res) => res.json(await accessRequests.list(req.query)),
+);
+
+// The admin, not the requester, decides role and department.
+router.post(
+  '/access-requests/:id/approve',
+  requestId,
+  body('role').isIn(ROLES).withMessage(`role must be one of ${ROLES.join(', ')}`),
+  body('department_id').optional({ values: 'null' }).isUUID(),
+  body('staff_number').optional({ values: 'falsy' }).isString().trim().isLength({ max: 20 }),
+  validate,
+  async (req, res) => res.status(201).json(await accessRequests.approve(req.user, req.params.id, req.body)),
+);
+
+router.post(
+  '/access-requests/:id/reject',
+  requestId,
+  body('reason').optional({ values: 'falsy' }).isString().trim().isLength({ max: 1000 }),
+  validate,
+  async (req, res) => res.json(await accessRequests.reject(req.user, req.params.id, req.body)),
 );
 
 module.exports = router;

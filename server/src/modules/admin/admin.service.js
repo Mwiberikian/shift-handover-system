@@ -58,26 +58,32 @@ async function getUser(userId) {
   return user;
 }
 
-async function createUser(admin, body) {
-  return withTransaction(async (client) => {
-    await assertRoleDepartment(client, body.role, body.department_id);
-    const passwordHash = await bcrypt.hash(body.password, BCRYPT_ROUNDS);
-    let user;
-    try {
-      ({ rows: [user] } = await client.query(
-        `INSERT INTO app_user (staff_number, full_name, email, password_hash, role, department_id, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, true)) RETURNING *`,
-        [body.staff_number, body.full_name, body.email.toLowerCase(), passwordHash, body.role,
-          body.department_id || null, body.is_active ?? null],
-      ));
-    } catch (err) {
-      translateUniqueViolation(err);
-    }
-    await writeAudit(client, {
-      userId: admin.user_id, entityType: 'app_user', entityId: user.user_id, action: 'create', newValue: userAuditView(user),
-    });
-    return userAuditView(user);
+// Inserts and audits a new account inside the caller's transaction. Shared by
+// direct creation and by approving an access request (`auditExtra` records
+// where the account came from).
+async function insertUser(client, admin, body, auditExtra = {}) {
+  await assertRoleDepartment(client, body.role, body.department_id);
+  const passwordHash = await bcrypt.hash(body.password, BCRYPT_ROUNDS);
+  let user;
+  try {
+    ({ rows: [user] } = await client.query(
+      `INSERT INTO app_user (staff_number, full_name, email, password_hash, role, department_id, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, true)) RETURNING *`,
+      [body.staff_number, body.full_name, body.email.toLowerCase(), passwordHash, body.role,
+        body.department_id || null, body.is_active ?? null],
+    ));
+  } catch (err) {
+    translateUniqueViolation(err);
+  }
+  await writeAudit(client, {
+    userId: admin.user_id, entityType: 'app_user', entityId: user.user_id, action: 'create',
+    newValue: { ...userAuditView(user), ...auditExtra },
   });
+  return userAuditView(user);
+}
+
+async function createUser(admin, body) {
+  return withTransaction((client) => insertUser(client, admin, body));
 }
 
 async function updateUser(admin, userId, body) {
@@ -213,6 +219,6 @@ async function updateTemplate(admin, code, fieldDefinition) {
 }
 
 module.exports = {
-  listUsers, getUser, createUser, updateUser, deactivateUser,
+  listUsers, getUser, createUser, insertUser, updateUser, deactivateUser,
   listDepartments, getTemplate, updateTemplate,
 };
