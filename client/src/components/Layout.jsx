@@ -7,6 +7,7 @@ import { ROLE_LABEL, initials } from '../lib/format';
 import { NAV } from './shell/nav';
 import SidebarNav from './shell/Sidebar';
 import NotificationsMenu from './shell/NotificationsMenu';
+import { ConfirmDialog } from './ui';
 import Brand from './shell/Brand';
 
 function UserBlock({ profile, role, dark = true }) {
@@ -29,6 +30,7 @@ function UserBlock({ profile, role, dark = true }) {
 export default function Layout() {
   const { claims, profile, logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const { pathname } = useLocation();
   if (!claims) return <Navigate to="/login" replace />;
   const items = NAV[claims.role] ?? [];
@@ -57,7 +59,7 @@ export default function Layout() {
           <div className="hidden md:block"><UserBlock profile={profile} role={claims.role} /></div>
           <button
             type="button"
-            onClick={logout}
+            onClick={() => setConfirmLogout(true)}
             className="inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/10 hover:text-white"
           >
             <LogOut aria-hidden className="size-[18px]" />
@@ -98,6 +100,16 @@ export default function Layout() {
           </div>
         </DialogPanel>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={logout}
+        icon={LogOut}
+        title="Log out?"
+        confirmLabel="Log out"
+        message={<p>Are you sure you want to log out? Any unsaved changes on this page will be lost.</p>}
+      />
 
       <main id="main" className="pt-14 md:pl-16 lg:pl-60">
         {/* Keyed on the route so each screen fades in on navigation. */}
