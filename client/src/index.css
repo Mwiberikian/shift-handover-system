@@ -1,0 +1,65 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+/* Pre-Tailwind styles, shrinking phase by phase until removed. Layered so
+   Tailwind utilities always win over them. */
+@import './legacy.css' layer(components);
+
+/* Design tokens. Components use these names (bg-brand-red, text-status-amber…),
+   never raw hex. */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  /* Kenya Airways palette. #ED1C24 gives only 4.4:1 against white, so text
+     and filled buttons use the darker shade; the pure brand red is kept for
+     the wordmark, accent lines and active indicators. */
+  --color-brand-red: #ed1c24;
+  --color-brand-red-dark: #c4161c;
+  --color-brand-red-darker: #a01217;
+  --color-brand-black: #0d0d0d;
+
+  /* Semantic status colours: strong = text/icon, soft = fill, line = border. */
+  --color-status-green: #047857;
+  --color-status-green-soft: #ecfdf5;
+  --color-status-green-line: #a7f3d0;
+  --color-status-amber: #92400e;
+  --color-status-amber-soft: #fffbeb;
+  --color-status-amber-line: #fcd34d;
+  --color-status-blue: #1d4ed8;
+  --color-status-blue-soft: #eff6ff;
+  --color-status-blue-line: #bfdbfe;
+  --color-status-red: #c4161c;
+  --color-status-red-soft: #fef2f2;
+  --color-status-red-line: #fecaca;
+  --color-status-gray: #3f3f46;
+  --color-status-gray-soft: #f4f4f5;
+  --color-status-gray-line: #d4d4d8;
+
+  /* Type scale: page title / section header / body / meta. */
+  --text-title: 1.5rem;
+  --text-title--line-height: 2rem;
+  --text-title--font-weight: 650;
+  --text-section: 1rem;
+  --text-section--line-height: 1.5rem;
+  --text-section--font-weight: 600;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.375rem;
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1rem;
+
+  --shadow-card: 0 1px 2px 0 rgb(13 13 13 / 0.04), 0 1px 3px 0 rgb(13 13 13 / 0.06);
+  --shadow-pop: 0 10px 30px -5px rgb(13 13 13 / 0.18), 0 4px 10px -6px rgb(13 13 13 / 0.12);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-zinc-50 font-sans text-body text-brand-black;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-red);
+    outline-offset: 2px;
+  }
+}

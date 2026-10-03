@@ -1,17 +1,15 @@
-/* Deliberately plain styling: this is an academic prototype. */
+/* Legacy pre-Tailwind styles. Removed piece by piece as screens move to Tailwind. */
 :root {
   --bg: #f4f6f8;
   --card: #fff;
   --border: #d9dee3;
   --text: #1f2933;
   --muted: #6b7785;
-  --brand: #b0102b; /* generic red accent */
+  --brand: var(--color-brand-red-dark);
   --ok: #1d7a46;
   --warn: #b26a00;
   --bad: #b3261e;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
-  background: var(--bg);
 }
 
 * { box-sizing: border-box; }
