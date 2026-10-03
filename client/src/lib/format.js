@@ -18,6 +18,12 @@ export function fmtRelative(d) {
   return days < 7 ? `${days} d ago` : fmtDate(d);
 }
 
+// "night" -> "Night shift"
+export const shiftLabel = (r) => {
+  const t = r?.shift_type ?? '';
+  return `${t.charAt(0).toUpperCase()}${t.slice(1)} shift`;
+};
+
 export const ROLE_LABEL = {
   outgoing_staff: 'Outgoing staff',
   incoming_staff: 'Incoming staff',

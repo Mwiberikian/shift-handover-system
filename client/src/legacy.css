@@ -21,7 +21,6 @@ code, pre { font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; 
 pre { background: #f0f2f4; padding: 0.6rem; overflow-x: auto; border-radius: 4px; }
 
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
-.card.warn { border-color: var(--warn); background: #fff8ec; }
 .muted { color: var(--muted); }
 .small { font-size: 0.82rem; }
 .notes { white-space: pre-wrap; }
@@ -78,10 +77,6 @@ td.actions button { margin-right: 0.3rem; }
 .prio-medium, .sev-medium { background: #fff0d4; color: var(--warn); }
 .carried { background: #e5e0f8; color: #4b3a99; }
 
-.checklist { list-style: none; padding: 0; }
-.checklist li { padding: 0.25rem 0; }
-.checklist .ok { color: var(--ok); }
-.checklist .missing { color: var(--bad); }
 
 .stats { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: stretch; margin-bottom: 1rem; }
 .stats h3 { width: 100%; margin: 0; }

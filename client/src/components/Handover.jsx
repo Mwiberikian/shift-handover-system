@@ -3,7 +3,7 @@ import {
   AlertTriangle, CheckCircle2, ClipboardList, CornerDownRight, FileText, HelpCircle, History, MessageSquareReply,
   ShieldCheck, ShieldAlert,
 } from 'lucide-react';
-import { cx, fmt, fmtRelative } from '../lib/format';
+import { cx, fmt, fmtRelative, shiftLabel } from '../lib/format';
 import { Callout, EmptyState, StatusBadge, Table } from './ui';
 
 export { fmt };
@@ -15,8 +15,6 @@ export function ErrorBox({ error }) {
   const [title, ...rest] = error.split('\n');
   return <Callout tone="danger" title={title} className="mb-4">{rest.length > 0 && <div className="whitespace-pre-line">{rest.join('\n')}</div>}</Callout>;
 }
-
-const shiftLabel = (r) => `${r.shift_type?.[0]?.toUpperCase()}${r.shift_type?.slice(1)} shift`;
 
 export const RECORD_COLUMNS = [
   {
@@ -160,7 +158,7 @@ function Meta({ label, children }) {
   return (
     <div className="min-w-0">
       <dt className="text-meta font-medium text-zinc-600">{label}</dt>
-      <dd className="truncate text-brand-black">{children}</dd>
+      <dd className="break-words text-brand-black">{children}</dd>
     </div>
   );
 }
