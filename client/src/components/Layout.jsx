@@ -39,7 +39,7 @@ export default function Layout() {
         Skip to content
       </a>
 
-      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b-2 border-brand-red bg-brand-black px-3 sm:px-4">
+      <header className="glass-dark fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b-2 border-brand-red px-3 sm:px-4">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}

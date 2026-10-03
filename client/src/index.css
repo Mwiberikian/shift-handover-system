@@ -54,6 +54,27 @@
   }
 }
 
+/* Frosted glass. Only for surfaces with a photo or scrolling content behind
+   them (login card, landing hero, header bar); on a plain background it
+   reads as nothing. Opacity is high enough that text contrast holds even
+   over a busy image, and browsers without backdrop-filter get an opaque fill. */
+@utility glass-light {
+  background-color: rgb(255 255 255 / 0.8);
+  border: 1px solid rgb(255 255 255 / 0.55);
+  backdrop-filter: blur(18px) saturate(140%);
+  @supports not (backdrop-filter: blur(1px)) {
+    background-color: rgb(255 255 255 / 0.97);
+  }
+}
+
+@utility glass-dark {
+  background-color: rgb(13 13 13 / 0.9);
+  backdrop-filter: blur(14px) saturate(150%);
+  @supports not (backdrop-filter: blur(1px)) {
+    background-color: var(--color-brand-black);
+  }
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;

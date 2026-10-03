@@ -5,6 +5,7 @@ import { errorMessage } from '../api';
 import { ROLE_HOME, useAuth } from '../auth/AuthContext';
 import { Button, Callout, Input } from '../components/ui';
 import Brand from '../components/shell/Brand';
+import runwayUrl from '../assets/images/runway-dusk.webp';
 
 export default function Login() {
   const { login } = useAuth();
@@ -33,26 +34,25 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-zinc-50 px-4 py-10">
-      {/* Soft brand accent in the corner, kept faint so the page stays calm. */}
-      <div aria-hidden className="pointer-events-none absolute -top-40 -right-40 size-[28rem] rounded-full bg-brand-red/[0.07] blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-48 -left-40 size-[26rem] rounded-full bg-zinc-300/30 blur-3xl" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-brand-black px-4 py-10">
+      {/* Runway photo behind a dark gradient; the card is frosted glass over it. */}
+      <img src={runwayUrl} alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-brand-black/55 via-brand-black/25 to-brand-black/70" />
 
       <main className="relative w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <Brand showName={false} size="lg" />
-          <h1 className="mt-3 text-body font-medium text-zinc-600">Shift Handover Management System</h1>
-        </div>
-
         <form
           onSubmit={submit}
-          className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-pop"
+          className="glass-light overflow-hidden rounded-2xl shadow-pop"
         >
           <div aria-hidden className="h-1 bg-brand-red" />
           <div className="space-y-5 p-6 sm:p-8">
+            <div className="flex flex-col items-center gap-2 border-b border-zinc-900/10 pb-5 text-center">
+              <Brand showName={false} size="lg" />
+              <h1 className="text-body font-medium text-zinc-700">Shift Handover Management System</h1>
+            </div>
             <div>
               <h2 className="text-lg font-semibold text-brand-black">Sign in</h2>
-              <p className="mt-0.5 text-zinc-600">Use your staff number or work email.</p>
+              <p className="mt-0.5 text-zinc-700">Use your staff number or work email.</p>
             </div>
 
             {error && <Callout tone="danger" title="Sign-in failed">{error}</Callout>}
@@ -97,7 +97,7 @@ export default function Login() {
           </div>
         </form>
 
-        <p className="mt-6 text-center text-meta text-zinc-600">
+        <p className="mt-6 text-center text-meta text-zinc-200 [text-shadow:0_1px_2px_rgb(0_0_0/0.6)]">
           <ShieldCheck aria-hidden className="mr-1 inline size-3.5 -translate-y-px" />
           Prototype with synthetic data. Seeded accounts: KQ1001–KQ4003, KQ9001.
         </p>
