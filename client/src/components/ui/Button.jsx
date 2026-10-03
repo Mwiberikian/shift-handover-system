@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { cx } from '../../lib/format';
 
@@ -17,6 +18,14 @@ const SIZES = {
   icon: 'size-9 justify-center',
 };
 
+// Class string for anything that should look like a Button (e.g. a Link).
+export const buttonClass = ({ variant = 'secondary', size = 'md', className } = {}) => cx(
+  'inline-flex shrink-0 items-center justify-center rounded-lg font-medium whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed',
+  VARIANTS[variant],
+  SIZES[size],
+  className,
+);
+
 const Button = forwardRef(function Button(
   { variant = 'secondary', size = 'md', loading = false, icon: Icon, className, children, disabled, type = 'button', ...props },
   ref,
@@ -28,12 +37,7 @@ const Button = forwardRef(function Button(
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cx(
-        'inline-flex shrink-0 items-center justify-center rounded-lg font-medium whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed',
-        VARIANTS[variant],
-        SIZES[size],
-        className,
-      )}
+      className={buttonClass({ variant, size, className })}
       {...props}
     >
       {loading
@@ -43,5 +47,15 @@ const Button = forwardRef(function Button(
     </button>
   );
 });
+
+// Router link styled as a Button.
+export function ButtonLink({ to, variant = 'secondary', size = 'md', icon: Icon, className, children, ...props }) {
+  return (
+    <Link to={to} className={buttonClass({ variant, size, className })} {...props}>
+      {Icon && <Icon aria-hidden className={size === 'sm' ? 'size-3.5' : 'size-4'} />}
+      {children}
+    </Link>
+  );
+}
 
 export default Button;

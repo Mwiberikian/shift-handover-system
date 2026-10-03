@@ -1,4 +1,4 @@
-export { default as Button } from './Button';
+export { default as Button, ButtonLink, buttonClass } from './Button';
 export { default as Card } from './Card';
 export { default as Callout } from './Callout';
 export { default as EmptyState } from './EmptyState';

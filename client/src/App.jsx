@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { ROLE_HOME, useAuth } from './auth/AuthContext';
 import Layout from './components/Layout';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import OutgoingPage from './pages/OutgoingPage';
 import IncomingPage from './pages/IncomingPage';
@@ -17,10 +18,11 @@ function RequireRole({ role }) {
 
 export default function App() {
   const { claims } = useAuth();
-  const home = claims ? ROLE_HOME[claims.role] : '/login';
+  const home = claims ? ROLE_HOME[claims.role] : '/';
 
   return (
     <Routes>
+      <Route path="/" element={claims ? <Navigate to={home} replace /> : <Landing />} />
       <Route path="/login" element={claims ? <Navigate to={home} replace /> : <Login />} />
       <Route element={<Layout />}>
         <Route path="/outgoing" element={<RequireRole role="outgoing_staff" />}>
