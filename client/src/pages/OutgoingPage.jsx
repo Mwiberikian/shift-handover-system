@@ -3,6 +3,7 @@ import api, { errorMessage } from '../api';
 import {
   ErrorBox, HandoverDetail, IncidentTable, RecordTable, StatusBadge, TaskTable, fmt,
 } from '../components/Handover';
+import PageHeader from '../components/ui/PageHeader';
 
 // Live checklist of the department template's mandatory fields.
 function TemplateChecklist({ template, record, notes, incoming }) {
@@ -176,7 +177,7 @@ function ClarifyBox({ record, reload }) {
   );
 }
 
-export default function OutgoingPage() {
+export default function OutgoingPage({ view }) {
   const [meta, setMeta] = useState(null);
   const [records, setRecords] = useState([]);
   const [current, setCurrent] = useState(null);
@@ -214,9 +215,13 @@ export default function OutgoingPage() {
 
   return (
     <>
-      <h2>Outgoing handover</h2>
+      <PageHeader
+        title={view === 'history' ? 'My handovers' : 'Current handover'}
+        subtitle={view === 'history' ? 'Every handover you have prepared, newest first.' : 'Prepare and submit the handover for your current shift.'}
+      />
       <ErrorBox error={error} />
       {flash && <div className="success">{flash}</div>}
+      {view === 'current' && (<>
       {queried.map((r) => (
         <QueriedLoader key={r.record_id} id={r.record_id} reload={reload} />
       ))}
@@ -233,13 +238,15 @@ export default function OutgoingPage() {
         <div className="card"><HandoverDetail record={current} /></div>
       )}
 
-      <h3>My handovers</h3>
+      </>)}
+      {view === 'history' && (<>
       <RecordTable
         records={records}
         selectedId={selected?.record_id}
         onSelect={async (id) => setSelected((await api.get(`/handovers/${id}`)).data)}
       />
       {selected && <div className="card"><HandoverDetail record={selected} /></div>}
+      </>)}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import api, { errorMessage } from '../api';
 import { ErrorBox } from '../components/Handover';
+import PageHeader from '../components/ui/PageHeader';
 
 const ROLES = ['outgoing_staff', 'incoming_staff', 'supervisor', 'admin'];
 const EMPTY_USER = { staff_number: '', full_name: '', email: '', password: '', role: 'outgoing_staff', department_id: '' };
@@ -230,19 +231,16 @@ function Templates({ departments }) {
   );
 }
 
-export default function AdminPage() {
-  const [tab, setTab] = useState('users');
+export default function AdminPage({ view }) {
   const [departments, setDepartments] = useState([]);
   useEffect(() => { api.get('/admin/departments').then((r) => setDepartments(r.data)); }, []);
 
   return (
     <>
-      <h2>Administration</h2>
-      <div className="tabs">
-        <button type="button" className={tab === 'users' ? 'active' : ''} onClick={() => setTab('users')}>Users</button>
-        <button type="button" className={tab === 'templates' ? 'active' : ''} onClick={() => setTab('templates')}>Templates</button>
-      </div>
-      {tab === 'users' ? <Users departments={departments} /> : <Templates departments={departments} />}
+      {view === 'users'
+        ? <PageHeader title="Users" subtitle="Create accounts, change roles and departments, and deactivate access." />
+        : <PageHeader title="Handover templates" subtitle="Per-department checklist definitions. Every save creates a new version." />}
+      {view === 'users' ? <Users departments={departments} /> : <Templates departments={departments} />}
     </>
   );
 }

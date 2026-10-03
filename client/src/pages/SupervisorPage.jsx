@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import api, { errorMessage } from '../api';
 import { ErrorBox, HandoverDetail, RecordTable, fmt } from '../components/Handover';
+import PageHeader from '../components/ui/PageHeader';
 
 const STATUSES = ['draft', 'submitted', 'queried', 'acknowledged', 'under_review', 'escalated', 'closed'];
 
@@ -109,12 +110,18 @@ function Search({ onSelect, selectedId }) {
   );
 }
 
-export default function SupervisorPage() {
+const TITLES = {
+  overview: ['Overview', 'Handover status across your departments.'],
+  queue: ['Review queue', 'Acknowledged handovers awaiting supervisor review.'],
+  escalated: ['Escalated', 'Handovers escalated for resolution.'],
+  search: ['Search', 'Find handover records by keyword, status or date.'],
+};
+
+export default function SupervisorPage({ view }) {
   const [dash, setDash] = useState(null);
   const [queue, setQueue] = useState([]);
   const [escalated, setEscalated] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [tab, setTab] = useState('queue');
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -144,25 +151,12 @@ export default function SupervisorPage() {
 
   return (
     <>
-      <div className="row-between">
-        <h2>Supervisor dashboard</h2>
-        <button type="button" onClick={load}>Refresh</button>
-      </div>
+      <PageHeader title={TITLES[view][0]} subtitle={TITLES[view][1]} actions={<button type="button" onClick={load}>Refresh</button>} />
       <ErrorBox error={error} />
-      {dash && <Dashboard data={dash} />}
-
-      <div className="tabs">
-        <button type="button" className={tab === 'queue' ? 'active' : ''} onClick={() => setTab('queue')}>
-          Review queue ({queue.length})
-        </button>
-        <button type="button" className={tab === 'escalated' ? 'active' : ''} onClick={() => setTab('escalated')}>
-          Escalated ({escalated.length})
-        </button>
-        <button type="button" className={tab === 'search' ? 'active' : ''} onClick={() => setTab('search')}>Search</button>
-      </div>
-      {tab === 'queue' && <RecordTable records={queue} onSelect={open} selectedId={selected?.record_id} empty="Nothing awaiting review." />}
-      {tab === 'escalated' && <RecordTable records={escalated} onSelect={open} selectedId={selected?.record_id} empty="No escalated records." />}
-      {tab === 'search' && <Search onSelect={open} selectedId={selected?.record_id} />}
+      {view === 'overview' && dash && <Dashboard data={dash} />}
+      {view === 'queue' && <RecordTable records={queue} onSelect={open} selectedId={selected?.record_id} empty="Nothing awaiting review." />}
+      {view === 'escalated' && <RecordTable records={escalated} onSelect={open} selectedId={selected?.record_id} empty="No escalated records." />}
+      {view === 'search' && <Search onSelect={open} selectedId={selected?.record_id} />}
 
       {selected && (
         <>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api, { errorMessage } from '../api';
 import { ErrorBox, HandoverDetail, RecordTable } from '../components/Handover';
+import PageHeader from '../components/ui/PageHeader';
 
 function AcknowledgeBox({ record, onDone }) {
   const [comments, setComments] = useState('');
@@ -35,7 +36,7 @@ function AcknowledgeBox({ record, onDone }) {
   );
 }
 
-export default function IncomingPage() {
+export default function IncomingPage({ view }) {
   const [records, setRecords] = useState([]);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState('');
@@ -53,12 +54,16 @@ export default function IncomingPage() {
   useEffect(() => { loadList(); }, []);
 
   const pending = records.filter((r) => r.status === 'submitted');
+  const shown = view === 'pending' ? records.filter((r) => ['submitted', 'queried'].includes(r.status)) : records;
   return (
     <>
-      <h2>Incoming handovers</h2>
+      <PageHeader
+        title={view === 'pending' ? 'Awaiting action' : 'All handovers'}
+        subtitle={view === 'pending' ? 'Handovers assigned to you that still need your acknowledgement.' : 'Every handover that has been assigned to you.'}
+      />
       <ErrorBox error={error} />
       {pending.length > 0 && <div className="success">{pending.length} handover(s) awaiting your acknowledgement.</div>}
-      <RecordTable records={records} onSelect={open} selectedId={selected?.record_id} empty="No handovers have been assigned to you." />
+      <RecordTable records={shown} onSelect={open} selectedId={selected?.record_id} empty="No handovers have been assigned to you." />
       {selected && (
         <>
           <div className="card"><HandoverDetail record={selected} /></div>
