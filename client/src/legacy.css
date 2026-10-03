@@ -14,12 +14,11 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; }
-h2 { margin: 0.5rem 0 1rem; }
-h3 { margin: 0 0 0.5rem; }
-h4 { margin: 1.2rem 0 0.4rem; }
+h2:not([class]) { margin: 0.5rem 0 1rem; }
+h3:not([class]) { margin: 0 0 0.5rem; }
+h4:not([class]) { margin: 1.2rem 0 0.4rem; }
 code, pre { font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; }
 pre { background: #f0f2f4; padding: 0.6rem; overflow-x: auto; border-radius: 4px; }
-
 
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
 .card.warn { border-color: var(--warn); background: #fff8ec; }
@@ -27,14 +26,14 @@ pre { background: #f0f2f4; padding: 0.6rem; overflow-x: auto; border-radius: 4px
 .small { font-size: 0.82rem; }
 .notes { white-space: pre-wrap; }
 
-label { display: block; margin-bottom: 0.7rem; font-size: 0.9rem; }
-label > input, label > select, label > textarea { display: block; width: 100%; margin-top: 0.25rem; }
+label:not([class]) { display: block; margin-bottom: 0.7rem; font-size: 0.9rem; }
+label:not([class]) > :is(input, select, textarea) { display: block; width: 100%; margin-top: 0.25rem; }
 .inline-label { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; }
 .inline-label > input, .inline-label > select { width: auto; margin: 0; }
-input, select, textarea {
+:is(input, select, textarea):is(:not([class]), .narrow) {
   font: inherit; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; background: #fff;
 }
-textarea { width: 100%; resize: vertical; }
+textarea:not([class]) { width: 100%; resize: vertical; }
 input.narrow { width: 6rem; }
 
 :is(button:not([class]), button.primary, button.danger, button.link) {
@@ -57,9 +56,9 @@ button.link { border: none; background: none; padding: 0; color: inherit; text-d
 .success { color: var(--ok); background: #e8f5ee; border: 1px solid #b9e0c8; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; }
 
 .table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 0.9rem; }
-th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { background: #eef1f4; font-weight: 600; }
+table:not([class]) { width: 100%; border-collapse: collapse; background: #fff; font-size: 0.9rem; }
+table:not([class]) :is(th, td) { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+table:not([class]) th { background: #eef1f4; font-weight: 600; }
 tr.clickable { cursor: pointer; }
 tr.clickable:hover { background: #f7f9fb; }
 tr.selected { background: #fdf0f2; }
@@ -91,12 +90,9 @@ td.actions button { margin-right: 0.3rem; }
 .stat.alert { border-color: var(--bad); background: #fdecea; color: var(--bad); }
 .alert-box { border-color: var(--bad); background: #fff6f5; }
 
-
-.detail-head { display: flex; gap: 0.6rem; align-items: center; }
-.thread, .versions { padding-left: 1.1rem; }
+.thread:not([class~="relative"]), .versions { padding-left: 1.1rem; }
 .thread li { margin-bottom: 0.4rem; }
 .versions li { margin-bottom: 0.3rem; display: flex; gap: 0.5rem; align-items: center; }
-
 
 .login { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
 .login .card { width: min(24rem, 100%); }
