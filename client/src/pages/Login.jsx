@@ -64,7 +64,6 @@ export default function Login() {
               autoComplete="username"
               autoFocus
               required
-              placeholder="e.g. KQ1001"
               error={!!error}
             />
 
@@ -99,7 +98,7 @@ export default function Login() {
 
         <p className="mt-6 text-center text-meta text-zinc-200 [text-shadow:0_1px_2px_rgb(0_0_0/0.6)]">
           <ShieldCheck aria-hidden className="mr-1 inline size-3.5 -translate-y-px" />
-          Prototype with synthetic data. Seeded accounts: KQ1001–KQ4003, KQ9001.
+          Authorised personnel only. Sign-ins and handover actions are recorded in the audit trail.
         </p>
       </main>
     </div>
