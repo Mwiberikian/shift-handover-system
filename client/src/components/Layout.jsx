@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
@@ -11,7 +11,7 @@ import NotificationsMenu from './shell/NotificationsMenu';
 function Wordmark() {
   return (
     <span className="flex items-baseline gap-2 select-none">
-      <span className="text-lg font-extrabold tracking-tight text-brand-red">SHMS</span>
+      <span className="text-xl font-extrabold tracking-tight text-brand-red">SHMS</span>
       <span className="hidden text-sm font-medium text-zinc-300 sm:inline">Shift Handover</span>
     </span>
   );
@@ -37,6 +37,7 @@ function UserBlock({ profile, role, dark = true }) {
 export default function Layout() {
   const { claims, profile, logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { pathname } = useLocation();
   if (!claims) return <Navigate to="/login" replace />;
   const items = NAV[claims.role] ?? [];
 
@@ -106,7 +107,8 @@ export default function Layout() {
       </Dialog>
 
       <main id="main" className="pt-14 md:pl-16 lg:pl-60">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        {/* Keyed on the route so each screen fades in on navigation. */}
+        <div key={pathname} className="mx-auto max-w-screen-2xl animate-page-in px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </div>
       </main>

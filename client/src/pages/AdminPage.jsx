@@ -341,9 +341,9 @@ function Templates({ departments }) {
       </Card>
 
       {!data ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]"><SkeletonCard lines={8} /><SkeletonCard lines={4} /></div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]"><SkeletonCard lines={8} /><SkeletonCard lines={4} /></div>
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <Card
             title="Checklist fields"
             subtitle="What outgoing staff must complete before submitting."

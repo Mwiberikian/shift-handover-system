@@ -44,8 +44,9 @@ export function ConfirmDialog({
       title={title}
       footer={(
         <>
-          <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
-          <Button variant={tone === 'danger' ? 'danger-solid' : 'primary'} onClick={onConfirm} loading={loading} data-autofocus>
+          {/* Focus starts on Cancel so a stray Enter can't confirm a consequential action. */}
+          <Button variant="secondary" onClick={onClose} disabled={loading} data-autofocus>Cancel</Button>
+          <Button variant={tone === 'danger' ? 'danger-solid' : 'primary'} onClick={onConfirm} loading={loading}>
             {confirmLabel}
           </Button>
         </>

@@ -16,9 +16,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         position="top-right"
         offset={{ top: 68, right: 16 }}
         mobileOffset={{ top: 64 }}
-        richColors
         closeButton
-        toastOptions={{ style: { fontFamily: 'var(--font-sans)' }, classNames: { description: 'whitespace-pre-line' } }}
+        toastOptions={{
+          // Sonner's own CSS is unlayered, so these need `!` to win.
+          classNames: {
+            toast: 'font-sans! rounded-xl! border-zinc-200! shadow-pop!',
+            title: 'text-brand-black! font-semibold!',
+            description: 'text-zinc-600! whitespace-pre-line',
+            success: '[&_[data-icon]]:text-status-green',
+            info: '[&_[data-icon]]:text-status-blue',
+            warning: '[&_[data-icon]]:text-status-amber',
+            error: 'border-l-4! border-l-status-red! [&_[data-icon]]:text-status-red [&_[data-title]]:text-status-red!',
+          },
+        }}
       />
     </BrowserRouter>
   </React.StrictMode>,

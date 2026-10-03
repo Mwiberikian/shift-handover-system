@@ -136,7 +136,7 @@ function PendingView({ records, loading, reloadList }) {
     if (!selectedId && pending.length) open(pending[0].record_id);
   }, [pending, selectedId, open]);
 
-  if (loading) return <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]"><SkeletonCard lines={2} /><SkeletonCard lines={8} /></div>;
+  if (loading) return <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]"><SkeletonCard lines={2} /><SkeletonCard lines={8} /></div>;
   if (!pending.length) {
     return (
       <Card>
@@ -146,7 +146,7 @@ function PendingView({ records, loading, reloadList }) {
   }
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <section aria-label="Pending handovers" className="lg:sticky lg:top-20">
         <h2 className="mb-2 text-meta font-semibold tracking-wide text-zinc-600 uppercase">{pending.length} pending</h2>
         <ul className="space-y-2">

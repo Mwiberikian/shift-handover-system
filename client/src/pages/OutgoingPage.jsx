@@ -67,7 +67,7 @@ function Checklist({ items }) {
         <li key={i.key} className="flex gap-2.5">
           {i.ok
             ? <CheckCircle2 aria-hidden className="mt-px size-[18px] shrink-0 text-status-green" />
-            : <Circle aria-hidden className="mt-px size-[18px] shrink-0 text-zinc-400" />}
+            : <Circle aria-hidden className="mt-px size-[18px] shrink-0 text-zinc-500" />}
           <div className="min-w-0">
             <p className={cx('leading-tight', i.ok ? 'text-zinc-700' : 'font-medium text-brand-black')}>
               {i.label}
@@ -168,7 +168,7 @@ function DraftEditor({ record, meta, reload }) {
   );
 
   return (
-    <div className="grid gap-6 pb-28 lg:grid-cols-[minmax(0,1fr)_20rem] lg:pb-0">
+    <div className="grid grid-cols-1 gap-6 pb-28 lg:grid-cols-[minmax(0,1fr)_20rem] lg:pb-0">
       <div className="space-y-6">
         <Card
           title="Handover details"
@@ -455,7 +455,7 @@ export default function OutgoingPage({ view }) {
         subtitle={view === 'history' ? 'Every handover you have prepared, newest first.' : 'Prepare and submit the handover for your current shift.'}
       />
       {!meta ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-6"><SkeletonCard lines={5} /><SkeletonCard lines={3} /></div>
           <SkeletonCard lines={6} className="hidden lg:block" />
         </div>

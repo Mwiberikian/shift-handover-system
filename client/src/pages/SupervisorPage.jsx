@@ -66,7 +66,7 @@ function Overview({ data, onOpen }) {
       header,
       className: 'text-right tabular-nums',
       hideBelow: ['open', 'closed', 'under_review'].includes(key) ? 'lg' : 'sm',
-      render: (r) => <span className={r[key] ? 'text-brand-black' : 'text-zinc-400'}>{r[key]}</span>,
+      render: (r) => <span className={r[key] ? 'text-brand-black' : 'text-zinc-500'}>{r[key]}</span>,
     })),
     {
       key: 'overdue',
@@ -74,7 +74,7 @@ function Overview({ data, onOpen }) {
       className: 'text-right',
       render: (r) => (r.unacknowledged_overdue
         ? <span className="inline-flex items-center gap-1 font-semibold text-status-red"><AlertTriangle aria-hidden className="size-3.5" />{r.unacknowledged_overdue}</span>
-        : <span className="text-zinc-400">0</span>),
+        : <span className="text-zinc-500">0</span>),
     },
   ];
 
