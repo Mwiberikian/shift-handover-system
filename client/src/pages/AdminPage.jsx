@@ -11,6 +11,7 @@ import {
 import { ROLE_LABEL, cx, initials } from '../lib/format';
 import { toast, toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
+import AccessRequests from './AccessRequests';
 
 const ROLES = ['outgoing_staff', 'incoming_staff', 'supervisor', 'admin'];
 const ROLE_OPTIONS = ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }));
@@ -413,6 +414,15 @@ export default function AdminPage({ view }) {
   const [departments, setDepartments] = useState([]);
   const [newOpen, setNewOpen] = useState(false);
   useEffect(() => { api.get('/admin/departments').then((r) => setDepartments(r.data)).catch(toastError); }, []);
+
+  if (view === 'requests') {
+    return (
+      <>
+        <PageHeader title="Access requests" subtitle="Requests from the public form. Approving creates the account with the role and department you choose." />
+        <AccessRequests departments={departments} />
+      </>
+    );
+  }
 
   return view === 'users' ? (
     <>

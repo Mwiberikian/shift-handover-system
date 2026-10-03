@@ -1,5 +1,5 @@
 import {
-  AlertTriangle, ClipboardList, FileCog, History, Inbox, LayoutDashboard, ListChecks, Search, Users,
+  AlertTriangle, ClipboardList, FileCog, History, Inbox, LayoutDashboard, ListChecks, Search, UserPlus, Users,
 } from 'lucide-react';
 
 // Sidebar links per role. Each role only ever sees its own entries.
@@ -20,6 +20,7 @@ export const NAV = {
   ],
   admin: [
     { to: '/admin/users', label: 'Users', icon: Users },
+    { to: '/admin/requests', label: 'Access requests', icon: UserPlus },
     { to: '/admin/templates', label: 'Templates', icon: FileCog },
   ],
 };

@@ -3,6 +3,7 @@ import { ROLE_HOME, useAuth } from './auth/AuthContext';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import RequestAccess from './pages/RequestAccess';
 import OutgoingPage from './pages/OutgoingPage';
 import IncomingPage from './pages/IncomingPage';
 import SupervisorPage from './pages/SupervisorPage';
@@ -23,6 +24,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={claims ? <Navigate to={home} replace /> : <Landing />} />
+      <Route path="/request-access" element={claims ? <Navigate to={home} replace /> : <RequestAccess />} />
       <Route path="/login" element={claims ? <Navigate to={home} replace /> : <Login />} />
       <Route element={<Layout />}>
         <Route path="/outgoing" element={<RequireRole role="outgoing_staff" />}>
@@ -43,6 +45,7 @@ export default function App() {
           <Route index element={<Navigate to="users" replace />} />
           <Route path="users" element={<AdminPage view="users" />} />
           <Route path="templates" element={<AdminPage view="templates" />} />
+          <Route path="requests" element={<AdminPage view="requests" />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to={home} replace />} />

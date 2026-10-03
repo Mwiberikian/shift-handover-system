@@ -26,11 +26,12 @@ router.get('/departments', async (req, res) => res.json(await service.listReques
 router.post(
   '/',
   submitLimiter,
-  body('full_name').isString().trim().notEmpty().isLength({ max: 120 }).withMessage('full_name is required (max 120)'),
-  body('email').isString().trim().isEmail().isLength({ max: 160 }).withMessage('a valid email is required'),
-  body('staff_number').optional({ values: 'falsy' }).isString().trim().isLength({ max: 20 }).withMessage('staff_number must be at most 20 characters'),
-  body('requested_department_code').isString().trim().notEmpty().isLength({ max: 10 }).withMessage('requested_department_code is required'),
-  body('note').optional({ values: 'falsy' }).isString().trim().isLength({ max: 1000 }).withMessage('note must be at most 1000 characters'),
+  // body(field, message) applies the message to every check in the chain.
+  body('full_name', 'Enter your full name (up to 120 characters)').isString().trim().notEmpty().isLength({ max: 120 }),
+  body('email', 'Enter a valid work email address').isString().trim().isEmail().isLength({ max: 160 }),
+  body('staff_number', 'Staff number must be at most 20 characters').optional({ values: 'falsy' }).isString().trim().isLength({ max: 20 }),
+  body('requested_department_code', 'Select your department').isString().trim().notEmpty().isLength({ max: 10 }),
+  body('note', 'Note must be at most 1000 characters').optional({ values: 'falsy' }).isString().trim().isLength({ max: 1000 }),
   validate,
   async (req, res) => res.status(201).json(await service.submit(req.body)),
 );
