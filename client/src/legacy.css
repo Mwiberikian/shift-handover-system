@@ -94,7 +94,3 @@ td.actions button { margin-right: 0.3rem; }
 .thread li { margin-bottom: 0.4rem; }
 .versions li { margin-bottom: 0.3rem; display: flex; gap: 0.5rem; align-items: center; }
 
-.login { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
-.login .card { width: min(24rem, 100%); }
-.login h1 { margin: 0; color: var(--brand); }
-.login button { width: 100%; margin-top: 0.5rem; }

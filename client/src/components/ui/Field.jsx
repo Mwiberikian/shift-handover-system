@@ -9,11 +9,13 @@ const CONTROL = 'block w-full rounded-lg border bg-white px-3 text-body text-bra
 const borderFor = (error) => (error ? 'border-status-red focus:border-status-red focus:ring-status-red/20' : 'border-zinc-300 hover:border-zinc-400');
 
 // Label + control + hint/error wrapper. Children receive the generated id and
-// aria wiring through the render prop.
+// aria wiring through the render prop. `error={true}` marks the control
+// invalid without printing a message (e.g. when a form-level message covers it).
 export function Field({ label, hint, error, required, className, children, hideLabel = false }) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
-  const errorId = error ? `${id}-error` : undefined;
+  const hasMessage = error && error !== true;
+  const errorId = hasMessage ? `${id}-error` : undefined;
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
       {label && (
@@ -29,7 +31,7 @@ export function Field({ label, hint, error, required, className, children, hideL
         'aria-describedby': [errorId, hintId].filter(Boolean).join(' ') || undefined,
         required,
       })}
-      {error && (
+      {hasMessage && (
         <p id={errorId} className="flex items-start gap-1 text-meta text-status-red">
           <AlertCircle aria-hidden className="mt-px size-3.5 shrink-0" />{error}
         </p>
