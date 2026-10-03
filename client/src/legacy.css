@@ -78,12 +78,6 @@ td.actions button { margin-right: 0.3rem; }
 .carried { background: #e5e0f8; color: #4b3a99; }
 
 
-.stats { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: stretch; margin-bottom: 1rem; }
-.stats h3 { width: 100%; margin: 0; }
-.stat { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.9rem; min-width: 6.5rem; }
-.stat .n { font-size: 1.5rem; font-weight: 700; }
-.stat.alert { border-color: var(--bad); background: #fdecea; color: var(--bad); }
-.alert-box { border-color: var(--bad); background: #fff6f5; }
 
 .thread:not([class~="relative"]), .versions { padding-left: 1.1rem; }
 .thread li { margin-bottom: 0.4rem; }
