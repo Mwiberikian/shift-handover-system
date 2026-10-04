@@ -36,6 +36,31 @@ Seeded logins (password `Password123!`):
 The seed gives Ground Ops an acknowledged previous-shift record with an open
 task, so submitting the current Ground Ops handover demonstrates carry-forward.
 
+## Sign in with Google (optional)
+
+Google sign-in is off unless `GOOGLE_CLIENT_ID` is set in `server/.env` (an
+OAuth 2.0 *Web application* client ID from Google Cloud Console, with
+`http://localhost:5173` as an authorised JavaScript origin). When it is unset
+the Google endpoints return 503, the client hides the Google buttons, and
+password sign-in works as normal.
+
+Google only proves identity. It **never creates an account or assigns a role**
+(account creation stays admin-gated, FR-01):
+
+- The server verifies the Google ID token (`verifyIdToken`, audience =
+  `GOOGLE_CLIENT_ID`) and requires a verified email.
+- It matches an **active** user by linked Google subject id, or on first use by
+  verified email, then links the subject id (audited as `link_google`).
+- No match returns `404 { code: "no_account", name, email }` with no token; the
+  client sends the person to Request Access with those details prefilled.
+- A different Google account using an already-linked email is refused.
+
+## Planned
+
+- **Sign in with Apple.** Not implemented: it needs an Apple Developer account
+  and a publicly reachable HTTPS domain registered with Apple for the return
+  URL, neither of which a local prototype has. No Apple button is shown.
+
 ## Tests
 
 ```bash
@@ -54,6 +79,7 @@ end in `_test`.
 | `handover.acknowledgement.test.js` | Acknowledgement required before `closed`; query/clarify; escalate/resolve |
 | `handover.carryforward.test.js` | Open/in-progress tasks carried with `carried_from_task_id` |
 | `auth.login.test.js` | Login, JWT claims/expiry, bcrypt cost 12 |
+| `auth.google.test.js` | Google sign-in (token verification mocked): known user, no account, unverified email, deactivated user, wrong audience, conflicting Google account, 503 when unconfigured |
 | `admin.templates.test.js` | Template versioning keeps history |
 
 ## Integrity model

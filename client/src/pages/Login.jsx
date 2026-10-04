@@ -5,9 +5,11 @@ import { errorMessage } from '../api';
 import { ROLE_HOME, useAuth } from '../auth/AuthContext';
 import { Button, Callout, Input } from '../components/ui';
 import AuthShell, { CardLink } from '../components/shell/AuthShell';
+import GoogleButton from '../components/shell/GoogleButton';
+import { toast } from '../lib/toast';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -29,6 +31,24 @@ export default function Login() {
       passwordRef.current?.focus();
     } finally {
       setBusy(false);
+    }
+  };
+
+  // Google only signs in to an existing account. With no account, the verified
+  // name and email are carried to the access-request form.
+  const google = async (credential) => {
+    setError('');
+    try {
+      const claims = await loginWithGoogle(credential);
+      navigate(ROLE_HOME[claims.role], { replace: true });
+    } catch (err) {
+      const data = err.response?.data;
+      if (err.response?.status === 404 && data?.code === 'no_account') {
+        toast.info('No account uses that Google address yet', { description: 'Send a request and an administrator will set up your access.' });
+        navigate('/request-access', { state: { google: { name: data.name, email: data.email } } });
+      } else {
+        setError(data?.error ?? errorMessage(err));
+      }
     }
   };
 
@@ -81,6 +101,8 @@ export default function Login() {
       <Button type="submit" variant="primary" size="lg" icon={LogIn} loading={busy} className="w-full">
         {busy ? 'Signing in…' : 'Sign in'}
       </Button>
+
+      <GoogleButton onCredential={google} />
     </AuthShell>
   );
 }

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Send } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { BadgeCheck, CheckCircle2, Send } from 'lucide-react';
 import api, { errorMessage } from '../api';
 import AuthShell, { CardLink } from '../components/shell/AuthShell';
+import GoogleButton, { useGoogleClientId } from '../components/shell/GoogleButton';
 import {
   Button, ButtonLink, Callout, Input, Select, Textarea,
 } from '../components/ui';
@@ -11,7 +13,12 @@ const EMPTY = { full_name: '', email: '', staff_number: '', requested_department
 // Public form. Submitting records a request for an administrator to review;
 // it does not create an account.
 export default function RequestAccess() {
-  const [form, setForm] = useState(EMPTY);
+  // Arriving from a Google sign-in with no account: name and email are already
+  // verified by the server, so the email is locked.
+  const fromGoogle = useLocation().state?.google;
+  const [form, setForm] = useState(fromGoogle ? { ...EMPTY, full_name: fromGoogle.name ?? '', email: fromGoogle.email ?? '' } : EMPTY);
+  const [verifiedEmail, setVerifiedEmail] = useState(fromGoogle?.email ?? null);
+  const googleEnabled = useGoogleClientId();
   const [departments, setDepartments] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState('');
@@ -25,6 +32,23 @@ export default function RequestAccess() {
   const set = (k) => (e) => {
     setForm({ ...form, [k]: e.target.value });
     if (fieldErrors[k]) setFieldErrors({ ...fieldErrors, [k]: undefined });
+  };
+
+  const handleGoogle = async (credential) => {
+    setError('');
+    try {
+      const { data } = await api.post('/auth/google/profile', { credential });
+      setForm((f) => ({ ...f, full_name: f.full_name || data.name, email: data.email }));
+      setVerifiedEmail(data.email);
+      setFieldErrors({});
+    } catch (err) {
+      setError(err.response?.data?.error ?? errorMessage(err));
+    }
+  };
+
+  const clearGoogle = () => {
+    setVerifiedEmail(null);
+    setForm((f) => ({ ...f, email: '' }));
   };
 
   const submit = async (e) => {
@@ -83,9 +107,32 @@ export default function RequestAccess() {
 
       {error && <Callout tone="danger" title="Request not sent">{error}</Callout>}
 
+      {verifiedEmail ? (
+        <Callout tone="success" icon={BadgeCheck} title="Verified with Google" action={<Button size="sm" variant="ghost" onClick={clearGoogle}>Use a different address</Button>}>
+          <span className="break-all">{verifiedEmail}</span>
+        </Callout>
+      ) : googleEnabled && (
+        <div className="space-y-4">
+          <GoogleButton onCredential={handleGoogle} divider={false} />
+          <div className="flex items-center gap-3 text-meta text-ink-600" aria-hidden>
+            <span className="h-px flex-1 bg-ink-900/10" /> or fill in your details <span className="h-px flex-1 bg-ink-900/10" />
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Full name" required autoComplete="name" value={form.full_name} onChange={set('full_name')} error={fieldErrors.full_name} className="sm:col-span-2" autoFocus />
-        <Input label="Work email" type="email" required autoComplete="email" value={form.email} onChange={set('email')} error={fieldErrors.email} />
+        <Input
+          label="Work email"
+          type="email"
+          required
+          autoComplete="email"
+          value={form.email}
+          onChange={set('email')}
+          readOnly={!!verifiedEmail}
+          error={fieldErrors.email}
+          hint={verifiedEmail ? 'Verified with Google' : undefined}
+        />
         <Input label="Staff number" value={form.staff_number} onChange={set('staff_number')} error={fieldErrors.staff_number} hint="If you know it." />
         <Select
           label="Department"

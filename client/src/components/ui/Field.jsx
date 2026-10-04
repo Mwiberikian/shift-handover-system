@@ -4,7 +4,7 @@ import { cx } from '../../lib/format';
 
 const CONTROL = 'block w-full rounded-lg border bg-surface px-3 text-body text-fg shadow-sm transition-colors placeholder:text-ink-500 '
   + 'focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-brand-red/25 focus:border-brand-red-dark '
-  + 'disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-500';
+  + 'disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-500 read-only:bg-ink-50 read-only:text-ink-700';
 
 const borderFor = (error) => (error ? 'border-status-red focus:border-status-red focus:ring-status-red/20' : 'border-ink-300 hover:border-ink-400');
 
