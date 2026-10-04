@@ -371,7 +371,7 @@ function Templates({ departments }) {
             </div>
           </Card>
 
-          <Card title="Version history" icon={History} className="lg:sticky lg:top-20" bodyClassName="space-y-4">
+          <Card title="Version history" icon={History} className="lg:sticky lg:top-26" bodyClassName="space-y-4">
             <ol className="space-y-1" aria-label="Template versions">
               {data.versions.slice().sort((a, b) => b.version - a.version).map((v) => (
                 <li key={v.template_id}>

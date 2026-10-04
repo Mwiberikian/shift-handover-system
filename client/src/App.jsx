@@ -8,6 +8,7 @@ import Login from './pages/Login';
 // not download every dashboard.
 const Landing = lazy(() => import('./pages/Landing'));
 const RequestAccess = lazy(() => import('./pages/RequestAccess'));
+const Help = lazy(() => import('./pages/Help'));
 const OutgoingPage = lazy(() => import('./pages/OutgoingPage'));
 const IncomingPage = lazy(() => import('./pages/IncomingPage'));
 const SupervisorPage = lazy(() => import('./pages/SupervisorPage'));
@@ -30,6 +31,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={claims ? <Navigate to={home} replace /> : <Landing />} />
       <Route path="/request-access" element={claims ? <Navigate to={home} replace /> : <RequestAccess />} />
+      <Route path="/help" element={<Help />} />
       <Route path="/login" element={claims ? <Navigate to={home} replace /> : <Login />} />
       <Route element={<Layout />}>
         <Route path="/outgoing" element={<RequireRole role="outgoing_staff" />}>

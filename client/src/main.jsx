@@ -14,8 +14,8 @@ function ThemedToaster() {
     <Toaster
       theme={theme}
       position="top-right"
-      offset={{ top: 68, right: 16 }}
-      mobileOffset={{ top: 64 }}
+      offset={{ top: 100, right: 16 }}
+      mobileOffset={{ top: 96 }}
       closeButton
       toastOptions={{
         // Sonner's own CSS is unlayered, so these need `!` to win.

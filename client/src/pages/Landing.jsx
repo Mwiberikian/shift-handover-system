@@ -2,7 +2,7 @@ import {
   ArrowRight, ClipboardList, Eye, Handshake, LogIn, ScrollText, Send,
 } from 'lucide-react';
 import Brand from '../components/shell/Brand';
-import ThemeToggle from '../components/shell/ThemeToggle';
+import PublicHeader from '../components/shell/PublicHeader';
 import { ButtonLink, buttonClass } from '../components/ui';
 import aircraftUrl from '../assets/images/aircraft-gate.webp';
 import towerUrl from '../assets/images/control-tower.webp';
@@ -47,23 +47,15 @@ export default function Landing() {
         Skip to content
       </a>
 
-      {/* Fixed glass bar: the hero photo, then page content, scroll beneath it. */}
-      <header className="glass-dark fixed inset-x-0 top-0 z-40 border-b border-white/10">
-        <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <Brand showName={false} className="sm:hidden" />
-          <Brand className="hidden sm:flex" />
-          <nav aria-label="Primary" className="flex items-center gap-2 sm:gap-4">
-            <a href="#features" className="hidden rounded-md px-2 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white sm:inline">Features</a>
-            <a href="#how-it-works" className="hidden rounded-md px-2 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white md:inline">How it works</a>
-            <ThemeToggle />
-            <ButtonLink to="/login" variant="primary" icon={LogIn}>Log In</ButtonLink>
-          </nav>
-        </div>
-      </header>
+      {/* Fixed chrome: the hero photo, then page content, scroll beneath it. */}
+      <PublicHeader>
+        <a href="#features" className="hidden rounded-md px-2 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white lg:inline">Features</a>
+        <a href="#how-it-works" className="hidden rounded-md px-2 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white lg:inline">How it works</a>
+      </PublicHeader>
 
       <main id="main">
         {/* Hero */}
-        <section className="relative isolate flex min-h-[92vh] items-center overflow-hidden bg-brand-black pt-16">
+        <section className="relative isolate flex min-h-[92vh] items-center overflow-hidden bg-brand-black pt-24">
           <img src={aircraftUrl} alt="" aria-hidden className="absolute inset-0 -z-10 size-full object-cover" />
           <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-black/80 via-brand-black/40 to-brand-black/10" />
           <div className="mx-auto w-full max-w-screen-xl px-4 py-16 sm:px-6 lg:px-8">
@@ -90,7 +82,7 @@ export default function Landing() {
         </section>
 
         {/* Features */}
-        <section id="features" aria-labelledby="features-title" className="scroll-mt-16 bg-ink-50 py-20 sm:py-24">
+        <section id="features" aria-labelledby="features-title" className="scroll-mt-24 bg-ink-50 py-20 sm:py-24">
           <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl">
               <p className="text-meta font-semibold tracking-widest text-accent-fg uppercase">Capabilities</p>
@@ -112,7 +104,7 @@ export default function Landing() {
         </section>
 
         {/* How it works, beside the control tower photo */}
-        <section id="how-it-works" aria-labelledby="how-title" className="scroll-mt-16 bg-surface py-20 sm:py-24">
+        <section id="how-it-works" aria-labelledby="how-title" className="scroll-mt-24 bg-surface py-20 sm:py-24">
           <div className="mx-auto grid max-w-screen-xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
             <div className="relative order-last lg:order-first">
               <img src={towerUrl} alt="Airport control tower against a cloudy sky" loading="lazy" className="aspect-[4/5] w-full rounded-2xl object-cover shadow-pop sm:aspect-[4/3] lg:aspect-[4/5]" />

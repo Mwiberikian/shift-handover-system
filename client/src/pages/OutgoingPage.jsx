@@ -262,7 +262,7 @@ function DraftEditor({ record, meta, reload }) {
 
       {/* Desktop: sticky readiness panel. */}
       <aside className="hidden lg:block">
-        <div className="sticky top-20 space-y-4">
+        <div className="sticky top-26 space-y-4">
           <Card title="Ready to submit?" subtitle={`${record.department_code?.toUpperCase()} template v${meta.template.version}`}>
             <div className="mb-1 flex items-baseline justify-between">
               <span className="font-semibold text-fg">{req.done} of {req.total}</span>

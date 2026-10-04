@@ -147,7 +147,7 @@ function PendingView({ records, loading, reloadList }) {
 
   return (
     <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-      <section aria-label="Pending handovers" className="lg:sticky lg:top-20">
+      <section aria-label="Pending handovers" className="lg:sticky lg:top-26">
         <h2 className="mb-2 text-meta font-semibold tracking-wide text-ink-600 uppercase">{pending.length} pending</h2>
         <ul className="space-y-2">
           {pending.map((r) => <PendingItem key={r.record_id} record={r} selected={r.record_id === selectedId} onSelect={open} />)}

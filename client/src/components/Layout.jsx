@@ -8,6 +8,8 @@ import { NAV } from './shell/nav';
 import SidebarNav from './shell/Sidebar';
 import NotificationsMenu from './shell/NotificationsMenu';
 import ThemeToggle from './shell/ThemeToggle';
+import HelpMenu from './shell/HelpMenu';
+import UtilityBar from './shell/UtilityBar';
 import { ConfirmDialog } from './ui';
 import Brand from './shell/Brand';
 
@@ -42,37 +44,42 @@ export default function Layout() {
         Skip to content
       </a>
 
-      <header className="glass-dark fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b-2 border-brand-red px-3 sm:px-4">
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          aria-label="Open navigation"
-          className="grid size-9 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white md:hidden"
-        >
-          <Menu aria-hidden className="size-5" />
-        </button>
-        <Brand showName={false} className="sm:hidden" />
-        <Brand className="hidden sm:flex" />
-
-        <div className="ml-auto flex items-center gap-1 sm:gap-3">
-          <ThemeToggle />
-          <NotificationsMenu />
-          <span aria-hidden className="hidden h-6 w-px bg-white/15 md:block" />
-          <div className="hidden md:block"><UserBlock profile={profile} role={claims.role} /></div>
+      {/* Fixed chrome: utility bar (2rem) + header (3.5rem) = top-22 offsets below. */}
+      <div className="fixed inset-x-0 top-0 z-40">
+        <UtilityBar />
+        <header className="glass-dark flex h-14 items-center gap-2 border-b-2 border-brand-red px-3 sm:px-4">
           <button
             type="button"
-            onClick={() => setConfirmLogout(true)}
-            className="inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open navigation"
+            className="grid size-9 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white md:hidden"
           >
-            <LogOut aria-hidden className="size-[18px]" />
-            <span className="hidden sm:inline">Log out</span>
-            <span className="sr-only sm:hidden">Log out</span>
+            <Menu aria-hidden className="size-5" />
           </button>
-        </div>
-      </header>
+          <Brand showName={false} className="sm:hidden" />
+          <Brand className="hidden sm:flex" />
+  
+          <div className="ml-auto flex items-center gap-1 sm:gap-3">
+            <ThemeToggle />
+            <div className="hidden sm:block"><HelpMenu /></div>
+            <NotificationsMenu />
+            <span aria-hidden className="hidden h-6 w-px bg-white/15 md:block" />
+            <div className="hidden md:block"><UserBlock profile={profile} role={claims.role} /></div>
+            <button
+              type="button"
+              onClick={() => setConfirmLogout(true)}
+              className="inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <LogOut aria-hidden className="size-[18px]" />
+              <span className="hidden sm:inline">Log out</span>
+              <span className="sr-only sm:hidden">Log out</span>
+            </button>
+          </div>
+        </header>
+      </div>
 
       {/* Rail on tablets, full sidebar from lg up, drawer below md. */}
-      <aside className="fixed top-14 bottom-0 left-0 z-30 hidden w-16 border-r border-ink-200 bg-surface md:block lg:w-60">
+      <aside className="fixed top-22 bottom-0 left-0 z-30 hidden w-16 border-r border-ink-200 bg-surface md:block lg:w-60">
         <div className="lg:hidden"><SidebarNav items={items} compact /></div>
         <div className="hidden lg:block"><SidebarNav items={items} /></div>
       </aside>
@@ -113,7 +120,7 @@ export default function Layout() {
         message={<p>Are you sure you want to log out? Any unsaved changes on this page will be lost.</p>}
       />
 
-      <main id="main" className="pt-14 md:pl-16 lg:pl-60">
+      <main id="main" className="pt-22 md:pl-16 lg:pl-60">
         {/* Keyed on the route so each screen fades in on navigation. */}
         <div key={pathname} className="mx-auto max-w-screen-2xl animate-page-in px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
