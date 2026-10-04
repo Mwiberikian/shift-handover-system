@@ -3,7 +3,8 @@
 Final-year project prototype: digital shift handovers with acknowledgement,
 supervisor review and a tamper-proof audit trail. **All seeded data is synthetic.**
 
-Stack: React 18 (Vite) · Node.js/Express · PostgreSQL 15 · JWT · node-pg-migrate.
+Stack: React 18 (Vite, Tailwind CSS v4) · Node.js/Express · PostgreSQL 15 · JWT ·
+node-pg-migrate · node-cron.
 
 ## Run locally
 
@@ -15,7 +16,8 @@ cp .env.example .env                 # then set JWT_SECRET
 npm install
 npm run migrate up
 npm run seed                         # wipes and reseeds dev data
-npm run dev                          # API on http://localhost:4000
+npm run dev                          # API on http://localhost:4000 (+ reminder scheduler)
+npm run demo:reminders               # optional: a shift ending in ~35 min to watch reminders
 
 cd ../client
 cp .env.example .env
@@ -35,6 +37,49 @@ Seeded logins (password `Password123!`):
 
 The seed gives Ground Ops an acknowledged previous-shift record with an open
 task, so submitting the current Ground Ops handover demonstrates carry-forward.
+It also rosters each department's outgoing user on the current shift and its
+incoming user on the next one.
+
+## Features at a glance
+
+- Structured handovers per department template, carry-forward of open tasks,
+  acknowledgement or query, supervisor review/escalation, append-only audit log.
+- Request access (public form; an admin approves and assigns the role).
+- Optional Sign in with Google for existing accounts (see below).
+- In-app messaging, shift reminders, a supervisor roster.
+- Light and dark themes (follows the OS until the user picks one), a help
+  centre at `/help`, and a support contact bar driven by `client/.env`.
+
+## Environment variables
+
+`server/.env` (see `server/.env.example`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | — | Postgres connection string |
+| `TEST_DATABASE_URL` | `DATABASE_URL` with db `shms_test` | Test database (name must end in `_test`) |
+| `JWT_SECRET` | — | Signs session tokens |
+| `JWT_EXPIRY` | `30m` | Session length |
+| `CLIENT_ORIGIN` | — | Allowed CORS origin (the UI) |
+| `PORT` | `4000` | API port |
+| `GOOGLE_CLIENT_ID` | unset | Enables Sign in with Google; unset = disabled (503) |
+| `ACCESS_REQUEST_RATE_LIMIT` | `5` | Public access requests per IP per hour |
+| `MESSAGE_RATE_LIMIT` | `30` | Messages per user per hour |
+| `REMINDERS_ENABLED` | `true` | `false` turns the reminder scheduler off |
+| `REMINDER_SHIFT_START_MINUTES` | `30` | Shift-starting reminder lead time |
+| `REMINDER_HANDOVER_DUE_FIRST_MINUTES` | `30` | First handover-due reminder before shift end |
+| `REMINDER_HANDOVER_DUE_FINAL_MINUTES` | `10` | Final handover-due reminder before shift end |
+| `REMINDER_ACK_PENDING_MINUTES` | `15` | After the incoming shift starts |
+| `REMINDER_UNACK_ALERT_MINUTES` | `120` | Supervisor alert after the incoming shift starts |
+| `REMINDER_LOOKBACK_MINUTES` | `60` | Missed reminders older than this are not replayed |
+
+`client/.env` (see `client/.env.example`):
+
+| Variable | Purpose |
+|---|---|
+| `VITE_API_URL` | API base URL |
+| `VITE_SUPPORT_EMAIL` | Support email in the utility bar and help page; blank = hidden |
+| `VITE_SUPPORT_PHONE` | Support phone in the utility bar and help page; blank = hidden |
 
 ## Messaging
 
@@ -153,7 +198,8 @@ end in `_test`.
 - Every state change and its `audit_log` row commit in the same transaction.
 - Postgres triggers (see the migration) make non-draft records immutable,
   allow only legal status transitions, freeze tasks/incidents after submit, and
-  make `audit_log` and `handover_template` append-only.
+  make `audit_log`, `handover_template`, `message`, `message_read` and
+  `reminder_log` append-only.
 - All foreign keys are `ON DELETE RESTRICT`. Users are deactivated, never deleted.
 
 ## API overview
@@ -168,3 +214,10 @@ end in `_test`.
 | `GET /api/handovers/search`, `GET /api/dashboard/supervisor` | supervisor, admin |
 | `GET /api/notifications`, `POST /api/notifications/:id/read` | any |
 | `/api/admin/users[/:id]`, `/api/admin/departments`, `/api/admin/templates/:departmentCode` | admin |
+| `GET /api/access-requests/departments`, `POST /api/access-requests` (rate-limited) | public |
+| `GET /api/admin/access-requests`, `POST /api/admin/access-requests/:id/approve`, `POST .../:id/reject` | admin |
+| `GET /api/auth/google/config`, `POST /api/auth/google`, `POST /api/auth/google/profile` (503 when unconfigured) | public |
+| `GET /api/messages/inbox`, `GET /api/messages/sent`, `GET /api/messages/unread-count`, `GET /api/messages/:id`, `POST /api/messages`, `POST /api/messages/:id/read` | any (rules above) |
+| `GET /api/directory`, `GET /api/directory/departments` | any |
+| `GET /api/shifts/mine` | any |
+| `GET /api/shifts`, `GET /api/shifts/:id/assignments`, `PUT /api/shifts/:id/assignments` | supervisor (own department), admin |

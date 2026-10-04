@@ -62,27 +62,27 @@ export default function Layout() {
             <Menu aria-hidden className="size-5" />
           </button>
           <Link to="/" aria-label="Shift Handover home" className="rounded-md">
-            <Brand showName={false} className="sm:hidden" />
-            <Brand className="hidden sm:flex" />
+            <Brand showName={false} className="lg:hidden" />
+            <Brand className="hidden lg:flex" />
           </Link>
-          <Link to="/" className="ml-2 hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white md:inline-flex">
-            <Home aria-hidden className="size-4" /> Home
+          <Link to="/" className="ml-1 hidden shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium whitespace-nowrap text-white/80 transition-colors hover:bg-white/10 hover:text-white md:inline-flex lg:ml-2">
+            <Home aria-hidden className="size-4" /> <span className="sr-only lg:not-sr-only">Home</span>
           </Link>
-  
-          <div className="ml-auto flex items-center gap-1 sm:gap-3">
+
+          <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2 lg:gap-3">
             <ThemeToggle />
             <div className="hidden sm:block"><HelpMenu /></div>
             <NotificationsMenu />
-            <span aria-hidden className="hidden h-6 w-px bg-white/15 md:block" />
-            <div className="hidden md:block"><UserBlock profile={profile} role={claims.role} /></div>
+            <span aria-hidden className="hidden h-6 w-px bg-white/15 lg:block" />
+            <div className="hidden min-w-0 lg:block"><UserBlock profile={profile} role={claims.role} /></div>
             <button
               type="button"
               onClick={() => setConfirmLogout(true)}
-              className="inline-flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-2.5 text-sm font-medium whitespace-nowrap text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <LogOut aria-hidden className="size-[18px]" />
-              <span className="hidden sm:inline">Log out</span>
-              <span className="sr-only sm:hidden">Log out</span>
+              <span className="hidden lg:inline">Log out</span>
+              <span className="sr-only lg:hidden">Log out</span>
             </button>
           </div>
         </header>
