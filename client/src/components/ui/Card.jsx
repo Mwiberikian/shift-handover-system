@@ -4,7 +4,7 @@ import { cx } from '../../lib/format';
 // an optional `actions` slot; `flush` drops body padding (for tables).
 export default function Card({ title, subtitle, actions, icon: Icon, flush = false, className, bodyClassName, children, as: Tag = 'section', ...props }) {
   return (
-    <Tag className={cx('rounded-xl border border-ink-200 bg-surface shadow-card', className)} {...props}>
+    <Tag className={cx('rounded-xl border border-ink-200 bg-surface shadow-card [backdrop-filter:var(--card-blur,none)]', className)} {...props}>
       {(title || actions) && (
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-ink-200 px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-start gap-2.5">

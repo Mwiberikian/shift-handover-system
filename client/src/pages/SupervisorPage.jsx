@@ -32,7 +32,7 @@ function StatCard({ label, value, icon: Icon, tone = 'gray', alert = false, hint
   return (
     <div
       className={cx(
-        'relative overflow-hidden rounded-xl border bg-surface p-4 shadow-card transition-shadow',
+        'relative overflow-hidden rounded-xl border bg-surface/80 p-4 shadow-card transition-shadow [backdrop-filter:var(--card-blur,none)]',
         alert ? 'border-status-red-line' : 'border-ink-200',
       )}
     >

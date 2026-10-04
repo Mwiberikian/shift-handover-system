@@ -10,6 +10,8 @@ import NotificationsMenu from './shell/NotificationsMenu';
 import ThemeToggle from './shell/ThemeToggle';
 import HelpMenu from './shell/HelpMenu';
 import UtilityBar from './shell/UtilityBar';
+import { pagePhotoFor } from './shell/pagePhotos';
+import { cx } from '../lib/format';
 import { ConfirmDialog } from './ui';
 import Brand from './shell/Brand';
 
@@ -37,6 +39,7 @@ export default function Layout() {
   const { pathname } = useLocation();
   if (!claims) return <Navigate to="/login" replace />;
   const items = NAV[claims.role] ?? [];
+  const photo = pagePhotoFor(claims.role, pathname);
 
   return (
     <div className="min-h-screen">
@@ -120,7 +123,11 @@ export default function Layout() {
         message={<p>Are you sure you want to log out? Any unsaved changes on this page will be lost.</p>}
       />
 
-      <main id="main" className="pt-22 md:pl-16 lg:pl-60">
+      <main
+        id="main"
+        className={cx('min-h-screen pt-22 md:pl-16 lg:pl-60', photo && 'page-photo')}
+        style={photo ? { '--page-photo': `url(${photo})` } : undefined}
+      >
         {/* Keyed on the route so each screen fades in on navigation. */}
         <div key={pathname} className="mx-auto max-w-screen-2xl animate-page-in px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
