@@ -36,6 +36,30 @@ Seeded logins (password `Password123!`):
 The seed gives Ground Ops an acknowledged previous-shift record with an open
 task, so submitting the current Ground Ops handover demonstrates carry-forward.
 
+## Messaging
+
+In-app messages between staff, separate from handover records. The rules are
+deliberate:
+
+| Kind | Who can send | Who receives |
+|---|---|---|
+| Direct | Any active user | One other active user, **in any department** |
+| Department broadcast | Anyone, to their **own** department; supervisors and admins, to **any** department | Everyone in that department |
+| Organisation-wide | Supervisors and admins only | Every user |
+
+- Cross-department direct messages are intentional: handover coordination
+  (e.g. maintenance telling ground operations a tug is back in service) crosses
+  departments. This applies to messaging only; **handover data stays
+  department-scoped under FR-03**.
+- Messages are **append-only**: there are no edit or delete routes, and a
+  database trigger rejects `UPDATE`/`DELETE` on `message` and `message_read`.
+- Read state is per user (`message_read`), so a broadcast tracks each reader.
+  Direct messages also create a bell notification (type `message`); broadcasts
+  don't fan out notification rows and are surfaced by the unread count.
+- Sending is limited to 30 messages per user per hour (`MESSAGE_RATE_LIMIT`).
+- Each send writes an audit row with ids and recipient type, never the body.
+- Bodies are plain text (1–2000 characters) and are never rendered as HTML.
+
 ## Sign in with Google (optional)
 
 Google sign-in is off unless `GOOGLE_CLIENT_ID` is set in `server/.env` (an
@@ -79,6 +103,8 @@ end in `_test`.
 | `handover.acknowledgement.test.js` | Acknowledgement required before `closed`; query/clarify; escalate/resolve |
 | `handover.carryforward.test.js` | Open/in-progress tasks carried with `carried_from_task_id` |
 | `auth.login.test.js` | Login, JWT claims/expiry, bcrypt cost 12 |
+| `messaging.test.js` | Cross-department direct messages, broadcast permissions (403s), private direct messages, append-only (API and DB), per-user rate limit |
+| `access-request.workflow.test.js` | Request access grants nothing until approved; admin approve/reject; rate limit; RBAC |
 | `auth.google.test.js` | Google sign-in (token verification mocked): known user, no account, unverified email, deactivated user, wrong audience, conflicting Google account, 503 when unconfigured |
 | `admin.templates.test.js` | Template versioning keeps history |
 

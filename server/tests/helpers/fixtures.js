@@ -23,7 +23,7 @@ let passwordHash;
 
 async function resetDb() {
   await pool.query(`
-    TRUNCATE access_request, audit_log, notification, supervisor_review, acknowledgement, incident,
+    TRUNCATE message_read, message, access_request, audit_log, notification, supervisor_review, acknowledgement, incident,
              task, handover_record, shift, app_user, department, handover_template
     RESTART IDENTITY`);
 }

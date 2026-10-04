@@ -16,6 +16,10 @@ app.use('/api/auth', require('./modules/auth/auth.routes'));
 app.use('/api/handovers', require('./modules/handovers/handovers.routes'));
 app.use('/api/dashboard', require('./modules/dashboard/dashboard.routes'));
 app.use('/api/notifications', require('./modules/notifications/notifications.routes'));
+const messages = require('./modules/messages/messages.routes');
+
+app.use('/api/messages', messages);
+app.use('/api/directory', messages.directory);
 app.use('/api/admin', require('./modules/admin/admin.routes'));
 // Public: unauthenticated, rate-limited request form (grants no access).
 app.use('/api/access-requests', require('./modules/accessRequests/accessRequests.routes'));

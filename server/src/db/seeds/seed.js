@@ -96,7 +96,7 @@ async function seed() {
     // TRUNCATE bypasses the row-level append-only/immutability triggers, which
     // is intended here: the seed rebuilds a disposable dev database.
     await client.query(`
-      TRUNCATE access_request, audit_log, notification, supervisor_review, acknowledgement, incident,
+      TRUNCATE message_read, message, access_request, audit_log, notification, supervisor_review, acknowledgement, incident,
                task, handover_record, shift, app_user, department, handover_template
       RESTART IDENTITY
     `);

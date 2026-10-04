@@ -9,6 +9,7 @@ import Login from './pages/Login';
 const Landing = lazy(() => import('./pages/Landing'));
 const RequestAccess = lazy(() => import('./pages/RequestAccess'));
 const Help = lazy(() => import('./pages/Help'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const OutgoingPage = lazy(() => import('./pages/OutgoingPage'));
 const IncomingPage = lazy(() => import('./pages/IncomingPage'));
 const SupervisorPage = lazy(() => import('./pages/SupervisorPage'));
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/help" element={<Help />} />
       <Route path="/login" element={claims ? <Navigate to={home} replace /> : <Login />} />
       <Route element={<Layout />}>
+        <Route path="/messages" element={<MessagesPage />} />
         <Route path="/outgoing" element={<RequireRole role="outgoing_staff" />}>
           <Route index element={<OutgoingPage view="current" />} />
           <Route path="history" element={<OutgoingPage view="history" />} />

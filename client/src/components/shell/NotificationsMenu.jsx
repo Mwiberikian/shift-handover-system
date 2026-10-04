@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { useNavigate } from 'react-router-dom';
+import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { Bell, CheckCheck } from 'lucide-react';
 import api from '../../api';
 import { cx, fmtRelative } from '../../lib/format';
@@ -13,8 +14,20 @@ const NOTIFICATION_LABEL = {
   handover_closed: 'Handover closed',
 };
 
+// Title and detail line for one notification.
+function describe(n) {
+  if (n.type === 'message') {
+    return { title: `Message from ${n.message_sender_name ?? 'a colleague'}`, detail: n.message_subject || 'Open Messages to read it.' };
+  }
+  return {
+    title: NOTIFICATION_LABEL[n.type] || n.type,
+    detail: `${n.department_code} · record ${n.record_id?.slice(0, 8)} · now ${n.record_status?.replace('_', ' ')}`,
+  };
+}
+
 export default function NotificationsMenu() {
   const [items, setItems] = useState([]);
+  const navigate = useNavigate();
 
   const load = useCallback(() => api.get('/notifications').then((r) => setItems(r.data)).catch(() => {}), []);
   useEffect(() => {
@@ -69,23 +82,22 @@ export default function NotificationsMenu() {
           <ul className="max-h-96 overflow-y-auto">
             {items.map((n) => (
               <li key={n.notification_id} className="border-b border-ink-100 last:border-0">
-                <button
+                <CloseButton
+                  as="button"
                   type="button"
-                  onClick={() => markRead(n)}
+                  onClick={() => { markRead(n); if (n.type === 'message') navigate('/messages'); }}
                   className={cx('flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50', n.read_at && 'opacity-60')}
                 >
                   <span aria-hidden className={cx('mt-1.5 size-2 shrink-0 rounded-full', n.read_at ? 'bg-transparent' : 'bg-brand-red')} />
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium text-fg">
-                      {NOTIFICATION_LABEL[n.type] || n.type}
+                      {describe(n).title}
                       {!n.read_at && <span className="sr-only"> (unread)</span>}
                     </span>
-                    <span className="block truncate text-meta text-ink-600">
-                      {n.department_code} · record {n.record_id?.slice(0, 8)} · now {n.record_status?.replace('_', ' ')}
-                    </span>
+                    <span className="block truncate text-meta text-ink-600">{describe(n).detail}</span>
                     <span className="mt-0.5 block text-meta text-ink-500">{fmtRelative(n.sent_at)}</span>
                   </span>
-                </button>
+                </CloseButton>
               </li>
             ))}
           </ul>

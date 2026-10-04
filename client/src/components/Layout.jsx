@@ -11,6 +11,7 @@ import ThemeToggle from './shell/ThemeToggle';
 import HelpMenu from './shell/HelpMenu';
 import UtilityBar from './shell/UtilityBar';
 import { pagePhotoFor } from './shell/pagePhotos';
+import { useUnreadPolling } from '../lib/unread';
 import { cx } from '../lib/format';
 import { ConfirmDialog } from './ui';
 import Brand from './shell/Brand';
@@ -37,6 +38,7 @@ export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const { pathname } = useLocation();
+  useUnreadPolling(claims?.user_id);
   if (!claims) return <Navigate to="/login" replace />;
   const items = NAV[claims.role] ?? [];
   const photo = pagePhotoFor(claims.role, pathname);
