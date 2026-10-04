@@ -141,26 +141,26 @@ function Users({ departments, newOpen, setNewOpen }) {
       header: 'User',
       render: (u) => (
         <div className="flex min-w-[12rem] items-center gap-3">
-          <span aria-hidden className={cx('grid size-8 shrink-0 place-items-center rounded-full text-meta font-semibold', u.is_active ? 'bg-zinc-100 text-zinc-700' : 'bg-zinc-50 text-zinc-400')}>
+          <span aria-hidden className={cx('grid size-8 shrink-0 place-items-center rounded-full text-meta font-semibold', u.is_active ? 'bg-ink-100 text-ink-700' : 'bg-ink-50 text-ink-400')}>
             {initials(u.full_name)}
           </span>
           <div className="min-w-0">
-            <p className={cx('font-medium', u.is_active ? 'text-brand-black' : 'text-zinc-500')}>{u.full_name}</p>
-            <p className="truncate text-meta text-zinc-600">{u.email}</p>
+            <p className={cx('font-medium', u.is_active ? 'text-fg' : 'text-ink-500')}>{u.full_name}</p>
+            <p className="truncate text-meta text-ink-600">{u.email}</p>
             <div className="mt-1 sm:hidden"><RoleBadge role={u.role} /></div>
           </div>
         </div>
       ),
     },
-    { key: 'staff_number', header: 'Staff #', hideBelow: 'md', render: (u) => <span className="font-mono text-meta text-zinc-700">{u.staff_number}</span> },
+    { key: 'staff_number', header: 'Staff #', hideBelow: 'md', render: (u) => <span className="font-mono text-meta text-ink-700">{u.staff_number}</span> },
     { key: 'role', header: 'Role', hideBelow: 'sm', render: (u) => <RoleBadge role={u.role} /> },
     {
       key: 'department',
       header: 'Department',
       hideBelow: 'lg',
       render: (u) => (u.department_name
-        ? <Badge tone="gray" icon={Building2} className="bg-white">{u.department_name}</Badge>
-        : <span className="text-zinc-500">—</span>),
+        ? <Badge tone="gray" icon={Building2} className="bg-surface">{u.department_name}</Badge>
+        : <span className="text-ink-500">—</span>),
     },
     {
       key: 'status',
@@ -168,7 +168,7 @@ function Users({ departments, newOpen, setNewOpen }) {
       hideBelow: 'sm',
       render: (u) => (u.is_active
         ? <span className="inline-flex items-center gap-1.5 text-status-green"><span aria-hidden className="size-1.5 rounded-full bg-status-green" />Active</span>
-        : <span className="inline-flex items-center gap-1.5 text-zinc-600"><span aria-hidden className="size-1.5 rounded-full bg-zinc-400" />Inactive</span>),
+        : <span className="inline-flex items-center gap-1.5 text-ink-600"><span aria-hidden className="size-1.5 rounded-full bg-ink-400" />Inactive</span>),
     },
     {
       key: 'actions',
@@ -190,9 +190,9 @@ function Users({ departments, newOpen, setNewOpen }) {
   return (
     <>
       <Card flush>
-        <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-3 border-b border-ink-200 p-4 sm:flex-row sm:items-end">
           <div className="relative flex-1">
-            <Search aria-hidden className="pointer-events-none absolute bottom-2.5 left-3 size-4 text-zinc-500" />
+            <Search aria-hidden className="pointer-events-none absolute bottom-2.5 left-3 size-4 text-ink-500" />
             <Input label="Search users" hideLabel placeholder="Search by name, staff number or email" value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} inputClassName="pl-9" />
           </div>
           <Select label="Filter by role" hideLabel value={filter.role} onChange={(e) => setFilter({ ...filter, role: e.target.value })} placeholder="All roles" options={ROLE_OPTIONS} className="sm:w-48" />
@@ -203,11 +203,11 @@ function Users({ departments, newOpen, setNewOpen }) {
             rows={shown}
             rowKey={(u) => u.user_id}
             caption="User accounts"
-            rowClassName={(u) => !u.is_active && 'bg-zinc-50/70'}
+            rowClassName={(u) => !u.is_active && 'bg-ink-50/70'}
             empty={<EmptyState compact icon={UsersIcon} title="No users match" message="Try a different search or role filter." />}
           />
         )}
-        {shown && <p className="border-t border-zinc-200 px-4 py-2.5 text-meta text-zinc-600">{shown.length} of {users.length} accounts</p>}
+        {shown && <p className="border-t border-ink-200 px-4 py-2.5 text-meta text-ink-600">{shown.length} of {users.length} accounts</p>}
       </Card>
 
       <UserForm open={newOpen} onClose={() => setNewOpen(false)} departments={departments} onCreated={load} />
@@ -255,15 +255,15 @@ function fromRows(rows) {
 function FieldEditor({ row, onChange }) {
   const info = KEY_INFO[row.key];
   return (
-    <li className={cx('rounded-xl border p-4 transition-colors', row.enabled ? 'border-zinc-200 bg-white' : 'border-dashed border-zinc-300 bg-zinc-50/60')}>
+    <li className={cx('rounded-xl border p-4 transition-colors', row.enabled ? 'border-ink-200 bg-surface' : 'border-dashed border-ink-300 bg-ink-50/60')}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-meta text-zinc-800">{row.key}</code>
+            <code className="rounded bg-ink-100 px-1.5 py-0.5 font-mono text-meta text-ink-800">{row.key}</code>
             <Badge tone="gray">{info.type === 'text' ? 'Text' : 'List'}</Badge>
             {row.enabled && row.required && <Badge tone="dark">Mandatory</Badge>}
           </div>
-          <p className="mt-1 text-meta text-zinc-600">{info.blurb}</p>
+          <p className="mt-1 text-meta text-ink-600">{info.blurb}</p>
         </div>
         <Checkbox label="Include in template" checked={row.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} />
       </div>
@@ -333,7 +333,7 @@ function Templates({ departments }) {
             options={departments.map((d) => ({ value: d.code, label: `${d.name} (${d.code})` }))}
           />
           {data && (
-            <p className="flex items-center gap-2 text-zinc-600 sm:pb-2">
+            <p className="flex items-center gap-2 text-ink-600 sm:pb-2">
               Current version <Badge tone="green">v{data.current_version}</Badge>
               <span className="text-meta">· {data.versions.length} version{data.versions.length === 1 ? '' : 's'} total</span>
             </p>
@@ -360,11 +360,11 @@ function Templates({ departments }) {
             </ul>
             {showJson && (
               <div className="mt-5">
-                <p className="mb-2 text-meta font-medium text-zinc-600">field_definition that will be saved</p>
+                <p className="mb-2 text-meta font-medium text-ink-600">field_definition that will be saved</p>
                 <JsonView value={draft} label="Draft field definition JSON" />
               </div>
             )}
-            <div className="mt-5 flex flex-col-reverse gap-2 border-t border-zinc-200 pt-4 sm:flex-row sm:items-center sm:justify-end">
+            <div className="mt-5 flex flex-col-reverse gap-2 border-t border-ink-200 pt-4 sm:flex-row sm:items-center sm:justify-end">
               {dirty && <span className="text-meta font-medium text-status-amber sm:mr-auto">Unsaved changes</span>}
               <Button icon={RotateCcw} disabled={!dirty || saving} onClick={() => setRows(toRows(data.template.field_definition))}>Discard</Button>
               <Button variant="primary" icon={Save} loading={saving} disabled={!dirty} onClick={save}>Save as v{data.current_version + 1}</Button>
@@ -381,11 +381,11 @@ function Templates({ departments }) {
                     aria-pressed={viewVersion === v.version}
                     className={cx(
                       'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition-colors',
-                      viewVersion === v.version ? 'bg-zinc-100 font-medium text-brand-black' : 'text-zinc-700 hover:bg-zinc-50',
+                      viewVersion === v.version ? 'bg-ink-100 font-medium text-fg' : 'text-ink-700 hover:bg-ink-50',
                     )}
                   >
                     <span className="flex items-center gap-2">
-                      <FileCog aria-hidden className="size-4 text-zinc-500" />
+                      <FileCog aria-hidden className="size-4 text-ink-500" />
                       Version {v.version}
                     </span>
                     {v.version === data.current_version && <Badge tone="green">Current</Badge>}

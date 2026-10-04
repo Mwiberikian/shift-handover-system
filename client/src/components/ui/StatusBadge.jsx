@@ -11,7 +11,7 @@ export const TONES = {
   green: 'bg-status-green-soft text-status-green ring-status-green-line',
   red: 'bg-status-red-soft text-status-red ring-status-red-line',
   'red-solid': 'bg-brand-red-dark text-white ring-brand-red-dark',
-  dark: 'bg-zinc-800 text-white ring-zinc-800',
+  dark: 'bg-fg text-surface ring-fg',
 };
 
 // Every enum value the API returns, mapped to tone + label + icon. The icon

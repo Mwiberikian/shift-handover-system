@@ -32,19 +32,19 @@ function StatCard({ label, value, icon: Icon, tone = 'gray', alert = false, hint
   return (
     <div
       className={cx(
-        'relative overflow-hidden rounded-xl border bg-white p-4 shadow-card transition-shadow',
-        alert ? 'border-status-red-line' : 'border-zinc-200',
+        'relative overflow-hidden rounded-xl border bg-surface p-4 shadow-card transition-shadow',
+        alert ? 'border-status-red-line' : 'border-ink-200',
       )}
     >
       {alert && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-brand-red" />}
       <div className="flex items-start justify-between gap-2">
-        <p className={cx('min-w-0 text-meta font-medium hyphens-auto', alert ? 'text-status-red' : 'text-zinc-600')}>{label}</p>
+        <p className={cx('min-w-0 text-meta font-medium hyphens-auto', alert ? 'text-status-red' : 'text-ink-600')}>{label}</p>
         <span className={cx('hidden size-8 shrink-0 place-items-center rounded-lg min-[400px]:grid', STAT_TONE[alert ? 'red' : tone])}>
           <Icon aria-hidden className="size-4" />
         </span>
       </div>
-      <p className={cx('mt-1 text-3xl font-semibold tracking-tight tabular-nums', alert ? 'text-status-red' : 'text-brand-black')}>{value}</p>
-      {hint && <p className="mt-0.5 text-meta text-zinc-600">{hint}</p>}
+      <p className={cx('mt-1 text-3xl font-semibold tracking-tight tabular-nums', alert ? 'text-status-red' : 'text-fg')}>{value}</p>
+      {hint && <p className="mt-0.5 text-meta text-ink-600">{hint}</p>}
     </div>
   );
 }
@@ -60,13 +60,13 @@ function Overview({ data, onOpen }) {
   const d = data.departments;
   const overdue = sum(d, 'unacknowledged_overdue');
   const deptColumns = [
-    { key: 'name', header: 'Department', render: (r) => <span className="font-medium text-brand-black">{r.name}</span> },
+    { key: 'name', header: 'Department', render: (r) => <span className="font-medium text-fg">{r.name}</span> },
     ...DEPT_COLUMNS.map(([key, header]) => ({
       key,
       header,
       className: 'text-right tabular-nums',
       hideBelow: ['open', 'closed', 'under_review'].includes(key) ? 'lg' : 'sm',
-      render: (r) => <span className={r[key] ? 'text-brand-black' : 'text-zinc-500'}>{r[key]}</span>,
+      render: (r) => <span className={r[key] ? 'text-fg' : 'text-ink-500'}>{r[key]}</span>,
     })),
     {
       key: 'overdue',
@@ -74,7 +74,7 @@ function Overview({ data, onOpen }) {
       className: 'text-right',
       render: (r) => (r.unacknowledged_overdue
         ? <span className="inline-flex items-center gap-1 font-semibold text-status-red"><AlertTriangle aria-hidden className="size-3.5" />{r.unacknowledged_overdue}</span>
-        : <span className="text-zinc-500">0</span>),
+        : <span className="text-ink-500">0</span>),
     },
   ];
 
@@ -104,20 +104,20 @@ function Overview({ data, onOpen }) {
               <h2 className="text-section text-status-red">
                 {data.unacknowledged_alerts.length} handover{data.unacknowledged_alerts.length === 1 ? '' : 's'} not acknowledged within {data.threshold_hours} hours
               </h2>
-              <p className="text-meta text-zinc-700">Counted from shift start. Follow up with the incoming staff member.</p>
+              <p className="text-meta text-ink-700">Counted from shift start. Follow up with the incoming staff member.</p>
             </div>
           </div>
-          <ul className="divide-y divide-zinc-100">
+          <ul className="divide-y divide-ink-100">
             {data.unacknowledged_alerts.map((a) => (
               <li key={a.record_id}>
                 <button
                   type="button"
                   onClick={() => onOpen(a.record_id)}
-                  className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-zinc-50 sm:px-5"
+                  className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-ink-50 sm:px-5"
                 >
                   <span className="min-w-0 basis-full sm:basis-auto sm:flex-1">
-                    <span className="block font-medium text-brand-black">{shiftLabel(a)} · {fmt(a.shift_start)}</span>
-                    <span className="block text-meta text-zinc-600">{a.outgoing_name} → {a.incoming_name ?? 'unassigned'}</span>
+                    <span className="block font-medium text-fg">{shiftLabel(a)} · {fmt(a.shift_start)}</span>
+                    <span className="block text-meta text-ink-600">{a.outgoing_name} → {a.incoming_name ?? 'unassigned'}</span>
                   </span>
                   <StatusBadge value={a.status} />
                   <span className="text-meta font-semibold whitespace-nowrap text-status-red tabular-nums">{a.hours_since_shift_start} h since start</span>
@@ -311,18 +311,18 @@ export default function SupervisorPage({ view }) {
             )}
             <HandoverDetail record={selected} />
             {selected.reviews?.length > 0 && (
-              <section className="border-t border-zinc-200 pt-4">
-                <h3 className="mb-2 flex items-center gap-2 text-section text-brand-black"><ShieldCheck aria-hidden className="size-[18px] text-zinc-500" />Reviews</h3>
+              <section className="border-t border-ink-200 pt-4">
+                <h3 className="mb-2 flex items-center gap-2 text-section text-fg"><ShieldCheck aria-hidden className="size-[18px] text-ink-500" />Reviews</h3>
                 <ul className="space-y-2">
                   {selected.reviews.map((r) => (
-                    <li key={r.review_id} className="rounded-lg bg-zinc-50 px-3 py-2">
+                    <li key={r.review_id} className="rounded-lg bg-ink-50 px-3 py-2">
                       <div className="flex flex-wrap items-center gap-2">
                         {r.decision === 'approved'
                           ? <Badge tone="green" icon={ShieldCheck}>Approved</Badge>
                           : <Badge tone="red" icon={ShieldAlert}>Escalated</Badge>}
-                        <span className="text-zinc-700">by {r.supervisor_name} · {fmt(r.reviewed_at)}</span>
+                        <span className="text-ink-700">by {r.supervisor_name} · {fmt(r.reviewed_at)}</span>
                       </div>
-                      {r.comments && <p className="mt-1 text-zinc-800">{r.comments}</p>}
+                      {r.comments && <p className="mt-1 text-ink-800">{r.comments}</p>}
                     </li>
                   ))}
                 </ul>

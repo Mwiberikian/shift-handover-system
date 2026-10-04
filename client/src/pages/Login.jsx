@@ -36,11 +36,11 @@ export default function Login() {
     <AuthShell
       as="form"
       onSubmit={submit}
-      footer={<p className="text-zinc-700">Need an account? <CardLink to="/request-access">Request access</CardLink></p>}
+      footer={<p className="text-ink-700">Need an account? <CardLink to="/request-access">Request access</CardLink></p>}
     >
       <div>
-        <h1 className="text-lg font-semibold text-brand-black">Sign in</h1>
-        <p className="mt-0.5 text-zinc-700">Use your staff number or work email.</p>
+        <h1 className="text-lg font-semibold text-fg">Sign in</h1>
+        <p className="mt-0.5 text-ink-700">Use your staff number or work email.</p>
       </div>
 
       {error && <Callout tone="danger" title="Sign-in failed">{error}</Callout>}
@@ -72,7 +72,7 @@ export default function Login() {
           onClick={() => setShowPassword((s) => !s)}
           aria-label={showPassword ? 'Hide password' : 'Show password'}
           aria-pressed={showPassword}
-          className="absolute top-[30px] right-1.5 grid size-7 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+          className="absolute top-[30px] right-1.5 grid size-7 place-items-center rounded-md text-ink-500 hover:bg-ink-100 hover:text-ink-800"
         >
           {showPassword ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
         </button>

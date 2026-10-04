@@ -55,12 +55,12 @@ function ApproveDialog({ request, departments, onClose, onApproved }) {
             Sign-in: <strong>{result.user.staff_number}</strong> or <strong>{result.user.email}</strong>
           </Callout>
           <div>
-            <p className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-zinc-800"><KeyRound aria-hidden className="size-4" />Temporary password</p>
+            <p className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-ink-800"><KeyRound aria-hidden className="size-4" />Temporary password</p>
             <div className="flex items-stretch gap-2">
               <code className="flex-1 rounded-lg bg-brand-black px-3 py-2 font-mono text-base tracking-wider text-white select-all">{result.temporary_password}</code>
               <Button icon={copied ? Check : Copy} onClick={copy} aria-label="Copy temporary password">{copied ? 'Copied' : 'Copy'}</Button>
             </div>
-            <p className="mt-2 text-meta text-zinc-600">
+            <p className="mt-2 text-meta text-ink-600">
               This is shown only once. Pass it to {result.user.full_name.split(' ')[0]} through a secure channel.
             </p>
           </div>
@@ -159,18 +159,18 @@ export default function AccessRequests({ departments }) {
     header: 'Requester',
     render: (r) => (
       <div className="min-w-[12rem]">
-        <p className="font-medium text-brand-black">{r.full_name}</p>
-        <p className="text-meta text-zinc-600">{r.email}{r.staff_number && <> · <span className="font-mono">{r.staff_number}</span></>}</p>
+        <p className="font-medium text-fg">{r.full_name}</p>
+        <p className="text-meta text-ink-600">{r.email}{r.staff_number && <> · <span className="font-mono">{r.staff_number}</span></>}</p>
       </div>
     ),
   };
-  const dept = { key: 'dept', header: 'Department', hideBelow: 'md', render: (r) => <Badge tone="gray" icon={Building2} className="bg-white">{r.requested_department_name}</Badge> };
+  const dept = { key: 'dept', header: 'Department', hideBelow: 'md', render: (r) => <Badge tone="gray" icon={Building2} className="bg-surface">{r.requested_department_name}</Badge> };
 
   const pendingColumns = [
     requester,
     dept,
-    { key: 'note', header: 'Note', hideBelow: 'lg', render: (r) => (r.note ? <p className="max-w-xs text-zinc-700 line-clamp-2" title={r.note}>{r.note}</p> : <span className="text-zinc-500">—</span>) },
-    { key: 'created', header: 'Received', hideBelow: 'sm', render: (r) => <span className="whitespace-nowrap text-zinc-700" title={fmt(r.created_at)}>{fmtRelative(r.created_at)}</span> },
+    { key: 'note', header: 'Note', hideBelow: 'lg', render: (r) => (r.note ? <p className="max-w-xs text-ink-700 line-clamp-2" title={r.note}>{r.note}</p> : <span className="text-ink-500">—</span>) },
+    { key: 'created', header: 'Received', hideBelow: 'sm', render: (r) => <span className="whitespace-nowrap text-ink-700" title={fmt(r.created_at)}>{fmtRelative(r.created_at)}</span> },
     {
       key: 'actions',
       header: <span className="sr-only">Actions</span>,
@@ -198,18 +198,18 @@ export default function AccessRequests({ departments }) {
       hideBelow: 'sm',
       render: (r) => (
         <div className="text-meta">
-          <p className="text-zinc-800">{r.reviewed_by_name}</p>
-          <p className="text-zinc-600">{fmt(r.reviewed_at)}</p>
+          <p className="text-ink-800">{r.reviewed_by_name}</p>
+          <p className="text-ink-600">{fmt(r.reviewed_at)}</p>
         </div>
       ),
     },
-    { key: 'reason', header: 'Reason', hideBelow: 'lg', render: (r) => r.review_reason ?? <span className="text-zinc-500">—</span> },
+    { key: 'reason', header: 'Reason', hideBelow: 'lg', render: (r) => r.review_reason ?? <span className="text-ink-500">—</span> },
   ];
 
   return (
     <>
       <Card flush>
-        <div role="group" aria-label="Request status" className="flex gap-1 border-b border-zinc-200 px-3 pt-3">
+        <div role="group" aria-label="Request status" className="flex gap-1 border-b border-ink-200 px-3 pt-3">
           {[['pending', 'Pending'], ['reviewed', 'Reviewed']].map(([value, label]) => (
             <button
               key={value}
@@ -218,11 +218,11 @@ export default function AccessRequests({ departments }) {
               onClick={() => setView(value)}
               className={cx(
                 '-mb-px rounded-t-lg border-b-2 px-3 py-2 text-sm font-medium transition-colors',
-                view === value ? 'border-brand-red text-brand-black' : 'border-transparent text-zinc-600 hover:text-brand-black',
+                view === value ? 'border-brand-red text-fg' : 'border-transparent text-ink-600 hover:text-fg',
               )}
             >
               {label}
-              {value === 'pending' && view === 'pending' && rows && <span className="ml-1.5 rounded-full bg-zinc-100 px-1.5 text-meta text-zinc-700">{rows.length}</span>}
+              {value === 'pending' && view === 'pending' && rows && <span className="ml-1.5 rounded-full bg-ink-100 px-1.5 text-meta text-ink-700">{rows.length}</span>}
             </button>
           ))}
         </div>

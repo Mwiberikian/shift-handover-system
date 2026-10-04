@@ -17,8 +17,8 @@ export default function SidebarNav({ items, compact = false, onNavigate }) {
             'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-body font-medium transition-colors',
             compact && 'justify-center px-0',
             isActive
-              ? 'bg-zinc-100 text-brand-black'
-              : 'text-zinc-600 hover:bg-zinc-50 hover:text-brand-black',
+              ? 'bg-ink-100 text-fg'
+              : 'text-ink-600 hover:bg-ink-50 hover:text-fg',
           )}
         >
           {({ isActive }) => (
@@ -30,7 +30,7 @@ export default function SidebarNav({ items, compact = false, onNavigate }) {
                   isActive ? 'opacity-100' : 'opacity-0',
                 )}
               />
-              <Icon aria-hidden className={cx('size-[18px] shrink-0', isActive ? 'text-brand-red-dark' : 'text-zinc-500 group-hover:text-zinc-700')} />
+              <Icon aria-hidden className={cx('size-[18px] shrink-0', isActive ? 'text-accent-fg' : 'text-ink-500 group-hover:text-ink-700')} />
               {!compact && <span className="truncate">{label}</span>}
             </>
           )}

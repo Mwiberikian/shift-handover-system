@@ -55,8 +55,8 @@ export default function RequestAccess() {
           <span className="grid size-12 place-items-center rounded-full bg-status-green-soft text-status-green ring-1 ring-status-green-line ring-inset">
             <CheckCircle2 aria-hidden className="size-6" />
           </span>
-          <h1 className="text-lg font-semibold text-brand-black">Your request has been sent to an administrator</h1>
-          <p className="max-w-sm text-zinc-700">
+          <h1 className="text-lg font-semibold text-fg">Your request has been sent to an administrator</h1>
+          <p className="max-w-sm text-ink-700">
             An administrator will review it and assign your role and department. Once approved, they will give you
             your sign-in details. There is no need to submit another request.
           </p>
@@ -72,11 +72,11 @@ export default function RequestAccess() {
       wide
       onSubmit={submit}
       noValidate
-      footer={<p className="text-zinc-700">Already have an account? <CardLink to="/login">Sign in</CardLink></p>}
+      footer={<p className="text-ink-700">Already have an account? <CardLink to="/login">Sign in</CardLink></p>}
     >
       <div>
-        <h1 className="text-lg font-semibold text-brand-black">Request access</h1>
-        <p className="mt-0.5 text-zinc-700">
+        <h1 className="text-lg font-semibold text-fg">Request access</h1>
+        <p className="mt-0.5 text-ink-700">
           Tell us who you are and where you work. An administrator reviews every request and decides your access.
         </p>
       </div>

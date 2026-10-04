@@ -1,19 +1,43 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/inter';
 
-/* Design tokens. Components use these names (bg-brand-red, text-status-amber…),
-   never raw hex. */
+/* Class-based dark mode: <html class="dark"> is set before first paint by the
+   inline script in index.html, then kept in sync by ThemeProvider. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens. Components use these names (bg-surface, text-fg,
+   text-status-amber…), never raw hex. Themed tokens are redefined under
+   .dark below; brand and zinc values are fixed in both themes. */
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
 
   /* Kenya Airways palette. #ED1C24 gives only 4.4:1 against white, so text
      and filled buttons use the darker shade; the pure brand red is kept for
-     the wordmark, accent lines and active indicators. */
+     accent lines and active indicators in both themes. */
   --color-brand-red: #ed1c24;
   --color-brand-red-dark: #c4161c;
   --color-brand-red-darker: #a01217;
   --color-brand-black: #0d0d0d;
+
+  /* Themed neutrals. `ink` is the neutral scale for everything that follows
+     the theme (page canvas = ink-50, borders = ink-200, muted text = ink-600…);
+     in dark mode the scale runs the other way. `surface` is the card/panel
+     fill, `fg` primary text, `accent-fg` red text. */
+  --color-surface: #ffffff;
+  --color-fg: #0d0d0d;
+  --color-accent-fg: #a01217;
+  --color-ink-50: #fafafa;
+  --color-ink-100: #f4f4f5;
+  --color-ink-200: #e4e4e7;
+  --color-ink-300: #d4d4d8;
+  --color-ink-400: #9f9fa9;
+  --color-ink-500: #71717b;
+  --color-ink-600: #52525c;
+  --color-ink-700: #3f3f46;
+  --color-ink-800: #27272a;
+  --color-ink-900: #18181b;
+  --color-ink-950: #09090b;
 
   /* Semantic status colours: strong = text/icon, soft = fill, line = border. */
   --color-status-green: #047857;
@@ -54,6 +78,47 @@
   }
 }
 
+/* Dark theme: near-black surfaces; brand red remains an accent only. Every
+   text/background pair here is checked at >= 4.5:1. */
+@layer base {
+  .dark {
+    color-scheme: dark;
+    --color-surface: #17171a;
+    --color-fg: #f4f4f5;
+    --color-accent-fg: #ff7a7f;
+    --color-ink-50: #0c0c0e;
+    --color-ink-100: #222226;
+    --color-ink-200: #2e2e33;
+    --color-ink-300: #3d3d43;
+    --color-ink-400: #5e5e66;
+    --color-ink-500: #8f8f99;
+    --color-ink-600: #a9a9b2;
+    --color-ink-700: #c6c6cd;
+    --color-ink-800: #dedee3;
+    --color-ink-900: #eeeef1;
+    --color-ink-950: #f7f7f9;
+
+    --color-status-green: #4ade80;
+    --color-status-green-soft: #0f2a1d;
+    --color-status-green-line: #1f5a3c;
+    --color-status-amber: #fbbf24;
+    --color-status-amber-soft: #2b2110;
+    --color-status-amber-line: #6b4f12;
+    --color-status-blue: #8ab4ff;
+    --color-status-blue-soft: #131f38;
+    --color-status-blue-line: #284477;
+    --color-status-red: #ff7a7f;
+    --color-status-red-soft: #36141a;
+    --color-status-red-line: #7a2530;
+    --color-status-gray: #c6c6cd;
+    --color-status-gray-soft: #26262b;
+    --color-status-gray-line: #3d3d43;
+
+    --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.02);
+    --shadow-pop: 0 12px 32px -6px rgb(0 0 0 / 0.7), 0 4px 12px -6px rgb(0 0 0 / 0.6);
+  }
+}
+
 /* Frosted glass. Only for surfaces with a photo or scrolling content behind
    them (login card, landing hero, header bar); on a plain background it
    reads as nothing. Opacity is high enough that text contrast holds even
@@ -64,6 +129,14 @@
   backdrop-filter: blur(18px) saturate(140%);
   @supports not (backdrop-filter: blur(1px)) {
     background-color: rgb(255 255 255 / 0.97);
+  }
+  /* In dark mode the same panels become smoked glass. */
+  &:where(.dark, .dark *) {
+    background-color: rgb(23 23 26 / 0.8);
+    border-color: rgb(255 255 255 / 0.08);
+    @supports not (backdrop-filter: blur(1px)) {
+      background-color: rgb(23 23 26 / 0.97);
+    }
   }
 }
 
@@ -80,7 +153,7 @@
     -webkit-font-smoothing: antialiased;
   }
   body {
-    @apply bg-zinc-50 font-sans text-body text-brand-black;
+    @apply bg-ink-50 font-sans text-body text-fg;
   }
   :focus-visible {
     outline: 2px solid var(--color-brand-red);

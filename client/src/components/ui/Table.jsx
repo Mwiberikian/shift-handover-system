@@ -24,19 +24,19 @@ export default function Table({
       <table className="w-full border-collapse text-left text-body">
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
-          <tr className="border-b border-zinc-200 bg-zinc-50/80">
+          <tr className="border-b border-ink-200 bg-ink-50/80">
             {columns.map((c) => (
               <th
                 key={c.key}
                 scope="col"
-                className={cx('px-4 py-2.5 text-meta font-semibold tracking-wide text-zinc-600 uppercase whitespace-nowrap', HIDE[c.hideBelow], c.className)}
+                className={cx('px-4 py-2.5 text-meta font-semibold tracking-wide text-ink-600 uppercase whitespace-nowrap', HIDE[c.hideBelow], c.className)}
               >
                 {c.header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-100">
+        <tbody className="divide-y divide-ink-100">
           {rows.map((row) => {
             const key = rowKey(row);
             const selected = selectedKey != null && selectedKey === key;
@@ -50,8 +50,8 @@ export default function Table({
                 onKeyDown={onRowClick ? activate(row) : undefined}
                 className={cx(
                   'transition-colors',
-                  onRowClick && 'cursor-pointer hover:bg-zinc-50 focus-visible:bg-zinc-50 focus-visible:outline-offset-[-2px]',
-                  selected && 'bg-zinc-100/80 shadow-[inset_3px_0_0_var(--color-brand-red)] hover:bg-zinc-100',
+                  onRowClick && 'cursor-pointer hover:bg-ink-50 focus-visible:bg-ink-50 focus-visible:outline-offset-[-2px]',
+                  selected && 'bg-ink-100/80 shadow-[inset_3px_0_0_var(--color-brand-red)] hover:bg-ink-100',
                   rowClassName?.(row),
                 )}
               >

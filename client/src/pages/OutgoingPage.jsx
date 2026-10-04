@@ -50,7 +50,7 @@ function ProgressBar({ done, total }) {
       aria-valuemax={total}
       aria-valuenow={done}
       aria-label="Mandatory requirements completed"
-      className="h-2 w-full overflow-hidden rounded-full bg-zinc-200"
+      className="h-2 w-full overflow-hidden rounded-full bg-ink-200"
     >
       <div
         className={cx('h-full rounded-full transition-[width] duration-500 ease-out', done === total ? 'bg-status-green' : 'bg-brand-red')}
@@ -67,14 +67,14 @@ function Checklist({ items }) {
         <li key={i.key} className="flex gap-2.5">
           {i.ok
             ? <CheckCircle2 aria-hidden className="mt-px size-[18px] shrink-0 text-status-green" />
-            : <Circle aria-hidden className="mt-px size-[18px] shrink-0 text-zinc-500" />}
+            : <Circle aria-hidden className="mt-px size-[18px] shrink-0 text-ink-500" />}
           <div className="min-w-0">
-            <p className={cx('leading-tight', i.ok ? 'text-zinc-700' : 'font-medium text-brand-black')}>
+            <p className={cx('leading-tight', i.ok ? 'text-ink-700' : 'font-medium text-fg')}>
               {i.label}
-              {!i.required && <span className="ml-1 text-meta font-normal text-zinc-500">(optional)</span>}
+              {!i.required && <span className="ml-1 text-meta font-normal text-ink-500">(optional)</span>}
               <span className="sr-only">{i.ok ? ' — complete' : ' — incomplete'}</span>
             </p>
-            <p className="mt-0.5 text-meta text-zinc-600">{i.hint}</p>
+            <p className="mt-0.5 text-meta text-ink-600">{i.hint}</p>
           </div>
         </li>
       ))}
@@ -84,8 +84,8 @@ function Checklist({ items }) {
 
 function SectionLabel({ required }) {
   return required
-    ? <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-meta font-medium text-zinc-700">Required</span>
-    : <span className="text-meta text-zinc-500">Optional</span>;
+    ? <span className="rounded-full bg-ink-100 px-2 py-0.5 text-meta font-medium text-ink-700">Required</span>
+    : <span className="text-meta text-ink-500">Optional</span>;
 }
 
 function DraftEditor({ record, meta, reload }) {
@@ -159,7 +159,7 @@ function DraftEditor({ record, meta, reload }) {
       <Button variant="primary" size="lg" icon={Send} className="w-full" disabled={!ready} onClick={() => setConfirmOpen(true)} aria-describedby="submit-help">
         Submit handover
       </Button>
-      <p id="submit-help" className="mt-2 text-meta text-zinc-600">
+      <p id="submit-help" className="mt-2 text-meta text-ink-600">
         {ready
           ? 'Submitting locks the record. It cannot be edited afterwards.'
           : `Complete ${missing.length} more requirement${missing.length === 1 ? '' : 's'} to submit: ${missing.map((m) => m.label.toLowerCase()).join(', ')}.`}
@@ -223,7 +223,7 @@ function DraftEditor({ record, meta, reload }) {
               />
             )}
           />
-          <form onSubmit={addTask} className="mt-4 rounded-lg border border-dashed border-zinc-300 bg-zinc-50/60 p-3 sm:p-4">
+          <form onSubmit={addTask} className="mt-4 rounded-lg border border-dashed border-ink-300 bg-ink-50/60 p-3 sm:p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-end">
               <Input
                 label="New task"
@@ -246,7 +246,7 @@ function DraftEditor({ record, meta, reload }) {
           actions={<SectionLabel required={fields.incidents?.required} />}
         >
           <IncidentTable incidents={record.incidents} />
-          <form onSubmit={addIncident} className="mt-4 space-y-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50/60 p-3 sm:p-4">
+          <form onSubmit={addIncident} className="mt-4 space-y-3 rounded-lg border border-dashed border-ink-300 bg-ink-50/60 p-3 sm:p-4">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_14rem]">
               <Input label="Incident title" placeholder="Short headline" value={incident.title} onChange={(e) => setIncident({ ...incident, title: e.target.value })} required />
               <Input label="Occurred at" type="datetime-local" value={incident.occurred_at} onChange={(e) => setIncident({ ...incident, occurred_at: e.target.value })} required />
@@ -265,12 +265,12 @@ function DraftEditor({ record, meta, reload }) {
         <div className="sticky top-20 space-y-4">
           <Card title="Ready to submit?" subtitle={`${record.department_code?.toUpperCase()} template v${meta.template.version}`}>
             <div className="mb-1 flex items-baseline justify-between">
-              <span className="font-semibold text-brand-black">{req.done} of {req.total}</span>
-              <span className="text-meta text-zinc-600">mandatory items complete</span>
+              <span className="font-semibold text-fg">{req.done} of {req.total}</span>
+              <span className="text-meta text-ink-600">mandatory items complete</span>
             </div>
             <ProgressBar done={req.done} total={req.total} />
             <div className="mt-5"><Checklist items={req.items} /></div>
-            <div className="mt-6 border-t border-zinc-200 pt-4">{submitPanel}</div>
+            <div className="mt-6 border-t border-ink-200 pt-4">{submitPanel}</div>
           </Card>
         </div>
       </aside>
@@ -279,9 +279,9 @@ function DraftEditor({ record, meta, reload }) {
       <Card title="Requirements" className="lg:hidden">
         <Checklist items={req.items} />
       </Card>
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/95 px-4 py-3 shadow-[0_-4px_12px_rgb(0_0_0/0.05)] backdrop-blur md:left-16 lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-200 bg-surface/95 px-4 py-3 shadow-[0_-4px_12px_rgb(0_0_0/0.05)] backdrop-blur md:left-16 lg:hidden">
         <div className="mb-2 flex items-center gap-3">
-          <span className="shrink-0 text-meta font-semibold text-brand-black">{req.done}/{req.total} complete</span>
+          <span className="shrink-0 text-meta font-semibold text-fg">{req.done}/{req.total} complete</span>
           <ProgressBar done={req.done} total={req.total} />
         </div>
         {submitPanel}
@@ -297,7 +297,7 @@ function DraftEditor({ record, meta, reload }) {
         confirmLabel="Submit handover"
         message={(
           <p>
-            The record will be locked and sent to <strong className="text-brand-black">{incomingName ?? 'the incoming staff member'}</strong> for
+            The record will be locked and sent to <strong className="text-fg">{incomingName ?? 'the incoming staff member'}</strong> for
             acknowledgement. You won&apos;t be able to edit it afterwards.
           </p>
         )}
@@ -322,11 +322,11 @@ function ClarifyBox({ record, reload }) {
       <form onSubmit={send} className="border-l-4 border-l-status-amber p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
           <MessageSquareReply aria-hidden className="size-[18px] text-status-amber" />
-          <h2 className="text-section text-brand-black">{record.incoming_name ?? 'The incoming staff member'} raised a query</h2>
+          <h2 className="text-section text-fg">{record.incoming_name ?? 'The incoming staff member'} raised a query</h2>
           <StatusBadge value="queried" />
         </div>
-        <p className="mt-1 text-meta text-zinc-600">{shiftLabel(record)} · {fmt(record.shift_start)}</p>
-        <blockquote className="mt-3 rounded-lg bg-status-amber-soft px-4 py-3 whitespace-pre-wrap text-zinc-800">
+        <p className="mt-1 text-meta text-ink-600">{shiftLabel(record)} · {fmt(record.shift_start)}</p>
+        <blockquote className="mt-3 rounded-lg bg-status-amber-soft px-4 py-3 whitespace-pre-wrap text-ink-800">
           {record.acknowledgement?.comments}
         </blockquote>
         <Textarea className="mt-4" label="Your clarification" required rows={3} value={text} onChange={(e) => setText(e.target.value)} />
@@ -355,13 +355,13 @@ function CurrentView({ meta, records, current, reload }) {
       {queried.map((r) => <QueriedLoader key={r.record_id} id={r.record_id} reload={reload} />)}
 
       {shift && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-card sm:px-5">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-ink-200 bg-surface px-4 py-3 shadow-card sm:px-5">
           <div className="flex items-center gap-2">
-            <Clock aria-hidden className="size-4 text-zinc-500" />
-            <span className="font-semibold text-brand-black">{shiftLabel(shift)}</span>
+            <Clock aria-hidden className="size-4 text-ink-500" />
+            <span className="font-semibold text-fg">{shiftLabel(shift)}</span>
           </div>
-          <span className="text-zinc-700">{fmtTime(shift.start_time)} – {fmtTime(shift.end_time)}</span>
-          <span className="text-meta text-zinc-600">{fmt(shift.start_time)}</span>
+          <span className="text-ink-700">{fmtTime(shift.start_time)} – {fmtTime(shift.end_time)}</span>
+          <span className="text-meta text-ink-600">{fmt(shift.start_time)}</span>
           {current && <StatusBadge value={current.status} className="ml-auto" />}
         </div>
       )}

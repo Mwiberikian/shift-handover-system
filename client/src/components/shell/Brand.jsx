@@ -9,8 +9,8 @@ export default function Brand({ tone = 'dark', size = 'md', showName = true, cla
       <img src={logoUrl} alt="Kenya Airways" className={size === 'lg' ? 'h-10 w-auto' : 'h-6 w-auto sm:h-7'} />
       {showName && (
         <>
-          <span aria-hidden className={cx('h-6 w-px', tone === 'dark' ? 'bg-white/20' : 'bg-zinc-300')} />
-          <span className={cx('font-semibold tracking-tight whitespace-nowrap', size === 'lg' ? 'text-lg' : 'text-sm', tone === 'dark' ? 'text-zinc-100' : 'text-brand-black')}>
+          <span aria-hidden className={cx('h-6 w-px', tone === 'dark' ? 'bg-white/20' : 'bg-ink-300')} />
+          <span className={cx('font-semibold tracking-tight whitespace-nowrap', size === 'lg' ? 'text-lg' : 'text-sm', tone === 'dark' ? 'text-white' : 'text-fg')}>
             Shift Handover
           </span>
         </>

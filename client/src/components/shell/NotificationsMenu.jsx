@@ -37,7 +37,7 @@ export default function NotificationsMenu() {
     <Popover className="relative">
       <PopoverButton
         aria-label={unread.length ? `Notifications, ${unread.length} unread` : 'Notifications'}
-        className="relative grid size-9 place-items-center rounded-lg text-zinc-300 transition-colors hover:bg-white/10 hover:text-white data-open:bg-white/10 data-open:text-white"
+        className="relative grid size-9 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white data-open:bg-white/10 data-open:text-white"
       >
         <Bell aria-hidden className="size-5" />
         {unread.length > 0 && (
@@ -50,40 +50,40 @@ export default function NotificationsMenu() {
       <PopoverPanel
         transition
         anchor={{ to: 'bottom end', gap: 8, padding: 8 }}
-        className="z-50 flex w-[min(24rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-pop transition duration-150 ease-out data-closed:-translate-y-1 data-closed:opacity-0"
+        className="z-50 flex w-[min(24rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-ink-200 bg-surface shadow-pop transition duration-150 ease-out data-closed:-translate-y-1 data-closed:opacity-0"
       >
-        <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-ink-200 px-4 py-3">
           <h2 className="m-0 text-section">Notifications</h2>
           {unread.length > 0 && (
-            <button type="button" onClick={markAllRead} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-meta font-medium text-zinc-600 hover:bg-zinc-100 hover:text-brand-black">
+            <button type="button" onClick={markAllRead} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-meta font-medium text-ink-600 hover:bg-ink-100 hover:text-fg">
               <CheckCheck aria-hidden className="size-3.5" /> Mark all read
             </button>
           )}
         </div>
         {items.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-zinc-500">
-            <Bell aria-hidden className="size-6 text-zinc-300" />
+          <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-ink-500">
+            <Bell aria-hidden className="size-6 text-ink-300" />
             <p>You&apos;re all caught up.</p>
           </div>
         ) : (
           <ul className="max-h-96 overflow-y-auto">
             {items.map((n) => (
-              <li key={n.notification_id} className="border-b border-zinc-100 last:border-0">
+              <li key={n.notification_id} className="border-b border-ink-100 last:border-0">
                 <button
                   type="button"
                   onClick={() => markRead(n)}
-                  className={cx('flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50 focus-visible:bg-zinc-50', n.read_at && 'opacity-60')}
+                  className={cx('flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-ink-50 focus-visible:bg-ink-50', n.read_at && 'opacity-60')}
                 >
                   <span aria-hidden className={cx('mt-1.5 size-2 shrink-0 rounded-full', n.read_at ? 'bg-transparent' : 'bg-brand-red')} />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-brand-black">
+                    <span className="block font-medium text-fg">
                       {NOTIFICATION_LABEL[n.type] || n.type}
                       {!n.read_at && <span className="sr-only"> (unread)</span>}
                     </span>
-                    <span className="block truncate text-meta text-zinc-600">
+                    <span className="block truncate text-meta text-ink-600">
                       {n.department_code} · record {n.record_id?.slice(0, 8)} · now {n.record_status?.replace('_', ' ')}
                     </span>
-                    <span className="mt-0.5 block text-meta text-zinc-500">{fmtRelative(n.sent_at)}</span>
+                    <span className="mt-0.5 block text-meta text-ink-500">{fmtRelative(n.sent_at)}</span>
                   </span>
                 </button>
               </li>

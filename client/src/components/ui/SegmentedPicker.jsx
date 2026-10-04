@@ -13,15 +13,15 @@ const CHECKED = {
 export default function SegmentedPicker({ label, value, onChange, options, className }) {
   return (
     <RadioGroup value={value} onChange={onChange} className={cx('flex flex-col gap-1.5', className)}>
-      <Label className="text-sm font-medium text-zinc-800">{label}</Label>
+      <Label className="text-sm font-medium text-ink-800">{label}</Label>
       <div className="flex flex-wrap gap-1.5">
         {options.map((o) => (
           <Radio
             key={o.value}
             value={o.value}
             className={cx(
-              'cursor-pointer rounded-full bg-white px-3 py-1 text-meta font-medium text-zinc-600 ring-1 ring-zinc-300 transition-colors ring-inset',
-              'hover:bg-zinc-50 data-checked:ring-2 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-brand-red',
+              'cursor-pointer rounded-full bg-surface px-3 py-1 text-meta font-medium text-ink-600 ring-1 ring-ink-300 transition-colors ring-inset',
+              'hover:bg-ink-50 data-checked:ring-2 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-brand-red',
               CHECKED[o.tone ?? 'gray'],
             )}
           >

@@ -2,11 +2,11 @@ import { forwardRef, useId } from 'react';
 import { AlertCircle, ChevronDown } from 'lucide-react';
 import { cx } from '../../lib/format';
 
-const CONTROL = 'block w-full rounded-lg border bg-white px-3 text-body text-brand-black shadow-sm transition-colors placeholder:text-zinc-500 '
+const CONTROL = 'block w-full rounded-lg border bg-surface px-3 text-body text-fg shadow-sm transition-colors placeholder:text-ink-500 '
   + 'focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-brand-red/25 focus:border-brand-red-dark '
-  + 'disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500';
+  + 'disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-500';
 
-const borderFor = (error) => (error ? 'border-status-red focus:border-status-red focus:ring-status-red/20' : 'border-zinc-300 hover:border-zinc-400');
+const borderFor = (error) => (error ? 'border-status-red focus:border-status-red focus:ring-status-red/20' : 'border-ink-300 hover:border-ink-400');
 
 // Label + control + hint/error wrapper. Children receive the generated id and
 // aria wiring through the render prop. `error={true}` marks the control
@@ -19,9 +19,9 @@ export function Field({ label, hint, error, required, className, children, hideL
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
       {label && (
-        <label htmlFor={id} className={cx('text-sm font-medium text-zinc-800', hideLabel && 'sr-only')}>
+        <label htmlFor={id} className={cx('text-sm font-medium text-ink-800', hideLabel && 'sr-only')}>
           {label}
-          {required && <span aria-hidden className="ml-0.5 text-brand-red-dark">*</span>}
+          {required && <span aria-hidden className="ml-0.5 text-accent-fg">*</span>}
           {required && <span className="sr-only"> (required)</span>}
         </label>
       )}
@@ -36,7 +36,7 @@ export function Field({ label, hint, error, required, className, children, hideL
           <AlertCircle aria-hidden className="mt-px size-3.5 shrink-0" />{error}
         </p>
       )}
-      {hint && !error && <p id={hintId} className="text-meta text-zinc-600">{hint}</p>}
+      {hint && !error && <p id={hintId} className="text-meta text-ink-600">{hint}</p>}
     </div>
   );
 }
@@ -71,7 +71,7 @@ export const Select = forwardRef(function Select({ label, hint, error, required,
             })}
             {children}
           </select>
-          <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-zinc-500" />
+          <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ink-500" />
         </div>
       )}
     </Field>
@@ -86,12 +86,12 @@ export function Checkbox({ label, description, className, ...props }) {
         id={id}
         type="checkbox"
         {...props}
-        className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-zinc-300 accent-brand-red-dark disabled:cursor-not-allowed"
+        className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-ink-300 accent-brand-red-dark disabled:cursor-not-allowed"
       />
       {(label || description) && (
         <label htmlFor={id} className="cursor-pointer text-sm leading-tight">
-          <span className="font-medium text-zinc-800">{label}</span>
-          {description && <span className="block text-meta text-zinc-600">{description}</span>}
+          <span className="font-medium text-ink-800">{label}</span>
+          {description && <span className="block text-meta text-ink-600">{description}</span>}
         </label>
       )}
     </div>

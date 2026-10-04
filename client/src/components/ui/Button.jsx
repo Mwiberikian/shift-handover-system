@@ -4,11 +4,11 @@ import { Loader2 } from 'lucide-react';
 import { cx } from '../../lib/format';
 
 const VARIANTS = {
-  primary: 'bg-brand-red-dark text-white shadow-sm hover:bg-brand-red-darker disabled:bg-zinc-300 disabled:text-zinc-600',
-  secondary: 'border border-zinc-300 bg-white text-brand-black shadow-sm hover:bg-zinc-50 hover:border-zinc-400 disabled:text-zinc-500 disabled:bg-zinc-50',
-  danger: 'border border-status-red-line bg-white text-status-red shadow-sm hover:bg-status-red-soft hover:border-status-red disabled:text-zinc-500 disabled:border-zinc-200',
-  'danger-solid': 'bg-brand-red-dark text-white shadow-sm hover:bg-brand-red-darker disabled:bg-zinc-300 disabled:text-zinc-600',
-  ghost: 'bg-transparent text-zinc-700 hover:bg-zinc-100 hover:text-brand-black disabled:text-zinc-400',
+  primary: 'bg-brand-red-dark text-white shadow-sm hover:bg-brand-red-darker disabled:bg-ink-300 disabled:text-ink-600',
+  secondary: 'border border-ink-300 bg-surface text-fg shadow-sm hover:bg-ink-50 hover:border-ink-400 disabled:text-ink-500 disabled:bg-ink-50',
+  danger: 'border border-status-red-line bg-surface text-status-red shadow-sm hover:bg-status-red-soft hover:border-status-red disabled:text-ink-500 disabled:border-ink-200',
+  'danger-solid': 'bg-brand-red-dark text-white shadow-sm hover:bg-brand-red-darker disabled:bg-ink-300 disabled:text-ink-600',
+  ghost: 'bg-transparent text-ink-700 hover:bg-ink-100 hover:text-fg disabled:text-ink-400',
 };
 
 const SIZES = {

@@ -44,10 +44,10 @@ function ResponseActions({ record, onDone, className, bare = false }) {
   if (record.status !== 'submitted') return null;
 
   return (
-    <div className={cx('flex flex-col gap-3 sm:flex-row sm:items-center', !bare && 'rounded-xl border border-zinc-200 bg-white p-4 shadow-pop', className)}>
+    <div className={cx('flex flex-col gap-3 sm:flex-row sm:items-center', !bare && 'rounded-xl border border-ink-200 bg-surface p-4 shadow-pop', className)}>
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-brand-black">Your response is needed</p>
-        <p className="hidden text-meta text-zinc-600 sm:block">Acknowledge once you have read and understood the full handover, or raise a query if anything is unclear.</p>
+        <p className="font-semibold text-fg">Your response is needed</p>
+        <p className="hidden text-meta text-ink-600 sm:block">Acknowledge once you have read and understood the full handover, or raise a query if anything is unclear.</p>
       </div>
       <div className="flex gap-2">
         <Button icon={HelpCircle} className="flex-1 max-sm:[&>svg]:hidden sm:flex-none" onClick={() => setDialog('query')}>Raise query</Button>
@@ -65,7 +65,7 @@ function ResponseActions({ record, onDone, className, bare = false }) {
         message={(
           <p>
             You confirm you have received and understood the {shiftLabel(record).toLowerCase()} handover from{' '}
-            <strong className="text-brand-black">{record.outgoing_name}</strong>, including {record.tasks.length} task(s) and{' '}
+            <strong className="text-fg">{record.outgoing_name}</strong>, including {record.tasks.length} task(s) and{' '}
             {record.incidents.length} incident(s). This is recorded against your name and can&apos;t be undone.
           </p>
         )}
@@ -99,19 +99,19 @@ function PendingItem({ record, selected, onSelect }) {
         onClick={() => onSelect(record.record_id)}
         aria-current={selected || undefined}
         className={cx(
-          'flex w-full items-center gap-3 rounded-xl border bg-white p-4 text-left shadow-card transition-colors',
-          selected ? 'border-zinc-400 shadow-[inset_3px_0_0_var(--color-brand-red)]' : 'border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50',
+          'flex w-full items-center gap-3 rounded-xl border bg-surface p-4 text-left shadow-card transition-colors',
+          selected ? 'border-ink-400 shadow-[inset_3px_0_0_var(--color-brand-red)]' : 'border-ink-200 hover:border-ink-300 hover:bg-ink-50',
         )}
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-brand-black">{shiftLabel(record)}</span>
+            <span className="font-semibold text-fg">{shiftLabel(record)}</span>
             <StatusBadge value={record.status} />
           </div>
-          <p className="mt-0.5 text-meta text-zinc-600">{fmt(record.shift_start)}</p>
-          <p className="mt-1 text-meta text-zinc-700">From {record.outgoing_name} · submitted {fmtRelative(record.submitted_at)}</p>
+          <p className="mt-0.5 text-meta text-ink-600">{fmt(record.shift_start)}</p>
+          <p className="mt-1 text-meta text-ink-700">From {record.outgoing_name} · submitted {fmtRelative(record.submitted_at)}</p>
         </div>
-        <ChevronRight aria-hidden className="size-4 shrink-0 text-zinc-400" />
+        <ChevronRight aria-hidden className="size-4 shrink-0 text-ink-400" />
       </button>
     </li>
   );
@@ -148,7 +148,7 @@ function PendingView({ records, loading, reloadList }) {
   return (
     <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <section aria-label="Pending handovers" className="lg:sticky lg:top-20">
-        <h2 className="mb-2 text-meta font-semibold tracking-wide text-zinc-600 uppercase">{pending.length} pending</h2>
+        <h2 className="mb-2 text-meta font-semibold tracking-wide text-ink-600 uppercase">{pending.length} pending</h2>
         <ul className="space-y-2">
           {pending.map((r) => <PendingItem key={r.record_id} record={r} selected={r.record_id === selectedId} onSelect={open} />)}
         </ul>

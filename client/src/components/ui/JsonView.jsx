@@ -16,7 +16,7 @@ function highlight(text) {
     else if (str) out.push(<span key={i++} className="text-emerald-300">{str}</span>);
     else if (lit) out.push(<span key={i++} className="text-violet-300">{lit}</span>);
     else if (num) out.push(<span key={i++} className="text-amber-300">{num}</span>);
-    else if (punct) out.push(<span key={i++} className="text-zinc-400">{punct}</span>);
+    else if (punct) out.push(<span key={i++} className="text-white/55">{punct}</span>);
     else out.push(whole);
     last = TOKEN.lastIndex;
   }
@@ -29,7 +29,7 @@ export default function JsonView({ value, className, label }) {
     <pre
       tabIndex={0}
       aria-label={label}
-      className={cx('overflow-x-auto rounded-lg bg-brand-black p-4 font-mono text-[13px] leading-relaxed text-zinc-100', className)}
+      className={cx('overflow-x-auto rounded-lg bg-brand-black p-4 font-mono text-[13px] leading-relaxed text-white/90', className)}
     >
       <code>{highlight(JSON.stringify(value, null, 2))}</code>
     </pre>

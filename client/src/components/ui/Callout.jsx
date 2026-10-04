@@ -17,7 +17,7 @@ export default function Callout({ tone = 'info', title, children, action, icon, 
       <Icon aria-hidden className="mt-0.5 size-[18px] shrink-0" />
       <div className="min-w-0 flex-1">
         {title && <p className="font-semibold">{title}</p>}
-        {children && <div className={cx('text-zinc-800', title && 'mt-0.5')}>{children}</div>}
+        {children && <div className={cx('text-ink-800', title && 'mt-0.5')}>{children}</div>}
       </div>
       {action && <div className="shrink-0 self-center">{action}</div>}
     </div>
