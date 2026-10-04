@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
-import { LogOut, Menu, X } from 'lucide-react';
+import { Home, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { ROLE_LABEL, initials } from '../lib/format';
 import { NAV } from './shell/nav';
@@ -61,8 +61,13 @@ export default function Layout() {
           >
             <Menu aria-hidden className="size-5" />
           </button>
-          <Brand showName={false} className="sm:hidden" />
-          <Brand className="hidden sm:flex" />
+          <Link to="/" aria-label="Shift Handover home" className="rounded-md">
+            <Brand showName={false} className="sm:hidden" />
+            <Brand className="hidden sm:flex" />
+          </Link>
+          <Link to="/" className="ml-2 hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white md:inline-flex">
+            <Home aria-hidden className="size-4" /> Home
+          </Link>
   
           <div className="ml-auto flex items-center gap-1 sm:gap-3">
             <ThemeToggle />
@@ -108,6 +113,11 @@ export default function Layout() {
           </div>
           <div className="flex-1 overflow-y-auto">
             <SidebarNav items={items} onNavigate={() => setDrawerOpen(false)} />
+            <div className="border-t border-ink-200 p-3">
+              <Link to="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2 text-body font-medium text-ink-600 hover:bg-ink-50 hover:text-fg">
+                <Home aria-hidden className="size-[18px] text-ink-500" /> Home
+              </Link>
+            </div>
           </div>
           <div className="border-t border-ink-200 p-4">
             <UserBlock profile={profile} role={claims.role} dark={false} />

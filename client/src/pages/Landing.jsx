@@ -1,9 +1,11 @@
 import {
-  ArrowRight, ClipboardList, Eye, Handshake, LogIn, ScrollText, Send,
+  ArrowRight, ClipboardList, Eye, Handshake, ScrollText, Send,
 } from 'lucide-react';
 import Brand from '../components/shell/Brand';
 import PublicHeader from '../components/shell/PublicHeader';
-import { ButtonLink, buttonClass } from '../components/ui';
+import { buttonClass } from '../components/ui';
+import EntryButton from '../components/shell/EntryButton';
+import { useAuth } from '../auth/AuthContext';
 import aircraftUrl from '../assets/images/aircraft-gate.webp';
 import towerUrl from '../assets/images/control-tower.webp';
 import boardUrl from '../assets/images/departure-board.webp';
@@ -41,6 +43,7 @@ const STEPS = [
 ];
 
 export default function Landing() {
+  const { claims } = useAuth();
   return (
     <div className="min-h-screen bg-surface text-fg">
       <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 py-2 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
@@ -72,7 +75,7 @@ export default function Landing() {
                 handover as it happens.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <ButtonLink to="/login" variant="primary" size="lg" icon={LogIn}>Log In</ButtonLink>
+                <EntryButton size="lg" />
                 <a href="#features" className={buttonClass({ variant: 'secondary', size: 'lg' })}>
                   See what it does <ArrowRight aria-hidden className="size-4" />
                 </a>
@@ -144,9 +147,13 @@ export default function Landing() {
           <div className="mx-auto flex max-w-screen-xl flex-col items-start gap-8 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
             <div className="max-w-2xl">
               <h2 id="cta-title" className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Starting or finishing a shift?</h2>
-              <p className="mt-3 text-white/85 sm:text-base">Log in with your staff number or work email to prepare, acknowledge or review handovers for your department.</p>
+              <p className="mt-3 text-white/85 sm:text-base">
+                {claims
+                  ? 'Open your dashboard to prepare, acknowledge or review handovers for your department.'
+                  : 'Log in with your staff number or work email to prepare, acknowledge or review handovers for your department.'}
+              </p>
             </div>
-            <ButtonLink to="/login" variant="primary" size="lg" icon={LogIn}>Log In</ButtonLink>
+            <EntryButton size="lg" />
           </div>
         </section>
       </main>

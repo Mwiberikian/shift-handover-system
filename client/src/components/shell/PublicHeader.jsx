@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
-import { LogIn } from 'lucide-react';
 import Brand from './Brand';
 import HelpMenu from './HelpMenu';
 import ThemeToggle from './ThemeToggle';
 import UtilityBar from './UtilityBar';
-import { ButtonLink } from '../ui';
+import EntryButton from './EntryButton';
 
 // Fixed chrome for the public pages (landing, help): utility bar + glass bar.
 // Content beneath it needs pt-24 (2rem bar + 4rem header).
@@ -21,8 +20,8 @@ export default function PublicHeader({ children }) {
           <nav aria-label="Primary" className="flex items-center gap-1 sm:gap-3">
             {children}
             <ThemeToggle />
-            <HelpMenu />
-            <ButtonLink to="/login" variant="primary" icon={LogIn} className="ml-1">Log In</ButtonLink>
+            <div className="hidden sm:block"><HelpMenu /></div>
+            <EntryButton className="ml-1" />
           </nav>
         </div>
       </header>

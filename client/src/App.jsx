@@ -30,7 +30,8 @@ export default function App() {
   return (
     <Suspense fallback={null}>
     <Routes>
-      <Route path="/" element={claims ? <Navigate to={home} replace /> : <Landing />} />
+      {/* Home is reachable signed in or out; it offers "Go to dashboard" when signed in. */}
+      <Route path="/" element={<Landing />} />
       <Route path="/request-access" element={claims ? <Navigate to={home} replace /> : <RequestAccess />} />
       <Route path="/help" element={<Help />} />
       <Route path="/login" element={claims ? <Navigate to={home} replace /> : <Login />} />
