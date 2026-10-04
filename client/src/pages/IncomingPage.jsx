@@ -13,6 +13,7 @@ import {
 } from '../lib/format';
 import { toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
+import ShiftBanner from '../components/shell/ShiftBanner';
 
 // Acknowledge (primary, confirmed) and Raise query (secondary) for a submitted record.
 // `bare` drops the card chrome (for use inside a drawer footer).
@@ -222,6 +223,7 @@ export default function IncomingPage({ view }) {
         title={view === 'pending' ? 'Awaiting action' : 'All handovers'}
         subtitle={view === 'pending' ? 'Handovers assigned to you that still need your acknowledgement.' : 'Every handover that has been assigned to you.'}
       />
+      <ShiftBanner role="incoming_staff" />
       {view === 'pending'
         ? <PendingView records={records} loading={loading} reloadList={loadList} />
         : <AllView records={records} loading={loading} reloadList={loadList} />}

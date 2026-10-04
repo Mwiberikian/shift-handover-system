@@ -60,6 +60,45 @@ deliberate:
 - Each send writes an audit row with ids and recipient type, never the body.
 - Bodies are plain text (1–2000 characters) and are never rendered as HTML.
 
+## Shift reminders
+
+A scheduler (`server/src/jobs/reminders.js`, node-cron, every minute) runs with
+the API (not under tests) and writes reminders to the notification bell
+(type `reminder`). Times in reminders are Nairobi time (DR-02).
+
+| Reminder | To | When |
+|---|---|---|
+| Shift starting | Staff assigned to the shift | 30 min before it starts |
+| Handover due | Assigned outgoing staff | 30 and 10 min before shift end, only while nothing has been submitted |
+| Acknowledgement pending | The record's incoming user | 15 min after the incoming shift starts, if still `submitted` |
+| Not acknowledged (FR-19) | Supervisors of the department | Once, 2 h after the incoming shift starts, if still unacknowledged |
+| No handover | Supervisors of the department | Once, when a shift ends with no submitted handover |
+
+- A record belongs to the outgoing shift, so the **incoming shift starts at
+  that shift's end**. The supervisor dashboard's "unacknowledged > 2 h" flag
+  uses the same rule, so the bell and the dashboard always agree.
+- Each reminder is logged in `reminder_log`, unique on
+  (type, record or shift, user), and is only sent if that insert succeeds:
+  restarts and overlapping ticks can never send it twice. Reminders more than
+  `REMINDER_LOOKBACK_MINUTES` (60) overdue are not replayed after downtime.
+- Lead times are configurable (`REMINDER_*_MINUTES`, see `server/.env.example`).
+- Supervisors manage who works each shift on the **Roster** screen
+  (`GET/PUT /api/shifts/:id/assignments`, audited). The seed assigns each
+  department's outgoing user to the current shift and incoming user to the next.
+- Outgoing and incoming dashboards show a banner for the user's current or next
+  shift. Users can opt in to desktop (browser) alerts from the bell; permission
+  is only requested when they click "Enable desktop alerts".
+
+To watch reminders fire, with the API running:
+
+```bash
+cd server && npm run demo:reminders
+```
+
+This adds a Ground Operations shift ending in about 35 minutes with KQ1001 and
+KQ1002 assigned (plus the following shift for KQ1002) and prints when each
+reminder is expected.
+
 ## Sign in with Google (optional)
 
 Google sign-in is off unless `GOOGLE_CLIENT_ID` is set in `server/.env` (an
@@ -105,6 +144,7 @@ end in `_test`.
 | `auth.login.test.js` | Login, JWT claims/expiry, bcrypt cost 12 |
 | `messaging.test.js` | Cross-department direct messages, broadcast permissions (403s), private direct messages, append-only (API and DB), per-user rate limit |
 | `access-request.workflow.test.js` | Request access grants nothing until approved; admin approve/reject; rate limit; RBAC |
+| `shift-reminders.test.js` | Reminders with an injected clock: fire at the lead time and not before, never twice (incl. racing ticks), none once submitted, supervisor alerts; roster API scoping |
 | `auth.google.test.js` | Google sign-in (token verification mocked): known user, no account, unverified email, deactivated user, wrong audience, conflicting Google account, 503 when unconfigured |
 | `admin.templates.test.js` | Template versioning keeps history |
 

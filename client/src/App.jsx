@@ -10,6 +10,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 const RequestAccess = lazy(() => import('./pages/RequestAccess'));
 const Help = lazy(() => import('./pages/Help'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const RosterPage = lazy(() => import('./pages/RosterPage'));
 const OutgoingPage = lazy(() => import('./pages/OutgoingPage'));
 const IncomingPage = lazy(() => import('./pages/IncomingPage'));
 const SupervisorPage = lazy(() => import('./pages/SupervisorPage'));
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="queue" element={<SupervisorPage view="queue" />} />
           <Route path="escalated" element={<SupervisorPage view="escalated" />} />
           <Route path="search" element={<SupervisorPage view="search" />} />
+          <Route path="roster" element={<RosterPage />} />
         </Route>
         <Route path="/admin" element={<RequireRole role="admin" />}>
           <Route index element={<Navigate to="users" replace />} />

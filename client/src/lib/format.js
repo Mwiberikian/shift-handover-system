@@ -35,3 +35,18 @@ export const initials = (name = '') => name.split(/\s+/).filter(Boolean).slice(0
 
 // Joins truthy class names.
 export const cx = (...c) => c.filter(Boolean).join(' ');
+
+// Shift times are shown in Nairobi time (DR-02), whatever the browser's zone.
+const NAIROBI_TIME = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const NAIROBI_DAY = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', weekday: 'short', day: 'numeric', month: 'short' });
+export const fmtNairobiTime = (d) => (d ? `${NAIROBI_TIME.format(new Date(d))} EAT` : '—');
+export const fmtNairobiDay = (d) => (d ? NAIROBI_DAY.format(new Date(d)) : '—');
+
+// 25 min, 3 h 10 min, 2 d 4 h
+export function fmtDuration(ms) {
+  const mins = Math.max(0, Math.round(ms / 60000));
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  if (h < 48) return mins % 60 ? `${h} h ${mins % 60} min` : `${h} h`;
+  return `${Math.floor(h / 24)} d ${h % 24} h`;
+}

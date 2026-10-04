@@ -96,7 +96,7 @@ async function seed() {
     // TRUNCATE bypasses the row-level append-only/immutability triggers, which
     // is intended here: the seed rebuilds a disposable dev database.
     await client.query(`
-      TRUNCATE message_read, message, access_request, audit_log, notification, supervisor_review, acknowledgement, incident,
+      TRUNCATE reminder_log, shift_assignment, message_read, message, access_request, audit_log, notification, supervisor_review, acknowledgement, incident,
                task, handover_record, shift, app_user, department, handover_template
       RESTART IDENTITY
     `);
@@ -145,6 +145,17 @@ async function seed() {
       }
     }
 
+    // Roster: each department's outgoing staff member works the current shift
+    // and its incoming staff member the next one (drives reminders and the
+    // dashboard shift banner).
+    const DEPT_STAFF = { ground_ops: ['KQ1001', 'KQ1002'], maint: ['KQ2001', 'KQ2002'], cust_svc: ['KQ3001', 'KQ3002'], flight_ops: ['KQ4001', 'KQ4002'] };
+    for (const [code, [outgoing, incoming]] of Object.entries(DEPT_STAFF)) {
+      await client.query(
+        'INSERT INTO shift_assignment (shift_id, user_id) VALUES ($1, $2), ($3, $4)',
+        [shiftIds[code].current, userIds[outgoing], shiftIds[code].next, userIds[incoming]],
+      );
+    }
+
     // One sample record from the previous Ground Ops shift, already submitted
     // and acknowledged, with an open task so carry-forward can be demonstrated
     // when the current shift's handover is submitted.
@@ -182,7 +193,7 @@ async function seed() {
 
     await client.query('COMMIT');
     console.log('Seed complete (synthetic data).');
-    console.log(`  ${DEPARTMENTS.length} departments, ${USERS.length} users, ${DEPARTMENTS.length * 3} shifts, 1 sample record`);
+    console.log(`  ${DEPARTMENTS.length} departments, ${USERS.length} users, ${DEPARTMENTS.length * 3} shifts, ${DEPARTMENTS.length * 2} shift assignments, 1 sample record`);
     console.log(`  All accounts use password: ${DEMO_PASSWORD}`);
     console.log('  Staff numbers: ' + USERS.map(([s, , , r]) => `${s} (${r})`).join(', '));
   } catch (err) {

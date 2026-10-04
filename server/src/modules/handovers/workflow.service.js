@@ -279,11 +279,14 @@ async function supervisorDashboard(user, query) {
   );
 
   // Submitted (or queried) but still not acknowledged more than N hours after
-  // the shift started.
+  // the incoming shift started. A record belongs to the outgoing shift, so
+  // the incoming shift starts at that shift's end_time. (Measuring from the
+  // outgoing shift's start flagged every handover the moment it was submitted.)
+  // The shift-reminders job raises the same condition as a notification.
   const { rows: alerts } = await pool.query(
     `${RECORD_SELECT}
       WHERE r.status IN ('submitted', 'queried')
-        AND s.start_time + make_interval(hours => $2) < now()
+        AND s.end_time + make_interval(hours => $2) < now()
         AND ($1::uuid IS NULL OR r.department_id = $1)
       ORDER BY s.start_time`,
     [departmentId, UNACK_ALERT_HOURS],
@@ -304,7 +307,8 @@ async function supervisorDashboard(user, query) {
     unacknowledged_alerts: alerts.map((a) => ({
       ...a,
       overdue_unacknowledged: true,
-      hours_since_shift_start: Math.round(((Date.now() - new Date(a.shift_start)) / 36e5) * 10) / 10,
+      // Hours since the incoming shift started (i.e. since handover was due).
+      hours_since_shift_start: Math.round(((Date.now() - new Date(a.shift_end)) / 36e5) * 10) / 10,
     })),
   };
 }

@@ -104,7 +104,7 @@ function Overview({ data, onOpen }) {
               <h2 className="text-section text-status-red">
                 {data.unacknowledged_alerts.length} handover{data.unacknowledged_alerts.length === 1 ? '' : 's'} not acknowledged within {data.threshold_hours} hours
               </h2>
-              <p className="text-meta text-ink-700">Counted from shift start. Follow up with the incoming staff member.</p>
+              <p className="text-meta text-ink-700">Counted from the start of the incoming shift. Follow up with the incoming staff member.</p>
             </div>
           </div>
           <ul className="divide-y divide-ink-100">
@@ -120,7 +120,7 @@ function Overview({ data, onOpen }) {
                     <span className="block text-meta text-ink-600">{a.outgoing_name} → {a.incoming_name ?? 'unassigned'}</span>
                   </span>
                   <StatusBadge value={a.status} />
-                  <span className="text-meta font-semibold whitespace-nowrap text-status-red tabular-nums">{a.hours_since_shift_start} h since start</span>
+                  <span className="text-meta font-semibold whitespace-nowrap text-status-red tabular-nums">{a.hours_since_shift_start} h since shift change</span>
                 </button>
               </li>
             ))}

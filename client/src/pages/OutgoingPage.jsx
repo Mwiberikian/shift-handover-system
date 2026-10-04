@@ -16,6 +16,7 @@ import {
 } from '../lib/format';
 import { toast, toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
+import ShiftBanner from '../components/shell/ShiftBanner';
 
 // Requirement list for the department template, evaluated against what the
 // user currently sees (including unsaved edits).
@@ -454,6 +455,7 @@ export default function OutgoingPage({ view }) {
         title={view === 'history' ? 'My handovers' : 'Current handover'}
         subtitle={view === 'history' ? 'Every handover you have prepared, newest first.' : 'Prepare and submit the handover for your current shift.'}
       />
+      <ShiftBanner role="outgoing_staff" />
       {!meta ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-6"><SkeletonCard lines={5} /><SkeletonCard lines={3} /></div>
