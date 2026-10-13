@@ -11,6 +11,7 @@ const RequestAccess = lazy(() => import('./pages/RequestAccess'));
 const Help = lazy(() => import('./pages/Help'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const RosterPage = lazy(() => import('./pages/RosterPage'));
+const MyShiftsPage = lazy(() => import('./pages/MyShiftsPage'));
 const OutgoingPage = lazy(() => import('./pages/OutgoingPage'));
 const IncomingPage = lazy(() => import('./pages/IncomingPage'));
 const SupervisorPage = lazy(() => import('./pages/SupervisorPage'));
@@ -56,6 +57,7 @@ export default function App() {
       <Route path="/handovers/:id/print" element={claims ? <PrintRecord /> : <Navigate to="/login" replace />} />
       <Route element={<Layout />}>
         <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/shifts" element={<MyShiftsPage />} />
         <Route path="/outgoing" element={<RequireRole role="outgoing_staff" />}>
           <Route index element={<OutgoingPage view="current" />} />
           <Route path="history" element={<OutgoingPage view="history" />} />

@@ -105,6 +105,63 @@ async function mine(user) {
   return { now: new Date().toISOString(), current, next };
 }
 
+// ---- Calendar (Part K) ------------------------------------------------------
+// Shifts for calendar export carry only name, times and department.
+const CALENDAR_COLUMNS = 's.shift_id, s.shift_type, s.start_time, s.end_time, d.name AS department_name';
+const MANAGERS = ['supervisor', 'admin'];
+
+// The caller's rostered shifts that have not ended, for the next `days` days.
+async function upcomingMine(userId, days = 30) {
+  const { rows } = await pool.query(
+    `SELECT ${CALENDAR_COLUMNS}
+       FROM shift_assignment sa
+       JOIN shift s ON s.shift_id = sa.shift_id
+       JOIN department d ON d.department_id = s.department_id
+      WHERE sa.user_id = $1 AND s.end_time > now() AND s.start_time < now() + make_interval(days => $2)
+      ORDER BY s.start_time`,
+    [userId, days],
+  );
+  return rows;
+}
+
+// Shifts for an .ics download:
+//   { shift_id }            one shift: one you are rostered on, or (supervisor,
+//                           admin) one in a department you manage;
+//   { days, scope: 'mine' } your own rostered shifts;
+//   { days, scope: 'department' } (supervisor, admin) your department's
+//                           shifts, as on the roster page.
+async function calendarShifts(user, { shift_id: shiftId, days = 30, scope = 'mine' }) {
+  if (shiftId) {
+    const { rows: [s] } = await pool.query(
+      `SELECT ${CALENDAR_COLUMNS}, s.department_id,
+              EXISTS (SELECT 1 FROM shift_assignment sa WHERE sa.shift_id = s.shift_id AND sa.user_id = $2) AS assigned
+         FROM shift s JOIN department d ON d.department_id = s.department_id
+        WHERE s.shift_id = $1`,
+      [shiftId, user.user_id],
+    );
+    if (!s) throw new AppError(404, 'Shift not found');
+    if (!s.assigned) {
+      if (!MANAGERS.includes(user.role)) throw new AppError(403, 'You are not rostered on this shift');
+      assertDepartmentAccess(user, s.department_id);
+    }
+    const { department_id: _d, assigned: _a, ...shift } = s;
+    return [shift];
+  }
+  if (scope === 'department') {
+    if (!MANAGERS.includes(user.role)) throw new AppError(403, 'Only supervisors and administrators can export the department roster');
+    const { rows } = await pool.query(
+      `SELECT ${CALENDAR_COLUMNS}
+         FROM shift s JOIN department d ON d.department_id = s.department_id
+        WHERE ($1::uuid IS NULL OR s.department_id = $1)
+          AND s.end_time > now() AND s.start_time < now() + make_interval(days => $2)
+        ORDER BY s.start_time, d.name`,
+      [user.role === 'admin' ? null : user.department_id, days],
+    );
+    return rows;
+  }
+  return upcomingMine(user.user_id, days);
+}
+
 module.exports = {
-  list, getAssignments, setAssignments, mine,
+  list, getAssignments, setAssignments, mine, upcomingMine, calendarShifts,
 };

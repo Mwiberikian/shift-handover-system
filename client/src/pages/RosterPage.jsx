@@ -6,6 +6,7 @@ import {
 } from '../components/ui';
 import { ROLE_LABEL, fmtDuration, fmtWeekdayEAT, formatEAT, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
+import { Next30DaysButton, ShiftCalendarButtons } from '../components/CalendarButtons';
 import useAction from '../lib/useAction';
 
 // Staff multi-select for one shift (checkbox list: Tab/Space operable).
@@ -121,16 +122,23 @@ export default function RosterPage() {
       header: <span className="sr-only">Actions</span>,
       className: 'text-right',
       render: (s) => (
-        <Button size="sm" icon={UserCog} onClick={() => setEditing(s)} aria-label={`Edit staff for ${shiftLabel(s)} ${formatEAT(s.start_time, 'date')}`}>
-          <span className="hidden sm:inline">Edit staff</span>
-        </Button>
+        <div className="flex flex-wrap justify-end gap-1.5">
+          <ShiftCalendarButtons shift={s} />
+          <Button size="sm" icon={UserCog} onClick={() => setEditing(s)} aria-label={`Edit staff for ${shiftLabel(s)} ${formatEAT(s.start_time, 'date')}`}>
+            <span className="hidden sm:inline">Edit staff</span>
+          </Button>
+        </div>
       ),
     },
   ];
 
   return (
     <>
-      <PageHeader title="Roster" subtitle="Who works each upcoming shift. Times are Nairobi time (EAT)." />
+      <PageHeader
+        title="Roster"
+        subtitle="Who works each upcoming shift. Times are Nairobi time (EAT)."
+        actions={<Next30DaysButton scope="department" label="Download roster .ics (30 days)" />}
+      />
       <Card flush>
         {shifts === null ? <SkeletonTable rows={4} /> : (
           <Table
