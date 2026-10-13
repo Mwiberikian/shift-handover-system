@@ -18,3 +18,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Database backups (scripts/backup.ps1)
+backups/

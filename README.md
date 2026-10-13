@@ -174,6 +174,23 @@ Google only proves identity. It **never creates an account or assigns a role**
   and a publicly reachable HTTPS domain registered with Apple for the return
   URL, neither of which a local prototype has. No Apple button is shown.
 
+## Backup and restore (NFR-11)
+
+PowerShell scripts that run the Postgres tools inside the compose container
+(`docker exec`), so nothing needs installing on the host:
+
+```powershell
+.\scripts\backup.ps1     # pg_dump -Fc of shms_dev into .\backups\ (git-ignored); prints size and elapsed time
+.\scripts\restore.ps1    # restores the newest backup into the scratch database shms_scratch
+```
+
+`restore.ps1` drops and recreates the target, runs `pg_restore`, prints row
+counts of the main tables and the elapsed time. It refuses any target whose
+name does not end in `_scratch` or `_restore`, so it cannot overwrite the live
+database. Options: `-BackupFile`, `-TargetDatabase`, `-Database`/`-OutDir`
+(backup), `-Container`. If script execution is blocked, run them with
+`powershell -ExecutionPolicy Bypass -File scripts\backup.ps1`.
+
 ## Tests
 
 ```bash
