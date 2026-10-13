@@ -4,6 +4,7 @@ const validate = require('../../middleware/validate');
 const { requireAuth, requireRole } = require('../../middleware/auth');
 const service = require('./handovers.service');
 const workflow = require('./workflow.service');
+const { TASK_DESCRIPTION } = require('../../config/constants');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -11,6 +12,11 @@ router.use(requireAuth);
 const RECORD_STATUSES = ['draft', 'submitted', 'queried', 'acknowledged', 'under_review', 'escalated', 'closed'];
 const outgoingOnly = requireRole('outgoing_staff');
 const recordId = param('id').isUUID().withMessage('id must be a UUID');
+
+// DR-04: a task description is 10 to 1,000 characters (after trimming).
+const DESCRIPTION_MESSAGE = `description must be ${TASK_DESCRIPTION.min} to ${TASK_DESCRIPTION.max} characters`;
+const taskDescription = (chain) => chain.isString().withMessage(DESCRIPTION_MESSAGE).bail()
+  .trim().isLength(TASK_DESCRIPTION).withMessage(DESCRIPTION_MESSAGE);
 
 // ---- Phase 3 ---------------------------------------------------------------
 
@@ -61,7 +67,7 @@ router.post(
   '/:id/tasks',
   outgoingOnly,
   recordId,
-  body('description').isString().trim().notEmpty().withMessage('description is required'),
+  taskDescription(body('description')),
   body('priority').optional().isIn(['low', 'medium', 'high']),
   body('status').optional().isIn(['open', 'in_progress', 'resolved']),
   validate,
@@ -73,7 +79,7 @@ router.patch(
   outgoingOnly,
   recordId,
   param('taskId').isUUID(),
-  body('description').optional().isString().trim().notEmpty(),
+  taskDescription(body('description').optional()),
   body('priority').optional().isIn(['low', 'medium', 'high']),
   body('status').optional().isIn(['open', 'in_progress', 'resolved']),
   validate,

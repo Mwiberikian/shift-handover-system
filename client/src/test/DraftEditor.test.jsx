@@ -88,3 +88,19 @@ describe('submit is blocked until required fields are complete', () => {
     expect(api.post).toHaveBeenCalledWith('/handovers/rec-1/submit');
   });
 });
+
+describe('task description (DR-04: 10 to 1,000 characters)', () => {
+  test('the input is capped at 1000 characters and shows a live counter', async () => {
+    const user = userEvent.setup();
+    render(<DraftEditor record={draft()} meta={META} reload={reload} />);
+    const input = screen.getByLabelText(/new task/i);
+    expect(input).toHaveAttribute('maxLength', '1000');
+    expect(input).toHaveAttribute('minLength', '10');
+    expect(input).toHaveAccessibleDescription('0 / 1000 characters (at least 10)');
+
+    await user.type(input, 'Check GPU');
+    expect(input).toHaveAccessibleDescription('9 / 1000 characters (at least 10)');
+    await user.type(input, '!');
+    expect(input).toHaveAccessibleDescription('10 / 1000 characters');
+  });
+});

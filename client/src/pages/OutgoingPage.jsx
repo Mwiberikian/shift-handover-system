@@ -14,6 +14,7 @@ import {
 import {
   cx, fmt, fmtTime, shiftLabel,
 } from '../lib/format';
+import { TASK_DESCRIPTION } from '../lib/limits';
 import { toast, toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 import ShiftBanner from '../components/shell/ShiftBanner';
@@ -87,6 +88,13 @@ function SectionLabel({ required }) {
   return required
     ? <span className="rounded-full bg-ink-100 px-2 py-0.5 text-meta font-medium text-ink-700">Required</span>
     : <span className="text-meta text-ink-500">Optional</span>;
+}
+
+// "12 / 1000 characters", with the minimum while the text is too short.
+function taskHint(text) {
+  const n = text.trim().length;
+  const count = `${n} / ${TASK_DESCRIPTION.max} characters`;
+  return n < TASK_DESCRIPTION.min ? `${count} (at least ${TASK_DESCRIPTION.min})` : count;
 }
 
 export function DraftEditor({ record, meta, reload }) {
@@ -225,17 +233,20 @@ export function DraftEditor({ record, meta, reload }) {
             )}
           />
           <form onSubmit={addTask} className="mt-4 rounded-lg border border-dashed border-ink-300 bg-ink-50/60 p-3 sm:p-4">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start">
               <Input
                 label="New task"
                 className="flex-1"
                 placeholder="Describe the task to hand over"
                 value={task.description}
                 onChange={(e) => setTask({ ...task, description: e.target.value })}
+                minLength={TASK_DESCRIPTION.min}
+                maxLength={TASK_DESCRIPTION.max}
+                hint={taskHint(task.description)}
                 required
               />
               <SegmentedPicker label="Priority" value={task.priority} onChange={(priority) => setTask({ ...task, priority })} options={PRIORITY_OPTIONS} />
-              <Button type="submit" icon={Plus} loading={addingTask}>Add task</Button>
+              <Button type="submit" icon={Plus} loading={addingTask} className="md:mt-[26px]">Add task</Button>
             </div>
           </form>
         </Card>

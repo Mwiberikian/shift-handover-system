@@ -76,6 +76,37 @@ describe('tasks (FR-05)', () => {
   });
 });
 
+describe('task description length (DR-04: 10 to 1,000 characters)', () => {
+  const url = () => `/api/handovers/${record.record_id}/tasks`;
+  const MESSAGE = 'description must be 10 to 1000 characters';
+  const text = (n) => 'x'.repeat(n);
+
+  test.each([[9, 400], [10, 201], [1000, 201], [1001, 400]])('create with %i characters gives %i', async (n, status) => {
+    const res = await as(world, 'outA').post(url(), { description: text(n) });
+    expect(res.status).toBe(status);
+    if (status === 400) {
+      expect(res.body.details).toEqual([{ field: 'description', message: MESSAGE }]);
+    } else {
+      expect(res.body.description).toHaveLength(n);
+    }
+  });
+
+  test.each([[9, 400], [10, 200], [1000, 200], [1001, 400]])('update with %i characters gives %i', async (n, status) => {
+    const out = as(world, 'outA');
+    const { body: task } = await out.post(url(), { description: 'Tow tug 3 to workshop' });
+    const res = await out.patch(`${url()}/${task.task_id}`, { description: text(n) });
+    expect(res.status).toBe(status);
+    const { rows: [row] } = await pool.query('SELECT description FROM task WHERE task_id = $1', [task.task_id]);
+    expect(row.description).toBe(status === 200 ? text(n) : 'Tow tug 3 to workshop');
+    if (status === 400) expect(res.body.details).toEqual([{ field: 'description', message: MESSAGE }]);
+  });
+
+  test('length is counted after trimming surrounding spaces', async () => {
+    const res = await as(world, 'outA').post(url(), { description: `   ${text(9)}   ` });
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('incidents (FR-06)', () => {
   const url = () => `/api/handovers/${record.record_id}/incidents`;
   const OCCURRED = '2026-10-13T03:15:00.000Z';
