@@ -49,6 +49,9 @@ incoming user on the next one.
 - In-app messaging, shift reminders, a supervisor roster.
 - The notification bell and message badge poll an unread count every 5 s
   (NFR-03) and pause while the browser tab is hidden.
+- Record export (FR-20): `GET /api/handovers/:id/export` returns the record with
+  tasks, incidents, acknowledgement, reviews and audit entries as JSON; every
+  record view has a **Print / export** button that opens a print-friendly page.
 - Light and dark themes (follows the OS until the user picks one), a help
   centre at `/help`, and a support contact bar driven by `client/.env`.
 
@@ -194,6 +197,7 @@ end in `_test`.
 | `access-request.workflow.test.js` | Request access grants nothing until approved; admin approve/reject; rate limit; RBAC |
 | `shift-reminders.test.js` | Reminders with an injected clock: fire at the lead time and not before, never twice (incl. racing ticks), none once submitted, supervisor alerts; roster API scoping |
 | `auth.google.test.js` | Google sign-in (token verification mocked): known user, no account, unverified email, deactivated user, wrong audience, conflicting Google account, 503 when unconfigured |
+| `handover.export.test.js` | Export holds tasks, incidents, acknowledgement, reviews and only this record's audit entries; same access as `GET /:id` |
 | `notifications.unread-count.test.js` | Unread count is per user, drops on read, and `latest_id` changes when a new notification arrives |
 | `admin.templates.test.js` | Template versioning keeps history |
 
@@ -208,6 +212,7 @@ cd client && npm test
 | `Login.test.jsx` | Sign-in lands each role on its own dashboard; a 401 stays on the sign-in page |
 | `RequireRole.test.jsx` | Signed-out or expired sessions go to `/login`; other roles are redirected to their own home |
 | `DraftEditor.test.jsx` | Submit is disabled until every template-required field and the incoming user are set |
+| `PrintRecord.test.jsx` | Print view renders each export section; shows the API error on 403 |
 | `usePolling.test.jsx` | 5 s polling, paused while the tab is hidden |
 
 ## Integrity model
@@ -224,7 +229,7 @@ cd client && npm test
 | Method & path | Role |
 |---|---|
 | `POST /api/auth/login`, `GET /api/auth/me` | any |
-| `GET /api/handovers`, `GET /api/handovers/:id` | any (scoped) |
+| `GET /api/handovers`, `GET /api/handovers/:id`, `GET /api/handovers/:id/export[?download=1]` | any (scoped) |
 | `GET /api/handovers/meta`, `POST /api/handovers`, `PATCH /:id`, `POST /:id/tasks`, `PATCH /:id/tasks/:taskId`, `POST /:id/incidents`, `POST /:id/submit`, `POST /:id/clarify` | outgoing_staff |
 | `POST /:id/acknowledgement`, `POST /:id/query` | incoming_staff |
 | `POST /:id/review`, `POST /:id/resolve` | supervisor |

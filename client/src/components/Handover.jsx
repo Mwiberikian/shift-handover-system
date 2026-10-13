@@ -1,10 +1,12 @@
 // Shared, read-only building blocks for displaying handover records.
 import {
   AlertTriangle, CheckCircle2, ClipboardList, CornerDownRight, Eye, FileText, HelpCircle, History, MessageSquareReply,
-  ShieldCheck, ShieldAlert,
+  Printer, ShieldCheck, ShieldAlert,
 } from 'lucide-react';
 import { cx, fmt, fmtRelative, shiftLabel } from '../lib/format';
-import { Callout, EmptyState, StatusBadge, Table } from './ui';
+import {
+  ButtonLink, Callout, EmptyState, StatusBadge, Table,
+} from './ui';
 
 export { fmt };
 export { StatusBadge };
@@ -176,6 +178,7 @@ export function HandoverDetail({ record, headerActions }) {
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge value={record.status} className="px-2.5 py-1" />
+          <ButtonLink to={`/handovers/${record.record_id}/print`} size="sm" icon={Printer} title="Print or export this record">Print / export</ButtonLink>
           {headerActions}
         </div>
       </div>

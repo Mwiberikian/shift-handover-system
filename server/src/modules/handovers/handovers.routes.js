@@ -112,6 +112,15 @@ const requiredComments = (what) => body('comments').isString().withMessage(`comm
 
 router.get('/:id', recordId, validate, async (req, res) => res.json(await workflow.getById(req.user, req.params.id)));
 
+// ?download=1 asks the browser to save it as a file.
+router.get('/:id/export', recordId, query('download').optional().isIn(['0', '1']), validate, async (req, res) => {
+  const data = await workflow.exportRecord(req.user, req.params.id);
+  if (req.query.download === '1') {
+    res.attachment(`handover-${req.params.id}.json`);
+  }
+  res.json(data);
+});
+
 router.post(
   '/:id/acknowledgement',
   incomingOnly,

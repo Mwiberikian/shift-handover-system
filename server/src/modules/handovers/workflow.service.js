@@ -74,6 +74,36 @@ async function getById(user, recordId) {
   return { ...detail, acknowledgement: ack.rows[0] || null, reviews: reviews.rows, thread: thread.rows, template };
 }
 
+// GET /api/handovers/:id/export (FR-20): the full record for archiving or
+// printing. Same access rules as getById. Audit entries cover the record and
+// every row attached to it (tasks, incidents, acknowledgement, reviews).
+async function exportRecord(user, recordId) {
+  const record = await getById(user, recordId);
+  const { thread, ...rest } = record;
+  const childIds = [
+    ...record.tasks.map((t) => t.task_id),
+    ...record.incidents.map((i) => i.incident_id),
+    ...record.reviews.map((r) => r.review_id),
+    ...(record.acknowledgement ? [record.acknowledgement.ack_id] : []),
+  ];
+  const { rows: audit } = await pool.query(
+    `SELECT a.log_id, a.logged_at, a.user_id, u.full_name AS user_name, a.entity_type, a.entity_id, a.action,
+            a.previous_value, a.new_value
+       FROM audit_log a LEFT JOIN app_user u ON u.user_id = a.user_id
+      WHERE (a.entity_type = 'handover_record' AND a.entity_id = $1)
+         OR a.entity_id = ANY($2::uuid[])
+      ORDER BY a.logged_at, a.log_id`,
+    [recordId, childIds],
+  );
+  return {
+    format: 'shms.handover_record.v1',
+    exported_at: new Date().toISOString(),
+    exported_by: user.user_id,
+    record: rest,
+    audit_log: audit,
+  };
+}
+
 async function acknowledge(user, recordId, { comments }) {
   return withTransaction(async (client) => {
     const record = await lockRecord(client, recordId);
@@ -332,4 +362,4 @@ async function supervisorDashboard(user, query) {
   };
 }
 
-module.exports = { getById, acknowledge, raiseQuery, clarify, openReview, review, resolve, search, supervisorDashboard };
+module.exports = { getById, exportRecord, acknowledge, raiseQuery, clarify, openReview, review, resolve, search, supervisorDashboard };
