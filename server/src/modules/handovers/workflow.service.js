@@ -256,7 +256,9 @@ async function resolve(user, recordId, { comments }) {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'resolve',
       previousValue: auditView(record), newValue: { ...auditView(updated), comments: comments || null },
     });
-    await notifyRecord(client, [record.outgoing_user_id, record.incoming_user_id], recordId, 'handover_closed');
+    // Its own type, so that resolving an escalation can be emailed while an
+    // ordinary approval (handover_closed) stays in-app.
+    await notifyRecord(client, [record.outgoing_user_id, record.incoming_user_id], recordId, 'handover_resolved');
     return getByIdTx(client, recordId);
   });
 }

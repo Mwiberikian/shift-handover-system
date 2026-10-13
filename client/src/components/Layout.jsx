@@ -9,6 +9,7 @@ import SidebarNav from './shell/Sidebar';
 import NotificationsMenu from './shell/NotificationsMenu';
 import ThemeToggle from './shell/ThemeToggle';
 import HelpMenu from './shell/HelpMenu';
+import UserMenu from './shell/UserMenu';
 import UtilityBar from './shell/UtilityBar';
 import { pagePhotoFor } from './shell/pagePhotos';
 import { useUnreadPolling } from '../lib/unread';
@@ -74,7 +75,7 @@ export default function Layout() {
             <div className="hidden sm:block"><HelpMenu /></div>
             <NotificationsMenu />
             <span aria-hidden className="hidden h-6 w-px bg-white/15 lg:block" />
-            <div className="hidden min-w-0 lg:block"><UserBlock profile={profile} role={claims.role} /></div>
+            <UserMenu />
             <button
               type="button"
               onClick={() => setConfirmLogout(true)}

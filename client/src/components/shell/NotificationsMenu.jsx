@@ -20,6 +20,7 @@ const NOTIFICATION_LABEL = {
   handover_clarified: 'Clarification received',
   handover_escalated: 'Handover escalated',
   handover_closed: 'Handover closed',
+  handover_resolved: 'Escalation resolved',
 };
 
 const KIND = {

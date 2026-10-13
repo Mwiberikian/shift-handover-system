@@ -2,7 +2,9 @@ const express = require('express');
 const { body } = require('express-validator');
 const validate = require('../../middleware/validate');
 const { rateLimit, MemoryStore } = require('express-rate-limit');
-const { requireAuthForPasswordChange } = require('../../middleware/auth');
+const { requireAuth, requireAuthForPasswordChange } = require('../../middleware/auth');
+const { withTransaction } = require('../../db/tx');
+const { writeAudit } = require('../../utils/audit');
 const AppError = require('../../utils/AppError');
 const pool = require('../../config/db');
 const authService = require('./auth.service');
@@ -52,12 +54,41 @@ router.post('/google/profile', credential, validate, async (req, res) => res.jso
 router.get('/me', requireAuthForPasswordChange, async (req, res) => {
   const { rows: [me] } = await pool.query(
     `SELECT u.user_id, u.staff_number, u.full_name, u.email, u.role, u.department_id, u.must_change_password,
+            u.email_notifications,
             d.code AS department_code, d.name AS department_name
        FROM app_user u LEFT JOIN department d USING (department_id) WHERE u.user_id = $1`,
     [req.user.user_id],
   );
   res.json(me);
 });
+
+// PATCH /api/auth/me/preferences { email_notifications } — the caller's own
+// switch for email alerts (in-app notifications are unaffected). Audited.
+router.patch(
+  '/me/preferences',
+  requireAuth,
+  body('email_notifications', 'email_notifications must be true or false').isBoolean({ strict: true }),
+  validate,
+  async (req, res) => {
+    const result = await withTransaction(async (client) => {
+      const { rows: [before] } = await client.query(
+        'SELECT email_notifications FROM app_user WHERE user_id = $1 FOR UPDATE', [req.user.user_id],
+      );
+      const { rows: [after] } = await client.query(
+        'UPDATE app_user SET email_notifications = $2 WHERE user_id = $1 RETURNING email_notifications',
+        [req.user.user_id, req.body.email_notifications],
+      );
+      if (before.email_notifications !== after.email_notifications) {
+        await writeAudit(client, {
+          userId: req.user.user_id, entityType: 'app_user', entityId: req.user.user_id, action: 'update_preferences',
+          previousValue: before, newValue: after,
+        });
+      }
+      return after;
+    });
+    res.json(result);
+  },
+);
 
 // POST /api/auth/change-password { current_password, new_password } (NFR-05).
 // 10 attempts per user per 15 minutes; the store is exported for tests.

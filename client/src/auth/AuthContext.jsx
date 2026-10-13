@@ -66,9 +66,12 @@ export function AuthProvider({ children }) {
     return next;
   }, []);
 
+  // Merges fields the API returned (e.g. preferences) into the profile.
+  const updateProfile = useCallback((patch) => setProfile((p) => (p ? { ...p, ...patch } : p)), []);
+
   const value = useMemo(() => ({
-    claims, profile, login, loginWithGoogle, logout, applySession,
-  }), [claims, profile, login, loginWithGoogle, logout, applySession]);
+    claims, profile, login, loginWithGoogle, logout, applySession, updateProfile,
+  }), [claims, profile, login, loginWithGoogle, logout, applySession, updateProfile]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
