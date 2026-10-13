@@ -1,0 +1,74 @@
+# NFR-18: server and client tests on Node 18, 20 and 22 against PostgreSQL 15.
+# The database credentials below exist only inside the throwaway CI service
+# container; they are not secrets.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  server:
+    name: server (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: shms_ci
+          POSTGRES_PASSWORD: shms_ci_password
+          POSTGRES_DB: shms_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shms_ci -d shms_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Tests derive their own database from this one: shms_test (created and
+      # migrated by tests/helpers/globalSetup.js).
+      DATABASE_URL: postgresql://shms_ci:shms_ci_password@localhost:5432/shms_ci
+      JWT_SECRET: ci-only-test-secret
+      TZ: UTC
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: node --version
+      - run: npm ci
+      - run: npm test
+
+  client:
+    name: client (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+    defaults:
+      run:
+        working-directory: client
+    env:
+      # Playwright (used only by npm run check:touch) never downloads browsers here.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: node --version
+      - run: npm ci
+      - run: npm test
