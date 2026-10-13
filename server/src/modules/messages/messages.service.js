@@ -32,9 +32,14 @@ const messageSelect = ({ columns = '', joins = '' } = {}) => `
     LEFT JOIN app_user ru ON ru.user_id = m.recipient_user_id
     LEFT JOIN department rd ON rd.department_id = m.recipient_department_id${joins}`;
 
+// Page size is clamped to MAX_PAGE_SIZE. MAX_PAGE keeps the offset well inside
+// Postgres bigint and JavaScript's safe-integer range; the route refuses
+// anything larger with a 400.
+const MAX_PAGE_SIZE = 100;
+const MAX_PAGE = 1000000;
 const paging = ({ page = 1, page_size: pageSize = 20 }) => {
-  const size = Math.min(Math.max(Number(pageSize) || 20, 1), 50);
-  const p = Math.max(Number(page) || 1, 1);
+  const size = Math.min(Math.max(Number(pageSize) || 20, 1), MAX_PAGE_SIZE);
+  const p = Math.min(Math.max(Number(page) || 1, 1), MAX_PAGE);
   return { size, offset: (p - 1) * size, page: p };
 };
 
@@ -48,8 +53,8 @@ async function inbox(user, query) {
     })}
       WHERE ${VISIBLE}
       ORDER BY m.created_at DESC, m.message_id
-      LIMIT ${size} OFFSET ${offset}`,
-    params,
+      LIMIT $3 OFFSET $4`,
+    [...params, size, offset],
   );
   const { rows: [{ total }] } = await pool.query(`SELECT count(*)::int AS total FROM message m WHERE ${VISIBLE}`, params);
   return {
@@ -65,8 +70,8 @@ async function sent(user, query) {
     })}
       WHERE m.sender_id = $1
       ORDER BY m.created_at DESC, m.message_id
-      LIMIT ${size} OFFSET ${offset}`,
-    [user.user_id],
+      LIMIT $2 OFFSET $3`,
+    [user.user_id, size, offset],
   );
   const { rows: [{ total }] } = await pool.query('SELECT count(*)::int AS total FROM message WHERE sender_id = $1', [user.user_id]);
   return {
@@ -184,5 +189,5 @@ async function departments() {
 }
 
 module.exports = {
-  inbox, sent, getVisible, unreadCount, markRead, send, directory, departments,
+  MAX_PAGE_SIZE, MAX_PAGE, inbox, sent, getVisible, unreadCount, markRead, send, directory, departments,
 };

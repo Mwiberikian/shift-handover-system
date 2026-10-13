@@ -12,9 +12,12 @@ const service = require('./messages.service');
 const router = express.Router();
 router.use(requireAuth);
 
+// IR-04: page and page_size are checked here and bound as parameters in the
+// service. page_size above the maximum is clamped, not refused; a page out of
+// range is a 400 (it used to reach Postgres and fail as a 500).
 const pageQuery = [
-  query('page').optional().isInt({ min: 1 }).toInt(),
-  query('page_size').optional().isInt({ min: 1, max: 50 }).toInt(),
+  query('page', `page must be a whole number from 1 to ${service.MAX_PAGE}`).optional().isInt({ min: 1, max: service.MAX_PAGE }).toInt(),
+  query('page_size', 'page_size must be a whole number of at least 1').optional().isInt({ min: 1 }).toInt(),
 ];
 
 // Per user, not per IP: 30 sends an hour by default. Rejected sends (4xx)

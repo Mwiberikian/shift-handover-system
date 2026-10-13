@@ -194,3 +194,49 @@ describe('directory and auth', () => {
     expect((await request(app).get('/api/directory')).status).toBe(401);
   });
 });
+
+describe('paging (IR-04)', () => {
+  const sendMany = async (n) => {
+    for (let i = 0; i < n; i += 1) {
+      await pool.query(
+        "INSERT INTO message (sender_id, recipient_type, recipient_user_id, body) VALUES ($1, 'user', $2, $3)",
+        [world.users.outA.user_id, world.users.incA.user_id, `Message ${i}`],
+      );
+    }
+  };
+
+  test('page=99999999999999999999 is a 400, not a 500', async () => {
+    for (const path of ['/api/messages/inbox', '/api/messages/sent']) {
+      const res = await as(world, 'incA').get(`${path}?page=99999999999999999999`);
+      expect(res.status).toBe(400);
+      expect(res.body.details).toEqual([{ field: 'page', message: 'page must be a whole number from 1 to 1000000' }]);
+    }
+  });
+
+  test('page 0, a negative page or a non-number is a 400; the last allowed page is an empty 200', async () => {
+    for (const page of ['0', '-1', 'abc', '1000001']) {
+      expect((await as(world, 'incA').get(`/api/messages/inbox?page=${page}`)).status).toBe(400);
+    }
+    const last = await as(world, 'incA').get('/api/messages/inbox?page=1000000&page_size=100');
+    expect(last.status).toBe(200);
+    expect(last.body).toMatchObject({ items: [], page: 1000000, page_size: 100 });
+  });
+
+  test('page_size is clamped to 100, and pages do not overlap', async () => {
+    await sendMany(105);
+    const big = await as(world, 'incA').get('/api/messages/inbox?page_size=500');
+    expect(big.status).toBe(200);
+    expect(big.body).toMatchObject({ page_size: 100, total: 105 });
+    expect(big.body.items).toHaveLength(100);
+
+    const second = await as(world, 'incA').get('/api/messages/inbox?page=2&page_size=100');
+    expect(second.body.items).toHaveLength(5);
+    const ids = new Set([...big.body.items, ...second.body.items].map((m) => m.message_id));
+    expect(ids.size).toBe(105);
+
+    const sent = await as(world, 'outA').get('/api/messages/sent?page=3&page_size=50');
+    expect(sent.body).toMatchObject({ page: 3, page_size: 50, total: 105 });
+    expect(sent.body.items).toHaveLength(5);
+    expect((await as(world, 'incA').get('/api/messages/inbox?page_size=0')).status).toBe(400);
+  });
+});
