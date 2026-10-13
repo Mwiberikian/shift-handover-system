@@ -90,6 +90,22 @@ router.patch(
   },
 );
 
+// Calendar subscription feed (Part K): status, create/regenerate (the URL is
+// returned once), revoke. The token itself is never stored or logged.
+const calendarFeed = require('../shifts/calendarFeed');
+
+const feedUrl = (req, token) => `${req.protocol}://${req.get('host')}/api/shifts/calendar/${token}.ics`;
+
+router.get('/me/calendar-feed', requireAuth, async (req, res) => res.json(await calendarFeed.status(req.user.user_id)));
+
+router.post('/me/calendar-feed', requireAuth, async (req, res) => {
+  const { token, created_at: createdAt } = await calendarFeed.create(req.user.user_id);
+  res.set('Cache-Control', 'no-store');
+  res.status(201).json({ active: true, created_at: createdAt, url: feedUrl(req, token) });
+});
+
+router.delete('/me/calendar-feed', requireAuth, async (req, res) => res.json(await calendarFeed.revoke(req.user.user_id)));
+
 // POST /api/auth/change-password { current_password, new_password } (NFR-05).
 // 10 attempts per user per 15 minutes; the store is exported for tests.
 const passwordChangeStore = new MemoryStore();

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { ChevronDown, KeyRound, Mail } from 'lucide-react';
+import { CalendarSync, ChevronDown, KeyRound, Mail } from 'lucide-react';
 import api from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_LABEL, cx, initials } from '../../lib/format';
 import { toast, toastError } from '../../lib/toast';
+import CalendarFeedDialog from './CalendarFeedDialog';
 
 const ROW = 'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg';
 
@@ -49,8 +50,10 @@ function EmailAlertsSwitch() {
 // password change link. Name and role show beside the avatar from lg up.
 export default function UserMenu({ children }) {
   const { claims, profile } = useAuth();
+  const [feedOpen, setFeedOpen] = useState(false);
   const name = profile?.full_name ?? '…';
   return (
+    <>
     <Popover className="relative">
       <PopoverButton
         aria-label={`Account menu for ${name}`}
@@ -79,6 +82,9 @@ export default function UserMenu({ children }) {
         </div>
         <div className="pt-1.5">
           <EmailAlertsSwitch />
+          <button type="button" onClick={() => setFeedOpen(true)} className={ROW}>
+            <CalendarSync aria-hidden className="size-4 text-ink-500" /> Calendar subscription
+          </button>
           {children}
           <Link to="/change-password" className={ROW}>
             <KeyRound aria-hidden className="size-4 text-ink-500" /> Change password
@@ -86,5 +92,7 @@ export default function UserMenu({ children }) {
         </div>
       </PopoverPanel>
     </Popover>
+    <CalendarFeedDialog open={feedOpen} onClose={() => setFeedOpen(false)} />
+    </>
   );
 }

@@ -46,3 +46,28 @@ describe('email alerts switch', () => {
     expect(screen.getByRole('link', { name: 'Change password' })).toHaveAttribute('href', '/change-password');
   });
 });
+
+describe('calendar subscription', () => {
+  test('creates a private feed link shown once, then can revoke it', async () => {
+    tokenStore.set(fakeToken('outgoing_staff'));
+    const FEED = 'http://localhost:4000/api/shifts/calendar/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ.ics';
+    api.get.mockImplementation((url) => Promise.resolve({ data: url === '/auth/me/calendar-feed' ? { active: false, created_at: null } : PROFILE }));
+    api.post.mockResolvedValue({ data: { active: true, created_at: '2026-10-13T20:00:00Z', url: FEED } });
+    api.delete = vi.fn().mockResolvedValue({ data: { active: false, created_at: null } });
+    const user = userEvent.setup();
+    renderWithProviders(<UserMenu />);
+
+    await user.click(await screen.findByRole('button', { name: 'Account menu for Brian Kamau' }));
+    await user.click(screen.getByRole('button', { name: 'Calendar subscription' }));
+    await user.click(await screen.findByRole('button', { name: 'Create my feed link' }));
+    expect(api.post).toHaveBeenCalledWith('/auth/me/calendar-feed');
+    expect(await screen.findByText(FEED)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'webcal' })).toHaveAttribute('href', FEED.replace('http:', 'webcal:'));
+    expect(screen.getByText(/Active since 2026-10-13 23:00 EAT/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Revoke' }));
+    expect(api.delete).toHaveBeenCalledWith('/auth/me/calendar-feed');
+    expect(await screen.findByRole('button', { name: 'Create my feed link' })).toBeInTheDocument();
+    expect(screen.queryByText(FEED)).not.toBeInTheDocument();
+  });
+});

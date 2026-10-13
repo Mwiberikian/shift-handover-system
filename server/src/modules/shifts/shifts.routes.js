@@ -1,4 +1,7 @@
 const express = require('express');
+const { rateLimit, MemoryStore } = require('express-rate-limit');
+const AppError = require('../../utils/AppError');
+const calendarFeed = require('./calendarFeed');
 const { body, param, query } = require('express-validator');
 const validate = require('../../middleware/validate');
 const { requireAuth, requireRole } = require('../../middleware/auth');
@@ -6,6 +9,28 @@ const service = require('./shifts.service');
 const ics = require('../../utils/ics');
 
 const router = express.Router();
+
+// ---- Public: calendar subscription feed (declared before requireAuth) -------
+// GET /api/shifts/calendar/<token>.ics. Calendar apps cannot send a bearer
+// token, so the unguessable token in the URL is the credential. Limited per
+// IP; unknown and revoked tokens get the same plain 404.
+const feedLimitStore = new MemoryStore();
+const feedLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: Number(process.env.CALENDAR_FEED_RATE_LIMIT) || 60,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: feedLimitStore,
+  handler: (req, res, next) => next(new AppError(429, 'Too many calendar requests. Try again later.')),
+});
+router.get('/calendar/:token.ics', feedLimiter, async (req, res) => {
+  const body = await calendarFeed.feedFor(req.params.token);
+  res.set('Cache-Control', 'private, no-store');
+  if (!body) return res.status(404).type('text/plain').send('Not found');
+  res.set('Content-Type', 'text/calendar; charset=utf-8');
+  return res.send(body);
+});
+
 router.use(requireAuth);
 
 // GET /api/shifts/mine — the caller's current and next rostered shift.
@@ -65,3 +90,4 @@ router.put(
 );
 
 module.exports = router;
+module.exports.feedLimitStore = feedLimitStore;
