@@ -1,8 +1,14 @@
 # Build Report — Shift Handover Management System
 
-Date: 2026-10-13. Baseline commit: `52273b2`. All figures below were measured on
-the machine described in [Test environment](#test-environment); none were tuned
-to meet a target.
+Date: 2026-10-13, updated 2026-10-14 (Parts H–K). Baseline commit: `52273b2`.
+All figures below were measured on the machine described in
+[Test environment](#test-environment); none were tuned to meet a target.
+
+**All data behind every result in this report is synthetic (DR-11).** The seed
+(`server/src/db/seeds/seed.js`, 13 invented users at `@shms.example`, records
+prefixed `SYNTHETIC:`), the test fixtures (`@test.example`), the 30,000 load-test
+drafts and every message, shift and email are invented. No Kenya Airways data,
+staff or passenger information was used.
 
 ---
 
@@ -239,6 +245,127 @@ every login waits for a cost-12 hash. Latency percentiles count completed reques
 timed-out requests are not in them. The default-pool error rate varied from 0.66 % to 2.15 % across
 three runs, so treat single runs as approximate. `UV_THREADPOOL_SIZE` is not set anywhere
 in the repository. Using it would mean adding it to the start command or the environment.
+
+---
+
+## Part E — Parts H, J and K (2026-10-13/14)
+
+One commit per numbered item, authored by Mwiberikian, no co-author or
+generated-by lines. All server and client tests passed after every step.
+
+| # | Commit | Change | Server | Client |
+|---|---|---|---|---|
+| H1 | `294307a` | Task description 10–1,000 characters (DR-04), create and update; client maxLength + counter | 173 | 24 |
+| H2 | `1031979` | Rejected handover writes (400/422) audited as `submit_rejected` after the rollback, plus one log line (DR-12) | 177 | 24 |
+| H3 | `d8efc69` | Messages `LIMIT`/`OFFSET` bound as parameters; page size clamped to 100; bad page 400 not 500 (IR-04) | 180 | 24 |
+| H4 | `97e0f23` | One EAT formatter `YYYY-MM-DD HH:mm EAT`; incident input read as EAT (DR-02) | 180 | 54 |
+| H5 | `37aa42f` | 44 × 44 px targets; Playwright `client/e2e/touch-targets.mjs` (IR-01) | 180 | 54 |
+| H6 | `a2b094c` | Search shift filter (`shift_type`, `shift_id`), UI and tests (FR-16) | 190 | 56 |
+| H7 | `f7d4d30` | Dashboard completion rate, current/preceding-shift window, "all records" toggle (FR-14) | 195 | 59 |
+| H8 | `e0292a4` | Test: second open record → 409 (DR-05) | 199 | 59 |
+| H9 | `a6d35bc` | Fault injection part-way through submit (NFR-10) | 203 | 59 |
+| H10 | `5c93890` | `scripts/schedule-backup.ps1`, `backup.ps1 -Keep` (NFR-11, DR-09) | 203 | 59 |
+| H11 | `dc029ee` | `UV_THREADPOOL_SIZE` defaults to min(12, CPUs) before any import | 205 | 59 |
+| H12 | `efe81c0` | `engines` node >=18; CI on Node 18/20/22 with postgres:15 (NFR-18) | 205 | 59 |
+| H13 | `7c064f2` | Temporary password shown once; `must_change_password`; `POST /api/auth/change-password` (NFR-05) | 215 | 66 |
+| H14 | `9ce311a` | Google sign-in described in one paragraph (README) | 215 | 66 |
+| J15 | `98a0fef` | `notify()`: the only code that inserts notifications (IR-05) | 221 | 66 |
+| J16 | `b1520ab` | SMTP gateway (nodemailer 9.1.1), env config, domain allowlist, Mailpit (IR-05) | 229 | 66 |
+| J17 | `80453f6` | `email_outbox`, sending in the jobs tick, 3 retries at 1/2/4 min, outcome on the notification (IR-06) | 238 | 66 |
+| J18 | `891f8a3` | Degraded mode; failed emails on the supervisor dashboard (IR-07) | 243 | 68 |
+| J19 | `cbf0d3f` | Email content rules, per-user opt-out, eligible types | 253 | 70 |
+| J20 | `786ab7e` | "Send as" System notification / Email / Both | 268 | 73 |
+| K21 | `3aef461` | Add to Google Calendar and Download .ics; My shifts page | 277 | 76 |
+| — | `e9a0ca1` | Fix: header at 320 px after the account menu (found by the stricter touch check) | 277 | 76 |
+| K22 | `d8ba9a4` | Private calendar subscription feed, hashed revocable token | 285 | 77 |
+| K23 | `f810696` | Note that calendar data leaves the system | 285 | 79 |
+
+What each feature does and does not do: [FEATURES_ADDED.md](FEATURES_ADDED.md).
+
+Notes:
+- H11: `server.js` now prints the pool size it started with. The default is applied before
+  `dotenv`; a value in `.env` or the environment still wins.
+- H13: the temporary password is held only in the API's memory for 10 minutes. A restart in that
+  window loses it; the admin then sets a new password.
+- J16: nodemailer 10 requires Node 20, so 9.1.1 (engines >= 6) was pinned to avoid another
+  Node 18 blocker. A message sent through the real transport arrived in Mailpit.
+- K21–K22: the ICS writer is hand-written (`server/src/utils/ics.js`); no dependency was added.
+- Not done: no real SMTP provider was used; the daily backup task was tested with a temporary
+  task and removed, so **"SHMS daily backup" is not registered on this machine**.
+
+### C1 (update). Server test coverage at `f810696`
+
+285 tests in 33 suites, all passing. `jest --coverage --collectCoverageFrom='src/**/*.js'`
+(all of `server/src`, including the seed scripts, and `server.js`, which the thread-pool test only
+runs in a child process):
+**93.31 % statements, 83.44 % branches, 96.31 % functions, 95.77 % lines.**
+The default `jest --coverage` view (files loaded by tests, including test helpers):
+93.50 % / 83.37 % / 96.48 % / 95.90 %.
+
+### C6. Login load after the thread-pool default (H11)
+
+Same shape as C2/C5: `POST /api/auth/login` as KQ1001, autocannon 8.0.0, 60 connections, 60 s,
+10 s timeout. One API process on port 4100 against `shms_eval_scratch` (seeded, 13 synthetic users),
+morgan logging to a file, reminders off. Also running, idle: the dev API (4000), dev Vite (5173),
+scratch Vite (5174). Load generator on the same machine. Nothing set `UV_THREADPOOL_SIZE` except
+where stated.
+
+| Run | Thread pool | 2xx | Avg req/s | p50 | p90 | p97.5 | p99 | max | Timeouts | Error rate |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | default, now 12 (12 logical CPUs) | 1,538 | 25.64 | 2,255 ms | 2,343 ms | 3,248 ms | 4,170 ms | 4,880 ms | 4 | 0.26 % |
+| 2 | default, now 12 | 1,513 | 25.22 | 2,289 ms | 2,365 ms | 2,636 ms | 3,254 ms | 3,786 ms | 9 | 0.59 % |
+| 3 | forced `UV_THREADPOOL_SIZE=4` | 688 | 11.47 | 4,823 ms | 4,922 ms | 8,195 ms | 8,974 ms | 9,519 ms | 9 | 1.29 % |
+
+**Against C5:** the new default reproduces C5's 12-thread result without any setting: about 2.2×
+the throughput of 4 threads (25.4 vs 11.5 req/s in the same session) and half the median (2.27 vs
+4.82 s). It is about 10 % below C5's 28.4 req/s / 2.07 s median for 12 threads. This session had
+three other dev processes running, and run-to-run spread in C5 was of the same order, so treat the
+gap as noise rather than a regression. Forcing 4 threads matches C5's default runs (12.1–13.7 req/s).
+At 60 concurrent logins the median is still over 2 s, because each login waits for a cost-12 hash.
+
+### C5b. Scheduled backup check (H10)
+
+`scripts/schedule-backup.ps1 -TaskName 'SHMS backup TEST (temporary)' -Keep 2 -OutDir <temp> -RunNow`
+registered a daily task, ran it once (last result 0), wrote a 62.3 KB dump of `shms_dev` and appended
+the log; `-Unregister` then removed it. `backup.ps1 -Keep 3` against a folder with five old dumps,
+one dump of another database and an unrelated file deleted exactly the three oldest dumps of `shms_dev`.
+
+### C7. Touch targets and horizontal scroll (IR-01)
+
+`client/e2e/touch-targets.mjs` (Playwright 1.56.1, installed Microsoft Edge, headless), seeded scratch
+instance. Measures every button, link, input, select, checkbox (with its label) and radio, plus the
+first Tab stop, at 320, 768 and 1280 px.
+
+| | Before H5 | Final (`f810696`) |
+|---|---|---|
+| Page/width combinations passing | 0 / 15 | **15 / 15** |
+| Controls under 44 × 44 px | 3–41 per combination (e.g. buttons 32–36 px, inputs 36 px, radios 24 px, skip link 24 × 16) | 0 |
+| Horizontal scroll | none | none |
+| Inline links in running text (exempt, listed) | 2 on login | 2 on login |
+| Controls reached only by scrolling a table sideways (listed) | not checked | admin users table: 26 at 320 px, 13 at 768 px |
+
+The script was tightened during K21: a control partly outside the viewport now fails. That caught
+the account menu pushing Log out off-screen at 320 px (fixed in `e9a0ca1`). Not covered: messages,
+roster, my shifts, help and landing pages; dialogs and drawers in their open state; other browsers.
+
+### NFR-18. CI on Node 18, 20 and 22
+
+`.github/workflows/ci.yml`, run 38471103301 on `f810696`
+(https://github.com/Mwiberikian/shift-handover-system/actions/runs/38471103301):
+
+| Job | Node 18 | Node 20 | Node 22 |
+|---|---|---|---|
+| server (npm ci, npm test, postgres:15) | **fail** | pass | pass |
+| client (npm ci, npm test) | **fail** | **fail** | pass |
+
+Cause, reproduced locally in `node:18` and `node:20` containers: the server's test setup runs
+`node-pg-migrate` 9, which needs Node 20 (`yargs parser supports a minimum Node.js version of 20`),
+so migrations cannot run on 18; the API itself (`app.js`, `node-cron`, `google-auth-library`) loads on
+18. The client test stack needs Node 22 (`jsdom` 30: `webidl.util.markAsUncloneable is not a
+function` on 20). Dependencies that declare newer engines: `google-auth-library` 11 (>=22),
+`node-cron` 4 and `node-pg-migrate` 9 (>=20), `vite` 8 (>=20.19), `vitest` 5 and `jsdom` 30 (>=22.12).
+Options: pin older majors that support Node 18 (e.g. `node-pg-migrate` 7, `vitest` 2 with
+`jsdom` 24), or accept Node 22 as the floor, which would conflict with NFR-18 as written.
 
 ---
 

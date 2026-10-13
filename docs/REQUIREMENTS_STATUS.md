@@ -1,11 +1,14 @@
 # Requirements Status — Shift Handover Management System
 
-Date: 2026-10-13. Code state: `23097ee` plus the four test files added for
-[TRACEABILITY.md](TRACEABILITY.md). Requirement texts:
+Date: 2026-10-14. Code state: `f810696` (Parts H, J and K). Requirement texts:
 [requirements.md](requirements.md), copied word for word from Chapter 4 of the proposal.
+The previous version of this file described `23097ee`; rows whose status changed since
+then are listed in [Status changes](#status-changes-since-23097ee).
 
-Test totals at the time of writing: **server 164/164 (18 suites), client 23/23 (5 files)**.
-Figures marked "C1"–"C5" are from [BUILD_REPORT.md](BUILD_REPORT.md).
+Test totals at the time of writing: **server 285/285 (33 suites), client 79/79 (12 files)**,
+and the Playwright touch-target check **15/15** page/width combinations.
+Figures marked "C1"–"C7" are from [BUILD_REPORT.md](BUILD_REPORT.md).
+**All data behind every test and measurement here is synthetic (DR-11).**
 
 Status meanings:
 - **Met**: a test or a measurement shows it, or the cited code shows it.
@@ -15,91 +18,122 @@ Status meanings:
 
 Paths are relative to the repository root. `S/` = `server/`, `C/` = `client/src/`.
 
+On DR-08 and IR-08: these were to be re-judged against revised wording in `docs/requirements.md`.
+The file in the repository has the same DR-08 and IR-08 text as when it was added (`f9e7de4`;
+`git log -p docs/requirements.md` shows no later change). They are judged against that text below.
+
 ---
 
 ## Functional requirements
 
 | ID | Status | Evidence |
 |---|---|---|
-| FR-01 | Met | `S/src/modules/admin/admin.routes.js:28-56`, `admin.service.js:20-28` (non-admin roles need one department), `:128-132` (delete = deactivate). Tests: `admin.users.test.js` (all 8), `access-request.workflow.test.js` "creates a working login with the role and department the admin assigned", `rbac.test.js` "a token for a deactivated account is rejected immediately". |
-| FR-02 | Met | `S/src/modules/auth/auth.service.js:37-49` (staff number or email, bcrypt), `:25-35` (signed JWT). Every role router runs `requireAuth` first (`handovers.routes.js:9`, `admin.routes.js:9`, `shifts.routes.js:8`, `messages.routes.js:13`, `notifications.routes.js:9`, `dashboard.routes.js:12`). Tests: `auth.login.test.js` (all 4), `rbac.test.js` "missing or invalid token is 401", `C/test/Login.test.jsx`. |
-| FR-03 | Partly met | Handover data, shifts and dashboard are department-scoped (`S/src/middleware/auth.js:49-54`, `handovers.service.js:144-168`, `workflow.service.js:24-32,271-282`, `shifts.service.js:15,53,67`), tested in `rbac.test.js`, `handover.open-review.test.js`, `handover.export.test.js`, `shift-reminders.test.js` (roster API). **Not met for:** directory, messages and department list. See answer 10. |
-| FR-04 | Met | `GET /api/handovers/meta` returns the department's current template (`handovers.service.js:171-182`). Submit checks the template server-side (`:348-365`). Tests: `handover.draft-content.test.js` "returns the current shift, the department's current template…", "after the admin publishes a new version…"; `handover.submit.test.js` (4 rejection tests); `C/test/DraftEditor.test.jsx` (3). |
-| FR-05 | Met | `S/src/modules/handovers/handovers.routes.js:60-81`, `task_status_enum` and `priority_enum` (`S/migrations/1790865288764_initial-schema.js:30-31`). Tests: `handover.draft-content.test.js` "stores description, status and priority…", "a draft task can be moved to resolved", "an empty description or a status/priority outside the enum is refused". |
-| FR-06 | Met | `handovers.routes.js:83-95`; `incident` columns `initial-schema.js:103-111`. Tests: `handover.draft-content.test.js` "stores title, description, severity, time of occurrence and the reporter", "a missing severity or time of occurrence… is refused". |
-| FR-07 | Met | `handovers.service.js:348-365` (422 with `missing_fields`; incoming user always required). Client lists outstanding items (`C/pages/OutgoingPage.jsx:20-42,107`). Tests: `handover.submit.test.js` "an empty draft is rejected with 422 listing each missing field", "a summary shorter than the template minLength…", "validation follows the current template version"; `C/test/DraftEditor.test.jsx`. |
-| FR-08 | Met | `handovers.service.js:300-340`, called on submit (`:367-368`). Tests: `handover.carryforward.test.js` (all 5). Note: tasks are carried when the *next* record is submitted, not at the moment the shift closes. |
-| FR-09 | Met | Service guard `handovers.service.js:42-49`; DB trigger `initial-schema.js:164-244`. A clarification is a new audit entry, not an edit (`workflow.service.js:169-183`). Tests: `handover.immutability.test.js` (all 11). |
-| FR-10 | Met | `handovers.service.js:389-395`. Tests: `handover.submit.test.js` "sets status submitted, audits, and notifies incoming staff + supervisor"; `notifications.unread-count.test.js` "a submit raises the count for the incoming user and supervisor only". |
-| FR-11 | Met | `workflow.service.js:49-75`. Tests: `handover.incoming-view.test.js` "the assigned incoming user sees tasks, incidents and carried-forward items", "the incoming list holds only records assigned to the caller". |
-| FR-12 | Met | `workflow.service.js:107-137`. Closure requires `acknowledged` (`:205-209`, trigger `initial-schema.js:190-201`). Tests: `handover.acknowledgement.test.js` (all 6). |
-| FR-13 | Met | `workflow.service.js:139-183`. Tests: `handover.acknowledgement.test.js` "a queried record cannot be reviewed until clarified and acknowledged"; `notifications.unread-count.test.js` "latest_id changes when a new notification arrives" (query → clarify). |
-| FR-14 | Partly met | `workflow.service.js:310-363`, `C/pages/SupervisorPage.jsx`. Status counts and overdue items are shown (tests: `dashboard.supervisor.test.js`, 3). **Not met for:** there is no acknowledgement completion rate, and the counts cover all records, not the current and preceding shifts (`:314-328` has no shift filter). |
-| FR-15 | Met | `workflow.service.js:205-262` (decision, `supervisor_id`, comments). Tests: `handover.acknowledgement.test.js` "acknowledge -> approve closes the record and records who did what", "escalated records close only through /resolve"; `handover.open-review.test.js` "an under-review record can be %s by the supervisor". |
-| FR-16 | Partly met | `handovers.routes.js:28-39`, `workflow.service.js:284-308`: date range, department, status and keyword filters. **No shift filter. No test.** |
-| FR-17 | Partly met | `S/src/utils/audit.js:4-14`, called inside the same transaction for every create, update, submit, acknowledge, query, clarify, open-review, review, resolve, login, admin and roster change. Tests: `handover.submit.test.js` "every state-changing call leaves a matching audit_log row", `admin.users.test.js`, `access-request.workflow.test.js`. **Not audited:** system-generated notification rows (`handovers.service.js:96-105`, `jobs/reminders.js:43-55`), and marking a message or notification read (`messages.service.js:98-114`, `notifications.routes.js:42-50`). |
-| FR-18 | Met | `admin.service.js:178-219` (insert version N+1, never update). Trigger `initial-schema.js:258-260`. Tests: `admin.templates.test.js` (all 3). |
-| FR-19 | Met | `S/src/jobs/reminders.js:117-136` (in-app alert to the department's supervisors, `REMINDER_UNACK_ALERT_MINUTES`, default 120). Dashboard flag `workflow.service.js:330-342`. Tests: `shift-reminders.test.js` "unacknowledged 2 hours after the incoming shift starts: supervisors of that department, once", "no unacknowledged alert once acknowledged", "the supervisor dashboard flags the same condition…". In-app only (see answer 9). |
-| FR-20 | Met | `workflow.service.js:77-105`, `handovers.routes.js:115-122` (JSON, `?download=1`), `C/pages/PrintRecord.jsx` (print view). Tests: `handover.export.test.js` (12, including "outA gets 200…" and "incA gets 200…"), `C/test/PrintRecord.test.jsx` (2). Not printed from a real browser. Export follows the read rules, so the record's outgoing and incoming users can export too, not only supervisors and admins. |
+| FR-01 | Met | `S/src/modules/admin/admin.routes.js`, `admin.service.js:21-29` (non-admin roles need one department), `:131-133` (delete = deactivate). Tests: `admin.users.test.js` (all 8), `access-request.workflow.test.js`, `rbac.test.js` "a token for a deactivated account is rejected immediately". |
+| FR-02 | Met | `S/src/modules/auth/auth.service.js:46-58` (staff number or email, bcrypt), `:26-44` (signed JWT). Every role router runs `requireAuth` first. Tests: `auth.login.test.js` (all 4), `rbac.test.js` "missing or invalid token is 401", `C/test/Login.test.jsx`. |
+| FR-03 | Partly met | Handover data, shifts, calendar exports and the dashboard are department-scoped (`S/src/middleware/auth.js:67-72`, `handovers.service.js:143-168`, `workflow.service.js:24-32,273-284`, `shifts.service.js` `calendarShifts`). Tests: `rbac.test.js`, `handover.open-review.test.js`, `handover.export.test.js`, `handover.search.test.js` [department and role scoping], `calendar.download.test.js`. **Not met for:** directory, messages and department list (by design; see answer 10 below). |
+| FR-04 | Met | `GET /api/handovers/meta` (`handovers.service.js:170-181`); submit checks the template server-side (`:341-365`). Tests: `handover.draft-content.test.js`, `handover.submit.test.js`, `C/test/DraftEditor.test.jsx`. |
+| FR-05 | Met | `handovers.routes.js:70-91`, enums in `S/migrations/1790865288764_initial-schema.js:30-31`. Description 10–1,000 characters (DR-04). Tests: `handover.draft-content.test.js` [tasks (FR-05)], [task description length (DR-04)]. |
+| FR-06 | Met | `handovers.routes.js:93-105`; `incident` columns `initial-schema.js:103-111`. Tests: `handover.draft-content.test.js` [incidents (FR-06)]. |
+| FR-07 | Met | `handovers.service.js:353-365` (422 with `missing_fields`). Tests: `handover.submit.test.js`; `C/test/DraftEditor.test.jsx`. |
+| FR-08 | Met | `handovers.service.js:306-339`. Tests: `handover.carryforward.test.js` (5); `handover.submit-fault.test.js` shows a failed submit carries nothing. |
+| FR-09 | Met | `handovers.service.js:44-50`; trigger `initial-schema.js:164-244`. Tests: `handover.immutability.test.js` (11). |
+| FR-10 | Met | `handovers.service.js:101-104` (`notifyRecord` through the notification service), called from submit. Tests: `handover.submit.test.js`, `notifications.unread-count.test.js`, `notify.service.test.js` "callers are unchanged in effect". |
+| FR-11 | Met | `workflow.service.js:49-75`. Tests: `handover.incoming-view.test.js`. |
+| FR-12 | Met | `workflow.service.js:107-137`, closure needs `acknowledged`. Tests: `handover.acknowledgement.test.js` (6). |
+| FR-13 | Met | `workflow.service.js:139-186`. Tests: `handover.acknowledgement.test.js`, `email.content.test.js` (query and clarify notify). |
+| FR-14 | **Met** | `workflow.service.js:316-446`: per department the counts, `acknowledgement_due/done/rate` (acknowledged or later ÷ submitted or later) and overdue items cover the **current and preceding shift** (the two most recent started shifts, `:331-344`); `?scope=all` counts everything; `older_outstanding` reports overdue records outside the window. `C/pages/SupervisorPage.jsx`: "Current and preceding shift / All records" toggle, acknowledgement-rate card and column. Tests: `dashboard.window.test.js` (5), `dashboard.supervisor.test.js` (3), `C/test/SupervisorOverview.test.jsx`. |
+| FR-15 | Met | `workflow.service.js:205-266`. Tests: `handover.acknowledgement.test.js`, `handover.open-review.test.js`. |
+| FR-16 | **Met** | `handovers.routes.js:36-49`, `workflow.service.js:289-312`: date range, department, **shift (`shift_type` day/night, `shift_id`)**, status, keyword. Search form: `C/pages/SupervisorPage.jsx` `Search` (Shift select; dates sent as EAT day bounds). Tests: `handover.search.test.js` (10), `C/test/SupervisorSearch.test.jsx` (2). |
+| FR-17 | Partly met | `S/src/utils/audit.js`, called in the same transaction for every create, update, submit, acknowledge, query, clarify, review, resolve, login, admin and roster change; also rejected writes (`submit_rejected`), password changes, preference changes, calendar-feed changes and the one-time password reveal. **Not audited:** system-generated notification rows and read receipts (`notifications.routes.js:42-50`, `messages.service.js:137-153`). |
+| FR-18 | Met | `admin.service.js:180-219`. Tests: `admin.templates.test.js` (3). |
+| FR-19 | Met | `S/src/jobs/reminders.js` rule 4a, `REMINDER_UNACK_ALERT_MINUTES`. Dashboard flag `workflow.service.js:372-381`. Tests: `shift-reminders.test.js`, `dashboard.supervisor.test.js`. The alert is now also emailed when email is on. |
+| FR-20 | Met | `workflow.service.js:80-105`, `C/pages/PrintRecord.jsx`. Tests: `handover.export.test.js` (12), `C/test/PrintRecord.test.jsx` (2). Not printed from a real browser. |
 
 ## Non-functional requirements
 
 | ID | Status | Evidence |
 |---|---|---|
-| NFR-01 | Partly met | API only: `GET /api/handovers` at 60 connections, p97.5 839 ms, p99 890 ms (C2). Page rendering in a browser under load was not measured. |
-| NFR-02 | Met | `POST /submit` at 60 connections: p99 462 ms, 0 errors (C2). Localhost, not "standard broadband". |
-| NFR-03 | Met | Notification row commits with the submit. Fast poll 20/20 ≤ 108 ms; client-like 5 s poll 30/30 ≤ 4,945 ms (C3). Polling script, not a real browser. A hidden tab updates only when it is shown again (`C/lib/usePolling.js:28`). |
-| NFR-04 | Unverified | No run compared view times at 60 sessions against a baseline. |
-| NFR-05 | Partly met | bcrypt cost 12 (`S/src/config/constants.js:3`, test `auth.login.test.js` "passwords are stored as bcrypt hashes with work factor 12"). The hash is removed from responses and audit rows (`auth.service.js:19-21`, `admin.service.js:13`). morgan logs method, URL and status only, never request bodies (`app.js:12`). **Exception:** approving an access request returns the generated temporary password in the response (`accessRequests.service.js:94`). |
-| NFR-06 | Met | Expiry is **fixed at 30 minutes from sign-in**, not sliding (answer 6). A session therefore always ends ≤ 30 min after its last activity. Test: `auth.login.test.js` "login by staff_number returns a 30-minute JWT…" (`exp - iat = 1800`). Configurable through `JWT_EXPIRY` (`auth.service.js:29`). |
-| NFR-07 | Partly met | Every boundary scenario that is tested is refused: `rbac.test.js` (10), `handover.open-review.test.js` (cross-department and role 403s), `handover.export.test.js` "outB/incB/supB gets 403…", `access-request.workflow.test.js` "every non-admin role gets 403…", `shift-reminders.test.js` roster API, `admin.users.test.js` "only admins may create accounts". The cross-department exceptions in answer 10 are allowed by design. |
-| NFR-08 | Not met | The API listens on plain HTTP (`S/src/server.js:6`). The dev client uses `http://localhost:4000/api`. There is no TLS configuration in the repository. |
-| NFR-09 | Met | No delete or edit route for records or audit rows. Triggers: `initial-schema.js:164-261`. Tests: `handover.immutability.test.js` (all 11). |
-| NFR-10 | Met | Submit runs in one `withTransaction` (`handovers.service.js:342-398`, `S/src/db/tx.js:5-18`). Test: `handover.submit.test.js` "a rejected submit writes no audit row and no notifications". No fault-injection test (for example, killing the connection mid-submit). |
-| NFR-11 | Partly met | Restore of a 30,001-record database in 3.4 s wall time, row counts matched (C4). Backups are manual (`scripts/backup.ps1`). Nothing schedules them, so the 24-hour loss bound depends on someone running the script. |
+| NFR-01 | Partly met | API only: `GET /api/handovers` at 60 connections, p97.5 839 ms (C2). Page rendering under load not measured. |
+| NFR-02 | Met | `POST /submit` at 60 connections: p99 462 ms, 0 errors (C2). Localhost. |
+| NFR-03 | Met | Notification row commits with the submit; 30/30 within 5 s with the client's 5 s poll (C3). The email channel only queues inside that transaction, so it adds no delay. |
+| NFR-04 | Unverified | No 60-session comparison against a baseline. |
+| NFR-05 | Partly met | bcrypt cost 12 for every stored password, including `POST /api/auth/change-password` (`auth.service.js:155-180`; test `auth.temporary-password.test.js` "bcrypt cost 12"). Hashes are kept out of responses and audit rows. The access-request approval **no longer returns the temporary password**; it is held only in memory and shown once to the approving admin (`accessRequests.service.js:77-118`, `S/src/utils/oneTimeSecrets.js`), the account must change it at first sign-in (`middleware/auth.js:34-36`), and it is never stored, logged or emailed (test "the password is in no database row and no audit entry"). **Still not met:** that one reveal response does carry the password in plain text, by design; the statement says "never … responses". |
+| NFR-06 | Met | Fixed 30-minute expiry from sign-in (`auth.service.js:26-36`). Test: `auth.login.test.js`. |
+| NFR-07 | Partly met | Every tested boundary is refused (`rbac.test.js`, `handover.search.test.js`, `calendar.download.test.js`, `messaging.send-as.test.js` role limits, `handover.export.test.js`, …). Cross-department messaging/directory allowed by design. |
+| NFR-08 | Not met | Plain HTTP (`S/src/server.js`). The calendar feed URL, which carries its token, is therefore also sent unencrypted. |
+| NFR-09 | Met | No delete/edit route for records or audit rows; triggers `initial-schema.js:164-261`. Tests: `handover.immutability.test.js`. |
+| NFR-10 | Met | One `withTransaction` per submit. **Fault-injection test** `handover.submit-fault.test.js`: a forced error at the notification insert, at the `submit` audit row, and at the status change each leave the record a draft with no audit row, no notifications and no carried-forward tasks; making `withTransaction` commit on error fails 3 of its 4 tests. |
+| NFR-11 | **Met** | Restore of a 30,001-record database in 3.4 s (C4). `scripts/schedule-backup.ps1` registers a daily Task Scheduler job running `backup.ps1 -Keep 14` (C5b: a temporary task ran with result 0 and wrote a dump). The 24-hour bound holds only while that job runs: it runs while the user is signed in and Docker is up, and catches up a missed run when it can. **The task is not registered on this machine**; run the script once to register it. |
 | NFR-12 | Unverified | No usability walkthrough. |
 | NFR-13 | Unverified | No SUS questionnaire. |
-| NFR-14 | Partly met | axe-core 4.10: **0 colour-contrast violations** on 7 views × 2 themes (answer 7). Keyboard-only operation was not tested. |
-| NFR-15 | Unverified | Only headless Edge (axe run) and jsdom were used. Chrome, Firefox and Safari were not tested, nor were widths of 320–1920 px. |
-| NFR-16 | Met | Separate `client/`, `server/` and Postgres container (`docker-compose.yml`). Backend statement coverage is 86.61 % (files loaded by tests) and 77.85 % (all of `server/src`) (C1, measured at 143 tests). |
-| NFR-17 | Partly met | [TRACEABILITY.md](TRACEABILITY.md) maps 19 of 20 FRs to tests. FR-16 has no test. |
-| NFR-18 | Partly met | Configuration comes from environment variables (`S/.env.example`, `C/.env.example`). Only Node 24 and PostgreSQL 15 were run. No `engines` field. Not tested on Node 18. |
-| NFR-19 | Met | `workflow.service.js:205-262`, trigger `initial-schema.js:190-201`. Tests: `handover.acknowledgement.test.js` "supervisor review of an unacknowledged record is rejected (409)", "the DB refuses to close a record that was never acknowledged". |
+| NFR-14 | Partly met | axe-core: 0 contrast violations on 7 views × 2 themes (answer 7). Keyboard-only operation not tested. |
+| NFR-15 | Unverified | Headless Edge only, at 320, 768 and 1280 px (C7: renders, no horizontal scroll). Chrome, Firefox, Safari and widths to 1920 px not tested. |
+| NFR-16 | Met | Separate `client/`, `server/`, Postgres container. Backend statement coverage **93.31 %** of all `server/src` (C1, 285 tests). |
+| NFR-17 | **Met** | [TRACEABILITY.md](TRACEABILITY.md) maps **all 20** FRs to tests; FR-16 now has `handover.search.test.js`. |
+| NFR-18 | Partly met | Configuration is from environment variables (`S/.env.example`, `C/.env.example`); both `package.json` files declare `"engines": {"node": ">=18"}`; `.github/workflows/ci.yml` runs both test suites on Node 18, 20 and 22 with `postgres:15`. **Result:** server passes on 20 and 22 and **fails on 18** (`node-pg-migrate` 9 needs Node 20, so migrations cannot run); client tests pass on 22 and **fail on 18 and 20** (`jsdom` 30 / `vitest` 5 need Node 22). The API itself loads on Node 18. See BUILD_REPORT Part H. |
+| NFR-19 | Met | `workflow.service.js:205-266`, trigger `initial-schema.js:190-201`. Tests: `handover.acknowledgement.test.js`. |
 
 ## Data requirements
 
 | ID | Status | Evidence |
 |---|---|---|
-| DR-01 | Met | `handover_record.summary_notes`, `task`, `incident` (`initial-schema.js:74-111`). Pending items are tasks in `open`/`in_progress`. |
-| DR-02 | Partly met | Storage met, presentation not met (answer 1). |
-| DR-03 | Met | `initial-schema.js:26-33` (`role_enum`, `record_status_enum`, `task_status_enum`, `priority_enum`, `severity_enum`), used at `:60,80,97-98,108`. |
-| DR-04 | Partly met | Severity and time of occurrence are required (answer 2; tested). **The 10–1,000 character task description rule is not enforced anywhere.** |
-| DR-05 | Met | Partial unique index `handover_record_one_open_per_shift` (`initial-schema.js:86-91`), mapped to 409 (`handovers.service.js:199-201`). No test creates a second open record. |
-| DR-06 | Met | Every FK is `ON DELETE RESTRICT` (`initial-schema.js:19`, `1791100000000_access-requests.js:12`, `1791300000000_messaging.js:20`, `1791400000000_shift-reminders.js:17`). |
-| DR-07 | Partly met | The creator (`outgoing_user_id`), acknowledger (`acknowledgement.incoming_user_id`) and reviewer (`supervisor_review.supervisor_id`) are kept. The audit log stores previous and new values for user actions (FR-17). It does not store them for read receipts or system-created notifications. |
-| DR-08 | Partly met | No hard-delete path (NFR-09). **No 24-month archival job exists.** |
-| DR-09 | Partly met | A manual logical backup script exists and restore is tested (C4). **Nothing runs it daily. There is no WAL archiving** (`docker-compose.yml` sets no `archive_mode`). |
-| DR-10 | Partly met | No passenger data. More personal data is held than the five listed fields (answer 8). |
-| DR-11 | Partly met | Seeds are labelled synthetic (`S/src/db/seeds/seed.js:4-6`, `README.md:4`, `SYNTHETIC:` prefixes). BUILD_REPORT's results do not state that the data was synthetic. |
-| DR-12 | Partly met | Validation happens at the API (`S/src/middleware/validate.js:6-10`, `handovers.service.js:348-365`). **Rejected submissions are not logged with their reason** (answer 3). |
+| DR-01 | Met | `summary_notes`, `task`, `incident` (`initial-schema.js:74-111`). |
+| DR-02 | **Met** | Storage: every temporal column is `timestamptz` (answer 1). Presentation: one formatter, `formatEAT` (`C/lib/format.js`), Intl with `timeZone: 'Africa/Nairobi'`, prints `YYYY-MM-DD HH:mm EAT` (and the date or time part alone); it replaced every `fmt`/`fmtDate`/`fmtTime`/`fmtNairobiTime` use. The incident "Occurred at (EAT)" input is read as EAT (`eatLocalToIso`), and search dates are sent as EAT day bounds. Tests: `C/test/format.test.js` with fixed instants under `Africa/Nairobi`, `UTC` and `America/New_York` (31). Notes: the zone is written "EAT", as specified, not as an ISO offset `+03:00`; lists still show relative labels ("5 min ago") with the full EAT time as a tooltip. |
+| DR-03 | Met | Enums `initial-schema.js:26-33`; new `email_status_enum` (`1791600000000_email-outbox.js`). |
+| DR-04 | **Met** | Task description 10–1,000 characters after trimming, on create and update (`handovers.routes.js:18-21`, `S/src/config/constants.js`); client `maxLength`/`minLength` and a counter (`C/pages/OutgoingPage.jsx`, `C/lib/limits.js`). Severity and time of occurrence required. Tests: `handover.draft-content.test.js` [task description length (DR-04)] at 9, 10, 1000, 1001 for create and update; `C/test/DraftEditor.test.jsx`. |
+| DR-05 | Met | Partial unique index `handover_record_one_open_per_shift` → 409. **Now tested:** `handover.one-open.test.js` (4): second create 409, direct INSERT 23505, every open status blocks, a closed one does not. |
+| DR-06 | Met | Every FK `ON DELETE RESTRICT`, including `email_outbox.notification_id` (`1791600000000_email-outbox.js`). |
+| DR-07 | Partly met | Creator, acknowledger and reviewer kept; previous/new values audited for user actions. Not for read receipts or system notifications. |
+| DR-08 | Partly met | Re-judged against the text in `requirements.md`. No interface hard-deletes records or audit entries (NFR-09), and nothing removes them, so they stay online beyond 24 months. **No archival after 24 months exists.** (Calendar exports and email never copy handover content out.) |
+| DR-09 | Partly met | A full logical backup is now scheduled daily (`scripts/schedule-backup.ps1`, keeps 14) and restore is tested (C4). **No WAL archiving** (`docker-compose.yml` sets no `archive_mode`). |
+| DR-10 | Partly met | No passenger data. More personal data than the five fields (answer 8); added since: `app_user.email_notifications`, `must_change_password`, `calendar_feed_hash` (a hash) and `email_outbox.to_address` (a work email, already held). The failed-email list shows names, not addresses. |
+| DR-11 | **Met** | Seeds and fixtures are synthetic (`S/src/db/seeds/seed.js:4-6`, `SYNTHETIC:` prefixes, `@shms.example`, `@test.example`). BUILD_REPORT, this file, TRACEABILITY and FEATURES_ADDED now state that every result used synthetic data. |
+| DR-12 | **Met** | Validation at the API (`S/src/middleware/validate.js`, `handovers.service.js:353-365`). **Every rejected handover write is now logged with its reason**: `S/src/utils/rejections.js` (router-level, `handovers.routes.js:189`) writes an `audit_log` row `submit_rejected` (user, record id, status, message, failing fields or missing template items; never the submitted values) in its own transaction after the rollback, and one log line. Tests: `handover.rejections.test.js` (4). |
 
 ## Interface and integration requirements
 
 | ID | Status | Evidence |
 |---|---|---|
-| IR-01 | Partly met | Responsive SPA with a 768 px (`md`) and 1280 px (`xl`) breakpoint. There is no 320 px breakpoint (mobile-first base). **Most touch targets are 32–36 px, not 44 px** (answer 4). |
-| IR-02 | Partly met | REST + JSON with 400/401/403/404/409/422/500 (`errorHandler.js:5-22`, `validate.js:8`, `auth.js:11,18,41`). Plain HTTP, not HTTPS (NFR-08). |
-| IR-03 | Met | `Authorization: Bearer` (`S/src/middleware/auth.js:9-19`). Claims are `user_id`, `role`, `department_id` and `exp` (`auth.service.js:26-30`). Test: `auth.login.test.js` "login by staff_number returns a 30-minute JWT with user_id, role, department_id". |
-| IR-04 | Partly met | Pooled `pg` (`S/src/config/db.js:3-5`). All values are bound as `$n`, **except `LIMIT`/`OFFSET` in messages** (answer 5). |
-| IR-05 | Not met | No SMTP gateway and no single notification service. Each caller inserts into `notification` itself (`handovers.service.js:96-105`, `messages.service.js:159-164`, `jobs/reminders.js:43-55`). |
-| IR-06 | Not met | No outbound email, retries or backoff. |
-| IR-07 | Not met | No email channel, so there is no undelivered-alert flag. The in-app notification and the `submitted` state do hold (FR-10). |
-| IR-08 | Partly met | Stable `/api` prefix (`S/src/app.js:14-28`). It has no version segment such as `/api/v1`. |
-| IR-09 | Met | `auth.service.js` holds the local credential check. Google sign-in reuses the same session issuer (`:25-35`, `:102-141`). `requireAuth` depends only on the JWT (`middleware/auth.js:8-34`). |
+| IR-01 | **Met** | Mobile-first base styles serve 320 px; `md` (768) and `xl` (1280) breakpoints are used. Buttons of every size, inputs, selects, checkbox labels, segmented radios, header icons, sidebar and utility-bar links, the brand link, the password toggle and the skip link are at least 44 × 44 px (`C/components/ui/Button.jsx`, `Field.jsx`, `SegmentedPicker.jsx`, `shell/*`). `C/../e2e/touch-targets.mjs` measured login, outgoing, incoming, supervisor and admin at 320/768/1280 px in Edge: **15/15 pass**, no horizontal scroll (C7). Exceptions reported, not failed: 2 inline links in running text on login (WCAG 2.5.5 exempts them), and the admin users table, whose Edit/Deactivate buttons (44 px) are reached by scrolling the table sideways at 320 and 768 px. |
+| IR-02 | Partly met | REST + JSON with standard status codes (now also 410 and 429). Plain HTTP (NFR-08). |
+| IR-03 | Met | Bearer JWT with `user_id`, `role`, `department_id`, `exp` (plus `pwd_change` while a temporary password is in use). Test: `auth.login.test.js`. |
+| IR-04 | **Met** | Pooled `pg`. Every value is a `$n` parameter; **`LIMIT`/`OFFSET` in messages are now bound** (`messages.service.js:90,107`), page size is clamped to 100 and an out-of-range page is a 400 (`messages.routes.js:18-21`). Test: `messaging.test.js` [paging (IR-04)] including `page=99999999999999999999` → 400. Queries are still assembled from fixed SQL fragments (answer 5); none contains user input. |
+| IR-05 | **Met** | One service interface: `notify()` (`S/src/modules/notifications/notify.js`) is the only code that inserts notifications (test scans the source); in-app is always delivered and channels (`registerChannel`) plug in behind it. SMTP channel: `email/channel.js`, `email/mailer.js` (`nodemailer`, config from env, off by default, domain allowlist), Mailpit in `docker-compose.yml`. Tests: `notify.service.test.js`, `email.mailer.test.js`, `email.content.test.js`. |
+| IR-06 | **Met** | `email/outbox.js`: up to 3 retries after 1, 2 and 4 minutes (base configurable), then `failed`; outcome written to `notification.email_status`/`email_status_at`. Test with a failing transport and a fake clock: `email.outbox.test.js` (9). |
+| IR-07 | **Met** | The in-app row is written before, and independently of, the email; sending is outside the handover's transaction. Dashboard: `failed_emails` list and per-department count (`workflow.service.js:383-410`), "could not be delivered" card. Fault-injection tests `email.degraded.test.js` (5): in-app delivered and unread, record stays submitted and can be acknowledged, failures listed for that department only. |
+| IR-08 | Partly met | Re-judged against the text in `requirements.md`: stable prefix `/api` (`S/src/app.js:14-28`) and a versioned export format (`shms.handover_record.v1`), but **no version in the API path** (e.g. `/api/v1`) and no published contract document. |
+| IR-09 | Met | Local credential check in `auth.service.js`; Google sign-in reuses the same session issuer (`signSession`, `:26-36`). |
 
 ---
 
-## Answers to the specific questions
+## Status changes since `23097ee`
+
+| ID | Before | Now | Why |
+|---|---|---|---|
+| FR-14 | Partly met | **Met** | Completion rate and current/preceding-shift window with an "all records" toggle |
+| FR-16 | Partly met | **Met** | Shift filter; tests |
+| NFR-11 | Partly met | **Met** | Daily scheduled backups (task must be registered once) |
+| NFR-17 | Partly met | **Met** | All 20 FRs have tests |
+| DR-02 | Partly met | **Met** | One EAT formatter everywhere; EAT input |
+| DR-04 | Partly met | **Met** | 10–1,000 characters enforced |
+| DR-11 | Partly met | **Met** | Every result now marked synthetic |
+| DR-12 | Partly met | **Met** | Rejected writes audited and logged |
+| IR-01 | Partly met | **Met** | 44 px targets, measured 15/15 |
+| IR-04 | Partly met | **Met** | LIMIT/OFFSET parameterised; 400 not 500 |
+| IR-05 | Not met | **Met** | Single notification service; SMTP channel |
+| IR-06 | Not met | **Met** | Retries with backoff; outcome on the notification |
+| IR-07 | Not met | **Met** | Degraded mode; dashboard flag |
+
+Unchanged status, changed evidence: NFR-05 (approval no longer returns the password; the one reveal
+still does), NFR-10 (fault-injection test added), NFR-18 (engines + CI; fails on Node 18), DR-05
+(now tested), DR-09 (daily backups; still no WAL), DR-08 and IR-08 (re-judged, unchanged).
+
+---
+
+## Answers to the specific questions (as of `23097ee`)
+
+Answers 1–5 below describe the code before Parts H–K. Where they say something is missing, the rows
+above say what changed: DR-02 (answer 1), DR-04 (2), DR-12 (3), IR-01 (4), IR-04 (5).
 
 ### 1) DR-02: storage and display of timestamps
 
@@ -108,200 +142,67 @@ Paths are relative to the repository root. `S/` = `server/`, `C/` = `client/src/
 `supervisor_review.reviewed_at`, `notification.sent_at`, `audit_log.logged_at`), `:69-70`
 (`shift.start_time/end_time`), `:82-83` (`submitted_at`, `closed_at`), `:109` (`occurred_at`),
 `:117` (`confirmed_at`), `:137` (`read_at`); `1791100000000_access-requests.js:26,31`;
-`1791300000000_messaging.js:33,51`; `1791400000000_shift-reminders.js:30`. Postgres stores
-`timestamptz` as UTC, and the container's `TimeZone` is `Etc/UTC`. The API returns them as ISO 8601 UTC
-strings (JSON serialisation of `Date`). The export sets `exported_at` with `toISOString()`
-(`workflow.service.js:100`).
+`1791300000000_messaging.js:33,51`; `1791400000000_shift-reminders.js:30`; since then also
+`email_outbox` and `app_user.calendar_feed_created_at`. Postgres stores `timestamptz` as UTC; the API
+returns ISO 8601 UTC strings.
 
-**Display: not met.**
-- Most dates use `fmt` = `new Date(d).toLocaleString()` (`C/lib/format.js:3`), with `fmtDate`/`fmtTime` at
-  `:5,7`. These use the **browser's** time zone and locale, so they show EAT only when the computer is set
-  to Nairobi. The output is not ISO 8601 (for example "13/10/2026, 18:00:00" in an en-GB browser). `fmt` is used for
-  record, incident, audit, review and message times: `C/components/Handover.jsx:28,36,104,137,177,189,191`,
-  `C/pages/PrintRecord.jsx:84-89,111,119,129,137`, `C/pages/OutgoingPage.jsx:329,364-365`,
-  `C/pages/IncomingPage.jsx:112`, `C/pages/SupervisorPage.jsx:119,332`, `C/pages/MessagesPage.jsx:51,185`,
-  `C/pages/AccessRequests.jsx:173,202`.
-- Shift times use `Africa/Nairobi` explicitly (`C/lib/format.js:39-43`, used in `ShiftBanner.jsx:30,48` and
-  `RosterPage.jsx:44,99,126`). Reminder text does the same (`S/src/jobs/reminders.js:31-33`). The format is
-  `HH:MM EAT` / "Tue 13 Oct", which is EAT but not ISO 8601.
-- The incident "Occurred at" input is `datetime-local` (`OutgoingPage.jsx:253`). It is converted with
-  `new Date(value).toISOString()` (`:128`), so the browser's time zone, not EAT, decides what it means.
+**Display (at `23097ee`): not met.** Most dates used `new Date(d).toLocaleString()` in the browser's
+zone and locale; shift times used Nairobi time but not ISO order; the incident input used the
+browser's zone. Fixed in `97e0f23` (see DR-02 above).
 
 ### 2) DR-04: validation of task and incident fields
 
-- **Task description:** only "string, non-empty after trim" (`handovers.routes.js:64` on create, `:76` on
-  update). The column is unbounded `text` (`initial-schema.js:96`). The client input has no length limit
-  (`OutgoingPage.jsx:233-235`). **No minimum of 10 or maximum of 1,000 characters exists.**
-- **Incident severity:** required, one of `low|medium|high|critical` (`handovers.routes.js:91`). The DB column
-  is `severity_enum NOT NULL` (`initial-schema.js:108`).
-- **Incident time of occurrence:** required ISO 8601 (`handovers.routes.js:92`), `timestamptz NOT NULL`
-  (`initial-schema.js:109`). There is no check that it is not in the future or that it falls within the shift.
-- Tests (new): `handover.draft-content.test.js` "a missing severity or time of occurrence, or an unknown
-  severity, is refused (400)".
+At `23097ee` the task description was only "non-empty"; severity and time of occurrence were required.
+Fixed in `294307a` (DR-04 above).
 
 ### 3) DR-12: logging of rejected submissions
 
-**No.** A validation failure throws `AppError(400)` (`S/src/middleware/validate.js:8`). An incomplete submit
-throws `AppError(422)` with `missing_fields` (`handovers.service.js:361-365`). The error handler sends the
-response and logs nothing for an `AppError` (`errorHandler.js:6-8`); only unexpected errors are logged (`:20`). The
-422 is raised inside the submit transaction, which is rolled back. The test `handover.submit.test.js` "a
-rejected submit writes no audit row and no notifications" asserts that nothing is written. The only trace
-is morgan's request line (method, URL, status), and only when `NODE_ENV` is not `test` (`app.js:12`).
-It does not record the reason or the user.
+At `23097ee` rejected submissions were rolled back and not logged with their reason. Fixed in `1031979` (DR-12 above).
 
 ### 4) IR-01: breakpoints and touch targets
 
-- **Breakpoints:** Tailwind v4 defaults. `C/index.css:11-79` defines no custom `--breakpoint-*`, so
-  `sm` = 640, `md` = 768, `lg` = 1024, `xl` = 1280 px. Usage in `.jsx`: `sm:` 116, `lg:` 54, `md:` 13,
-  `xl:` 5, `max-sm:` 2, and one `min-[400px]:`. The table hides columns by `hideBelow` (`C/components/ui/Table.jsx:5`).
-  There is no 320 px breakpoint (unprefixed styles apply from 0 px). 768 and 1280 exist, but the layout mostly
-  switches at 640 and 1024.
-- **Touch targets:** `C/components/ui/Button.jsx:14-19`: `sm` = `h-8` (32 px), `md` = `h-9` (36 px, the default),
-  `icon` = `size-9` (36 × 36 px), `lg` = `h-11` (44 px). Inputs and selects are `h-9` (36 px) (`C/components/ui/Field.jsx:47,66`).
-  Only `lg` buttons reach 44 px.
+At `23097ee` most targets were 32–36 px. Tailwind v4 default breakpoints (`sm` 640, `md` 768, `lg` 1024,
+`xl` 1280); no 320 px breakpoint (mobile-first base). Fixed in `37aa42f` and `e9a0ca1` (IR-01 above).
 
 ### 5) IR-04: string-built queries
 
-**Values from users are bound as `$n` parameters everywhere except one place.**
-`messages.service.js:51` and `:68` interpolate `LIMIT ${size} OFFSET ${offset}`. These values come from `?page` and
-`?page_size`. They pass `isInt({min:1})` (`messages.routes.js:15-18`) and `Number()`/`Math.min/max` (`messages.service.js:35-39`),
-so they are always numbers and cannot inject SQL. They are still not parameters, and a very large page fails: `GET /api/messages/inbox?page=99999999999999999999`
-returned **500** (`bigint out of range`) on the scratch instance.
-
-Other template literals put only **fixed SQL text** into queries, never user values:
-- shared column and join fragments: `RECORD_SELECT` (`handovers.service.js:8-16`), `PROFILE_SELECT` (`auth.service.js:14-17`),
-  `USER_COLUMNS` (`admin.service.js:9-10`), `REQUEST_SELECT` (`accessRequests.service.js:8-14`), `VISIBLE` and `messageSelect` (`messages.service.js:18-33`),
-  `ASSIGNED` (`shifts.service.js:7-10`), `SHIFT_COLUMNS` and `DUE_WINDOW(anchor, sign)` with constant arguments (`reminders.js:37-41`).
-- `WHERE` built by joining fixed fragments that hold `$n` placeholders (`handovers.service.js:147,163`, `workflow.service.js:290,303`).
-  The search keyword is bound as a parameter after escaping `%`/`_` (`workflow.service.js:296-300`).
-- constant choices: `extraSql` is either `''` or `', closed_at = now()'` (`workflow.service.js:43`, callers `:217,250`).
-  Also `lock ? 'FOR UPDATE' : ''` (`admin.service.js:147`, `shifts.service.js:31`), and `ASC`/`DESC` chosen from a validated enum (`accessRequests.service.js:52`).
-
-No query uses `+` concatenation. Strictly, the requirement's "no query constructed by string concatenation" is
-not met, because queries are assembled from fragments, but none of those fragments contains user input.
-
-**Files checked** (every file that issues SQL): `server/src/config/db.js`, `server/src/db/tx.js`,
-`server/src/utils/audit.js`, `server/src/middleware/auth.js`, `server/src/jobs/reminders.js`,
-`server/src/modules/auth/auth.routes.js`, `auth.service.js`, `server/src/modules/health/health.routes.js`,
-`server/src/modules/handovers/handovers.service.js`, `workflow.service.js`, `server/src/modules/messages/messages.service.js`,
-`server/src/modules/notifications/notifications.routes.js`, `server/src/modules/shifts/shifts.service.js`,
-`server/src/modules/admin/admin.service.js`, `server/src/modules/accessRequests/accessRequests.service.js`,
-`server/src/db/seeds/seed.js`, `server/src/db/seeds/demo-reminders.js`, all five `server/migrations/*.js`,
-`server/tests/helpers/globalSetup.js` (test-only `CREATE DATABASE "${dbName}"` from the env URL), and
-`scripts/restore.ps1` (fixed count query). Route files that only call services were also read:
-`handovers.routes.js`, `messages.routes.js`, `shifts.routes.js`, `admin.routes.js`, `dashboard.routes.js`,
-`accessRequests.routes.js`.
+At `23097ee`, `LIMIT ${size} OFFSET ${offset}` in messages was interpolated and `page=99999999999999999999`
+returned 500. Fixed in `d8efc69`. Other template literals put only **fixed SQL text** into queries, never user values:
+shared column/join fragments (`RECORD_SELECT`, `PROFILE_SELECT`, `USER_COLUMNS`, `REQUEST_SELECT`, `VISIBLE`,
+`messageSelect`, `ASSIGNED`, `SHIFT_COLUMNS`, `DUE_WINDOW`, and since then `CALENDAR_COLUMNS` and the
+dashboard's `inWindow(alias)`), `WHERE` lists joined from fixed fragments with `$n` placeholders, and constant
+choices (`extraSql`, `FOR UPDATE`, `ASC`/`DESC`).
 
 ### 6) NFR-06: fixed or sliding expiry
 
-**Fixed from sign-in.** The token is signed once with `expiresIn: process.env.JWT_EXPIRY || '30m'`
-(`auth.service.js:26-30`), and that applies to Google sign-in too (`:140`). There is no refresh or re-issue endpoint
-(`auth.routes.js` has only `login`, `google*` and `me`). `requireAuth` only verifies the token (`middleware/auth.js:16`).
-In the client, a 401 clears the token and logs the user out (`C/api.js:22-31`), and an expired token found at load is dropped
-(`C/auth/AuthContext.jsx:13-21`). A user who is active for 30 minutes is therefore signed out mid-work.
-This is stricter than the requirement, not looser.
+**Fixed from sign-in** (`expiresIn: process.env.JWT_EXPIRY || '30m'`), for password and Google sign-in alike.
+No refresh endpoint; a 401 logs the client out. A password change issues a fresh token.
 
-### 7) NFR-14: axe-core results (report only, nothing fixed)
+### 7) NFR-14: axe-core results
 
-Tool: axe-core 4.10.0, tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`. Headless Microsoft Edge (Playwright),
-1280 × 900, reduced motion, theme forced through the app's own `shms-theme` setting. The `.dark` class on `<html>` was confirmed for
-each dark run. Two passes were made:
-- **Dev instance** (your running client on 5173 and API on 4000, `shms_dev`): login, outgoing, incoming, supervisor and admin.
-  On this database `/outgoing` showed only the "No active shift" empty state.
-- **Scratch instance** (client on 5174, API on 4100, seeded `shms_eval_scratch` with a draft containing a task and an incident, plus a
-  submitted Maintenance record): login, outgoing (full draft editor), incoming (pending record open), supervisor
-  overview, supervisor queue, admin users and admin templates.
-
-| Page | Light: contrast violations | Dark: contrast violations | Undecided by axe | Other WCAG violations |
-|---|---|---|---|---|
-| Login | 0 | 0 | 9 per theme (text on the frosted card over the photo, `bgGradient`) | 0 |
-| Outgoing (draft editor) | 0 | 0 | 2 per theme (two textareas, `elmPartiallyObscured`) | 0 |
-| Incoming (record open) | 0 | 0 | 0 | 0 |
-| Supervisor overview | 0 | 0 | 0 | 0 |
-| Supervisor queue | 0 | 0 | 0 | 0 |
-| Admin users | 0 | 0 | 0 | 0 |
-| Admin templates | 0 | 0 | 0 | 0 |
-
-**axe reported no contrast violations in either theme.** Things axe does not cover, checked by hand:
-- Placeholder text (`placeholder:text-ink-500`, `Field.jsx:5`): 4.83:1 in light, 5.59:1 in dark. Passes.
-- The 9 undecided login nodes sit on the frosted card over a photo. They need a manual check against the real
-  image. The card fill is 80 % opaque (`index.css:126-141`).
-- Initials of an *inactive* user in the admin list use `text-ink-400` on `bg-ink-50` (`AdminPage.jsx:144`), about 2.5:1.
-  They are `aria-hidden`, the name is shown beside them, and no inactive user existed in either database, so axe did not see them.
-
-Not covered: keyboard-only operation (the other half of NFR-14), any view other than the ones listed, dialogs and
-drawers in their open state, mobile widths.
+axe-core 4.10.0 (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`), headless Edge, 1280 × 900, both themes: **0
+colour-contrast violations** on login, outgoing, incoming, supervisor overview and queue, admin users and
+templates. Not re-run after Parts H–K. Keyboard-only operation not tested.
 
 ### 8) DR-10: personal data beyond the five listed fields
 
-| Where | Field | Note |
-|---|---|---|
-| `app_user` | `password_hash` | Needed for sign-in (`initial-schema.js:59`). |
-| `app_user` | `google_sub` | Google account identifier, stored after the first Google sign-in (`1791200000000_app-user-google-sub.js:14-16`). |
-| `access_request` | `full_name`, `email`, `staff_number`, `note`, `review_reason`, `created_at` | Held for people who are **not** users, including rejected requesters. Kept indefinitely (`1791100000000_access-requests.js:17-32`). |
-| `message` | `subject`, `body` | Free text up to 2,000 characters. Append-only, so it can never be removed (`1791300000000_messaging.js:25-34,56-63`). |
-| `message_read` | `user_id`, `read_at` | Per-user read times (`:48-52`). |
-| `notification` | `title`, `body`, `read_at` | Reminder text includes colleagues' names (`1791400000000_shift-reminders.js:34-39`, `reminders.js:113,134`). |
-| `shift_assignment` | who works which shift | Roster (`1791400000000_shift-reminders.js:20-23`). |
-| `incident` / `task` / `summary_notes` | free text | May name people. |
-| `audit_log` | `previous_value`, `new_value` (jsonb) | Full user snapshots (name, email, role, `google_sub`, but not the hash: `admin.service.js:13`), full access-request rows including `note` (`accessRequests.service.js:41-43,90-93`), the `google_sub` link (`auth.service.js:131-134`), and a `login` row for every sign-in. Append-only, so it can never be removed (`initial-schema.js:255-257`). Message subjects and bodies are kept out of it (`messages.service.js:149-156`). |
-
-No passenger data is held. Request logs (morgan `dev`) contain no IP address or body.
+`app_user.password_hash`, `google_sub`, `must_change_password`, `email_notifications`, `calendar_feed_hash`
+(SHA-256 of the feed token); `access_request` rows for non-users; message subjects and bodies; per-user
+read times; notification text (reminders name colleagues); the roster; free text in records; audit snapshots.
+`email_outbox.to_address` repeats a work email already held. No passenger data.
 
 ### 9) FR-19: alerts beyond the dashboard flag
 
-Yes. `S/src/jobs/reminders.js` runs every minute (`:168-183`). It is started from `S/src/server.js:13-16` unless
-`NODE_ENV=test` or `REMINDERS_ENABLED=false`. Every alert is an **in-app `notification` row** of type
-`reminder`. No email or SMS is sent. Each alert is written once per (type, reference, user), guarded by
-`reminder_log` (`:43-55`), and only if its due time is in the last 60 minutes (`REMINDER_LOOKBACK_MINUTES`,
-`:27,36-39`).
-
-| Type | To | When (defaults, env-configurable at `:20-29`) | Condition |
-|---|---|---|---|
-| `shift_start` | staff assigned to the shift | 30 min before shift start | active user (`:59-75`) |
-| `handover_due_first` | assigned **outgoing** staff | 30 min before shift end | no non-draft record for the shift (`:79-95`) |
-| `handover_due_final` | assigned outgoing staff | 10 min before shift end | same |
-| `ack_pending` | the record's incoming user | 15 min after the incoming shift starts (= record's shift `end_time`) | status `submitted` (`:99-115`) |
-| `supervisor_unacknowledged` | every active supervisor of the department | 120 min after the incoming shift starts | status `submitted` or `queried` (`:117-136`) |
-| `supervisor_no_handover` | every active supervisor of the department | at shift end | no non-draft record for the shift (`:139-154`) |
-
-In the client, the bell polls every 5 s. When a new `reminder` arrives it shows a toast, and it shows a browser desktop
-notification if the user has turned that on (`C/components/shell/NotificationsMenu.jsx:92-99`, `C/lib/desktopAlerts.js:32-40`).
-Admins get no reminders. If a department has no supervisor, nobody gets the alert.
+The reminders job (now the "jobs tick", `S/src/jobs/reminders.js` `startJobs`) sends in-app reminders and, when
+email is on, queues email alerts for them and sends the outbox.
 
 ### 10) FR-03: endpoints that cross departments
 
-| Endpoint | What crosses | Evidence |
-|---|---|---|
-| `GET /api/directory` | Every active user in every department (name, role, department). Any authenticated role can call it. | `messages.routes.js:61-63`, `messages.service.js:170-178`; test `messaging.test.js` "directory lists active users with minimal fields only" |
-| `GET /api/directory/departments` | All department ids and names | `messages.routes.js:64`, `messages.service.js:181-184` |
-| `POST /api/messages` (`recipient_type: user`) | Any user may message any active user in any department (deliberate, documented) | `messages.service.js:6-9,116-121`; test "work across departments, notify the recipient…" |
-| `POST /api/messages` (`department`) | Supervisors and admins may broadcast to **any** department | `messages.service.js:123-129`; test "supervisors and admins can broadcast to any department" |
-| `POST /api/messages` (`organisation`) | Supervisors and admins reach every user | `messages.service.js:131-133` |
-| `GET /api/messages/inbox`, `/:id` | Readers see messages from senders in other departments, with sender name and department | `messages.service.js:18-33` |
-| `GET /api/access-requests/departments` | Department codes and names, **unauthenticated** | `accessRequests.routes.js:24`; test "lists departments publicly with code and name only" |
-| `/api/admin/*`, `GET /api/dashboard/supervisor`, `GET /api/handovers/search`, `GET /api/shifts` | Admin only, or admin may pass any department | Intended for the admin role |
-
-No cross-department path was found for handover records, tasks, incidents, notifications, roster changes or
-shift assignments. `GET /api/shifts` and `GET /api/shifts/:id/assignments` are scoped (`shifts.service.js:15,53,67`).
-`GET /api/shifts/mine` returns only the caller's shifts (`:90-106`).
+`GET /api/directory` (every active user), `GET /api/directory/departments`, direct messages to anyone,
+broadcasts by supervisors/admins to any department or everyone, unauthenticated department list for the
+access-request form. All deliberate. The calendar feed and downloads are not cross-department.
 
 ### 11) FR-21..FR-25
 
-**Not possible.** No draft wording for FR-21..FR-25 exists. It was not in `docs/requirements.md` (which did not exist
-before this change), not in the proposal (which defines FR-01..FR-20 only), and nowhere else in the repository.
-`docs/requirements.md` now says so at the bottom. No corrections were made. Send the drafts and I will correct them
-against the code.
-
----
-
-## What is not covered anywhere
-
-- Nothing was run in Chrome, Firefox or Safari, on a phone, or at widths other than 1280 px. The print view was not printed from a browser.
-- No usability walkthrough or SUS (NFR-12, NFR-13). No keyboard-only test (NFR-14).
-- No TLS (NFR-08, IR-02) and no email channel (IR-05..IR-07).
-- No fault-injection test for the submit transaction (NFR-10).
-- No 60-session degradation comparison (NFR-04). Page render time under load was not measured (NFR-01).
-- No scheduled backups, WAL archiving or 24-month archival (DR-08, DR-09, NFR-11).
-- No test for search (FR-16) or for the one-open-record constraint (DR-05).
-- All load figures come from one machine, with the load generator on the same host (C2, C5).
+No draft wording exists in the repository. FR-24 (Google sign-in) is described in one paragraph in
+`README.md` ("How it works, in one paragraph").
