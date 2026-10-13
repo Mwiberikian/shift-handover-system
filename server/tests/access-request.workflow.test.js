@@ -104,15 +104,21 @@ describe('admin approval', () => {
     expect(res.body.user.role).toBe('supervisor');
     expect(res.body.user.department_id).toBe(world.depts.dept_b.department_id);
     expect(res.body.user).not.toHaveProperty('password_hash');
-    expect(res.body.temporary_password).toMatch(/^[A-Za-z2-9]{14}$/);
+    // NFR-05: the approve response carries a reveal token, never the password.
+    expect(res.body).not.toHaveProperty('temporary_password');
+    const { body: { temporary_password: password } } = await admin.post(
+      `/api/admin/access-requests/${submitted.request_id}/temporary-password`,
+      { reveal_token: res.body.temporary_password_reveal.token },
+    );
+    expect(password).toMatch(/^[A-Za-z2-9]{14}$/);
 
-    const loggedIn = await login('amina.wekesa@test.example', res.body.temporary_password);
+    const loggedIn = await login('amina.wekesa@test.example', password);
     expect(loggedIn.status).toBe(200);
     expect(loggedIn.body.user.role).toBe('supervisor');
 
     const { rows: [row] } = await pool.query('SELECT user_id FROM access_request WHERE request_id = $1', [submitted.request_id]);
     expect(row.user_id).toBe(res.body.user.user_id);
-    expect((await auditFor(submitted.request_id)).map((a) => a.action)).toEqual(['create', 'approve']);
+    expect((await auditFor(submitted.request_id)).map((a) => a.action)).toEqual(['create', 'approve', 'reveal_temporary_password']);
     expect((await auditFor(res.body.user.user_id)).map((a) => a.action)).toEqual(['create', 'login']);
   });
 

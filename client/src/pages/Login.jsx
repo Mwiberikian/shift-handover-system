@@ -24,7 +24,7 @@ export default function Login() {
     setError('');
     try {
       const claims = await login(identifier.trim(), password);
-      navigate(ROLE_HOME[claims.role], { replace: true });
+      navigate(claims.pwd_change ? '/change-password' : ROLE_HOME[claims.role], { replace: true });
     } catch (err) {
       setError(err.response?.status === 401 ? 'The staff number/email or password is incorrect.' : errorMessage(err));
       setPassword('');
@@ -40,7 +40,7 @@ export default function Login() {
     setError('');
     try {
       const claims = await loginWithGoogle(credential);
-      navigate(ROLE_HOME[claims.role], { replace: true });
+      navigate(claims.pwd_change ? '/change-password' : ROLE_HOME[claims.role], { replace: true });
     } catch (err) {
       const data = err.response?.data;
       if (err.response?.status === 404 && data?.code === 'no_account') {

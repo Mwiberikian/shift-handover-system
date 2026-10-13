@@ -4,6 +4,7 @@ const AppError = require('../../utils/AppError');
 const { withTransaction } = require('../../db/tx');
 const { writeAudit } = require('../../utils/audit');
 const { insertUser } = require('../admin/admin.service');
+const oneTimeSecrets = require('../../utils/oneTimeSecrets');
 
 const REQUEST_COLUMNS = `ar.request_id, ar.full_name, ar.email, ar.staff_number, ar.requested_department_code,
                          d.name AS requested_department_name, ar.note, ar.status, ar.reviewed_by,
@@ -62,25 +63,29 @@ async function lockPending(client, requestId) {
   return request;
 }
 
-// 14 characters from an unambiguous alphabet; shown to the admin once.
+// 14 characters from an unambiguous alphabet. Never stored in plain text,
+// logged, emailed or put in the approve response: the approving admin reads it
+// once through revealTemporaryPassword (NFR-05).
 function temporaryPassword() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   return Array.from(crypto.randomBytes(14), (b) => alphabet[b % alphabet.length]).join('');
 }
 
 // Admin decides role and department; the request only supplies identity.
+// The account must change its password at first sign-in. The response holds a
+// single-use reveal token for the temporary password, not the password.
 async function approve(admin, requestId, { role, department_id: departmentId, staff_number: staffNumber }) {
-  return withTransaction(async (client) => {
+  const password = temporaryPassword();
+  const result = await withTransaction(async (client) => {
     const request = await lockPending(client, requestId);
     const finalStaffNumber = staffNumber || request.staff_number;
     if (!finalStaffNumber) {
       throw new AppError(400, 'Validation failed', [{ field: 'staff_number', message: 'staff_number is required because the request did not include one' }]);
     }
 
-    const password = temporaryPassword();
     const user = await insertUser(client, admin, {
       staff_number: finalStaffNumber, full_name: request.full_name, email: request.email, password, role, department_id: departmentId,
-    }, { source: 'access_request', request_id: requestId });
+    }, { source: 'access_request', request_id: requestId, must_change_password: true }, { mustChangePassword: true });
 
     const { rows: [updated] } = await client.query(
       `UPDATE access_request SET status = 'approved', reviewed_by = $2, reviewed_at = now(), user_id = $3
@@ -91,8 +96,25 @@ async function approve(admin, requestId, { role, department_id: departmentId, st
       userId: admin.user_id, entityType: 'access_request', entityId: requestId, action: 'approve',
       previousValue: request, newValue: updated,
     });
-    return { request: updated, user, temporary_password: password };
+    return { request: updated, user };
   });
+  // Only after the commit: a rolled-back approval leaves nothing to reveal.
+  const reveal = oneTimeSecrets.put(password, `${admin.user_id}:${requestId}`);
+  return { ...result, temporary_password_reveal: { token: reveal.token, expires_at: reveal.expiresAt } };
+}
+
+// Returns the temporary password once, to the admin who approved the request,
+// within the reveal window. Audited without the value.
+async function revealTemporaryPassword(admin, requestId, revealToken) {
+  const password = oneTimeSecrets.take(revealToken, `${admin.user_id}:${requestId}`);
+  if (!password) {
+    throw new AppError(410, 'The temporary password has already been shown, has expired, or belongs to another approval. Set a new password for the user instead.');
+  }
+  await withTransaction((client) => writeAudit(client, {
+    userId: admin.user_id, entityType: 'access_request', entityId: requestId, action: 'reveal_temporary_password',
+    newValue: { shown_to: admin.user_id },
+  }));
+  return { temporary_password: password };
 }
 
 async function reject(admin, requestId, { reason }) {
@@ -112,5 +134,5 @@ async function reject(admin, requestId, { reason }) {
 }
 
 module.exports = {
-  listRequestableDepartments, submit, list, approve, reject,
+  listRequestableDepartments, submit, list, approve, revealTemporaryPassword, reject,
 };

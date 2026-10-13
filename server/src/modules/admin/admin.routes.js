@@ -98,6 +98,19 @@ router.post(
   async (req, res) => res.status(201).json(await accessRequests.approve(req.user, req.params.id, req.body)),
 );
 
+// NFR-05: the temporary password, once, for the admin who approved it.
+router.post(
+  '/access-requests/:id/temporary-password',
+  requestId,
+  body('reveal_token', 'reveal_token is required').isString().notEmpty().isLength({ max: 100 }),
+  validate,
+  async (req, res) => {
+    const result = await accessRequests.revealTemporaryPassword(req.user, req.params.id, req.body.reveal_token);
+    res.set('Cache-Control', 'no-store');
+    res.json(result);
+  },
+);
+
 router.post(
   '/access-requests/:id/reject',
   requestId,

@@ -16,6 +16,7 @@ const IncomingPage = lazy(() => import('./pages/IncomingPage'));
 const SupervisorPage = lazy(() => import('./pages/SupervisorPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const PrintRecord = lazy(() => import('./pages/PrintRecord'));
+const ChangePassword = lazy(() => import('./pages/ChangePassword'));
 
 // Only lets a user into the dashboard for the role in their JWT.
 export function RequireRole({ role }) {
@@ -29,6 +30,19 @@ export default function App() {
   const { claims } = useAuth();
   const home = claims ? ROLE_HOME[claims.role] : '/';
 
+  // NFR-05: a temporary password must be replaced before anything else. The
+  // API refuses other calls too; this keeps the app from showing them.
+  if (claims?.pwd_change) {
+    return (
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="*" element={<Navigate to="/change-password" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
   return (
     <Suspense fallback={null}>
     <Routes>
@@ -37,6 +51,7 @@ export default function App() {
       <Route path="/request-access" element={claims ? <Navigate to={home} replace /> : <RequestAccess />} />
       <Route path="/help" element={<Help />} />
       <Route path="/login" element={claims ? <Navigate to={home} replace /> : <Login />} />
+      <Route path="/change-password" element={claims ? <ChangePassword /> : <Navigate to="/login" replace />} />
       {/* Outside the app layout so it prints without navigation; the API applies the access rules. */}
       <Route path="/handovers/:id/print" element={claims ? <PrintRecord /> : <Navigate to="/login" replace />} />
       <Route element={<Layout />}>

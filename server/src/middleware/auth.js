@@ -4,8 +4,10 @@ const AppError = require('../utils/AppError');
 
 // Verifies the bearer JWT and confirms the account is still active with the
 // same role/department, so deactivation or reassignment takes effect
-// immediately rather than at token expiry.
-async function requireAuth(req, res, next) {
+// immediately rather than at token expiry. An account that must change its
+// temporary password (NFR-05) is refused everywhere except the routes that
+// use requireAuthForPasswordChange.
+async function authenticate(req, { allowPasswordChange }) {
   const [scheme, token] = (req.get('authorization') || '').split(' ');
   if (scheme !== 'Bearer' || !token) {
     throw new AppError(401, 'Missing bearer token');
@@ -19,7 +21,7 @@ async function requireAuth(req, res, next) {
   }
 
   const { rows: [user] } = await pool.query(
-    'SELECT user_id, role, department_id, is_active FROM app_user WHERE user_id = $1',
+    'SELECT user_id, role, department_id, is_active, must_change_password FROM app_user WHERE user_id = $1',
     [claims.user_id],
   );
   if (!user || !user.is_active) {
@@ -29,7 +31,23 @@ async function requireAuth(req, res, next) {
     throw new AppError(401, 'Role or department changed; please log in again');
   }
 
-  req.user = { user_id: user.user_id, role: user.role, department_id: user.department_id };
+  if (user.must_change_password && !allowPasswordChange) {
+    throw new AppError(403, 'You must change your temporary password before continuing', { code: 'password_change_required' });
+  }
+
+  req.user = {
+    user_id: user.user_id, role: user.role, department_id: user.department_id, must_change_password: user.must_change_password,
+  };
+}
+
+async function requireAuth(req, res, next) {
+  await authenticate(req, { allowPasswordChange: false });
+  next();
+}
+
+// For GET /api/auth/me and POST /api/auth/change-password only.
+async function requireAuthForPasswordChange(req, res, next) {
+  await authenticate(req, { allowPasswordChange: true });
   next();
 }
 
@@ -53,4 +71,6 @@ function assertDepartmentAccess(user, departmentId) {
   }
 }
 
-module.exports = { requireAuth, requireRole, assertDepartmentAccess };
+module.exports = {
+  requireAuth, requireAuthForPasswordChange, requireRole, assertDepartmentAccess,
+};

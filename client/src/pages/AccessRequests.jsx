@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Building2, Check, CheckCircle2, Copy, Inbox, KeyRound, UserCheck, UserX, XCircle,
 } from 'lucide-react';
-import api from '../api';
+import api, { errorMessage } from '../api';
 import {
   Badge, Button, Callout, Card, ConfirmDialog, EmptyState, Input, Modal, Select, SkeletonTable, Table, Textarea,
 } from '../components/ui';
@@ -16,6 +16,11 @@ function ApproveDialog({ request, departments, onClose, onApproved }) {
   const requestedDept = departments.find((d) => d.code === request.requested_department_code);
   const [form, setForm] = useState({ role: '', department_id: requestedDept?.department_id ?? '', staff_number: request.staff_number ?? '' });
   const [result, setResult] = useState(null);
+  // NFR-05: the approve response has no password, only a single-use reveal
+  // token. It is exchanged at once and the password lives only in this
+  // dialog's state; closing the dialog discards it for good.
+  const [temporaryPassword, setTemporaryPassword] = useState(null);
+  const [revealError, setRevealError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [run, busy] = useAction();
 
@@ -28,12 +33,20 @@ function ApproveDialog({ request, departments, onClose, onApproved }) {
       });
       setResult(data);
       onApproved();
+      try {
+        const { data: shown } = await api.post(`/admin/access-requests/${request.request_id}/temporary-password`, {
+          reveal_token: data.temporary_password_reveal.token,
+        });
+        setTemporaryPassword(shown.temporary_password);
+      } catch (err) {
+        setRevealError(errorMessage(err));
+      }
     });
   };
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(result.temporary_password);
+      await navigator.clipboard.writeText(temporaryPassword);
       setCopied(true);
       toast.success('Temporary password copied');
     } catch {
@@ -56,12 +69,19 @@ function ApproveDialog({ request, departments, onClose, onApproved }) {
           </Callout>
           <div>
             <p className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-ink-800"><KeyRound aria-hidden className="size-4" />Temporary password</p>
-            <div className="flex items-stretch gap-2">
-              <code className="flex-1 rounded-lg bg-brand-black px-3 py-2 font-mono text-base tracking-wider text-white select-all">{result.temporary_password}</code>
-              <Button icon={copied ? Check : Copy} onClick={copy} aria-label="Copy temporary password">{copied ? 'Copied' : 'Copy'}</Button>
-            </div>
+            {temporaryPassword ? (
+              <div className="flex items-stretch gap-2">
+                <code className="flex-1 rounded-lg bg-brand-black px-3 py-2 font-mono text-base tracking-wider text-white select-all">{temporaryPassword}</code>
+                <Button icon={copied ? Check : Copy} onClick={copy} aria-label="Copy temporary password">{copied ? 'Copied' : 'Copy'}</Button>
+              </div>
+            ) : (
+              <Callout tone="warning" title="The temporary password could not be shown">
+                {revealError ?? 'Set a new password for this user from Users.'}
+              </Callout>
+            )}
             <p className="mt-2 text-meta text-ink-600">
-              This is shown only once. Pass it to {result.user.full_name.split(' ')[0]} through a secure channel.
+              Shown only once and never emailed. Pass it to {result.user.full_name.split(' ')[0]} in person or
+              by phone. They must choose their own password the first time they sign in.
             </p>
           </div>
         </div>

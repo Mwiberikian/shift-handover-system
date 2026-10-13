@@ -57,9 +57,18 @@ export function AuthProvider({ children }) {
     return decodeToken(data.token);
   }, []);
 
+  // Replaces the session with one the API issued (e.g. after a password change).
+  const applySession = useCallback((data) => {
+    tokenStore.set(data.token);
+    const next = decodeToken(data.token);
+    setClaims(next);
+    setProfile(data.user);
+    return next;
+  }, []);
+
   const value = useMemo(() => ({
-    claims, profile, login, loginWithGoogle, logout,
-  }), [claims, profile, login, loginWithGoogle, logout]);
+    claims, profile, login, loginWithGoogle, logout, applySession,
+  }), [claims, profile, login, loginWithGoogle, logout, applySession]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

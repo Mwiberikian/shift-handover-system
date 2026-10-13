@@ -7,7 +7,7 @@ const { writeAudit } = require('../../utils/audit');
 const { checkFieldDefinition } = require('../handovers/template.validation');
 
 const USER_COLUMNS = `u.user_id, u.staff_number, u.full_name, u.email, u.role, u.department_id, u.is_active,
-                      d.code AS department_code, d.name AS department_name`;
+                      u.must_change_password, d.code AS department_code, d.name AS department_name`;
 
 // Audit snapshots never include the password hash.
 const userAuditView = ({ password_hash: _omit, ...rest }) => rest;
@@ -60,17 +60,18 @@ async function getUser(userId) {
 
 // Inserts and audits a new account inside the caller's transaction. Shared by
 // direct creation and by approving an access request (`auditExtra` records
-// where the account came from).
-async function insertUser(client, admin, body, auditExtra = {}) {
+// where the account came from). `mustChangePassword` marks the password as
+// temporary (NFR-05).
+async function insertUser(client, admin, body, auditExtra = {}, { mustChangePassword = false } = {}) {
   await assertRoleDepartment(client, body.role, body.department_id);
   const passwordHash = await bcrypt.hash(body.password, BCRYPT_ROUNDS);
   let user;
   try {
     ({ rows: [user] } = await client.query(
-      `INSERT INTO app_user (staff_number, full_name, email, password_hash, role, department_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, true)) RETURNING *`,
+      `INSERT INTO app_user (staff_number, full_name, email, password_hash, role, department_id, is_active, must_change_password)
+       VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, true), $8) RETURNING *`,
       [body.staff_number, body.full_name, body.email.toLowerCase(), passwordHash, body.role,
-        body.department_id || null, body.is_active ?? null],
+        body.department_id || null, body.is_active ?? null, mustChangePassword],
     ));
   } catch (err) {
     translateUniqueViolation(err);

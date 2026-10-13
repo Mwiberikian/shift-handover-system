@@ -44,7 +44,13 @@ incoming user on the next one.
 
 - Structured handovers per department template, carry-forward of open tasks,
   acknowledgement or query, supervisor review/escalation, append-only audit log.
-- Request access (public form; an admin approves and assigns the role).
+- Request access (public form; an admin approves and assigns the role). The
+  approving admin sees the generated temporary password once, in the approval
+  dialog; it is never stored, logged or emailed, and the approve response itself
+  does not contain it. The new user must choose their own password at first
+  sign-in (`POST /api/auth/change-password`); until then the API refuses every
+  other call. The one-time copy is held in the API's memory for 10 minutes, so a
+  restart in that window loses it: set a new password from Users instead.
 - Optional Sign in with Google for existing accounts (see below).
 - In-app messaging, shift reminders, a supervisor roster.
 - The notification bell and message badge poll an unread count every 5 s
@@ -240,6 +246,7 @@ end in `_test`.
 | `auth.login.test.js` | Login, JWT claims/expiry, bcrypt cost 12 |
 | `messaging.test.js` | Cross-department direct messages, broadcast permissions (403s), private direct messages, append-only (API and DB), per-user rate limit |
 | `access-request.workflow.test.js` | Request access grants nothing until approved; admin approve/reject; rate limit; RBAC |
+| `auth.temporary-password.test.js` | Approve response has no password; one-time reveal (owner only, expires); first sign-in blocked until the password changes; bcrypt 12; audit without values |
 | `shift-reminders.test.js` | Reminders with an injected clock: fire at the lead time and not before, never twice (incl. racing ticks), none once submitted, supervisor alerts; roster API scoping |
 | `auth.google.test.js` | Google sign-in (token verification mocked): known user, no account, unverified email, deactivated user, wrong audience, conflicting Google account, 503 when unconfigured |
 | `handover.export.test.js` | Export holds tasks, incidents, acknowledgement, reviews and only this record's audit entries; same access as `GET /:id` |

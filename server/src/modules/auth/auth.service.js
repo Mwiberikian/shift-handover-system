@@ -12,7 +12,7 @@ const { writeAudit } = require('../../utils/audit');
 let dummyHash;
 
 const PROFILE_SELECT = `SELECT u.user_id, u.staff_number, u.full_name, u.email, u.password_hash, u.role,
-                               u.department_id, u.is_active, u.google_sub,
+                               u.department_id, u.is_active, u.google_sub, u.must_change_password,
                                d.code AS department_code, d.name AS department_name
                           FROM app_user u LEFT JOIN department d USING (department_id)`;
 
@@ -20,14 +20,23 @@ const toProfile = ({
   password_hash: _hash, is_active: _active, google_sub: _sub, ...profile
 }) => profile;
 
-// Signs the session JWT (same claims and expiry for every sign-in method) and
-// audits the login.
-async function issueSession(user, auditValue = null) {
-  const token = jwt.sign(
-    { user_id: user.user_id, role: user.role, department_id: user.department_id },
+// Session JWT: same claims and expiry for every sign-in method. pwd_change
+// tells the client to show only the change-password screen; the server
+// enforces the same rule from the database (middleware/auth.js).
+function signSession(user) {
+  return jwt.sign(
+    {
+      user_id: user.user_id, role: user.role, department_id: user.department_id,
+      ...(user.must_change_password && { pwd_change: true }),
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRY || '30m' },
   );
+}
+
+// Signs the session JWT and audits the login.
+async function issueSession(user, auditValue = null) {
+  const token = signSession(user);
   await withTransaction((client) => writeAudit(client, {
     userId: user.user_id, entityType: 'app_user', entityId: user.user_id, action: 'login', newValue: auditValue,
   }));
@@ -140,6 +149,34 @@ async function googleSignIn(credential) {
   return issueSession(user, { method: 'google' });
 }
 
+// POST /api/auth/change-password (NFR-05). Checks the current password,
+// stores the new one as a bcrypt hash (cost BCRYPT_ROUNDS = 12), clears
+// must_change_password and returns a fresh session. Audited without values.
+async function changePassword(userId, currentPassword, newPassword) {
+  const result = await withTransaction(async (client) => {
+    const { rows: [user] } = await client.query(`${PROFILE_SELECT} WHERE u.user_id = $1 FOR UPDATE OF u`, [userId]);
+    if (!user || !user.is_active) throw new AppError(401, 'Account is inactive or no longer exists');
+    if (!(await bcrypt.compare(currentPassword, user.password_hash))) {
+      throw new AppError(400, 'Validation failed', [{ field: 'current_password', message: 'Current password is incorrect' }]);
+    }
+    if (await bcrypt.compare(newPassword, user.password_hash)) {
+      throw new AppError(400, 'Validation failed', [{ field: 'new_password', message: 'The new password must be different from the current one' }]);
+    }
+    const hash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await client.query(
+      'UPDATE app_user SET password_hash = $2, must_change_password = false WHERE user_id = $1',
+      [userId, hash],
+    );
+    await writeAudit(client, {
+      userId, entityType: 'app_user', entityId: userId, action: 'change_password',
+      previousValue: { must_change_password: user.must_change_password },
+      newValue: { must_change_password: false, password_changed: true },
+    });
+    return { ...user, must_change_password: false };
+  });
+  return { token: signSession(result), user: toProfile(result) };
+}
+
 module.exports = {
-  login, googleConfig, googleProfile, googleSignIn,
+  login, googleConfig, googleProfile, googleSignIn, changePassword,
 };
