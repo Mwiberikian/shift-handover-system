@@ -197,6 +197,19 @@ end in `_test`.
 | `notifications.unread-count.test.js` | Unread count is per user, drops on read, and `latest_id` changes when a new notification arrives |
 | `admin.templates.test.js` | Template versioning keeps history |
 
+Client tests (Vitest + React Testing Library, jsdom; the API module is mocked):
+
+```bash
+cd client && npm test
+```
+
+| File | Covers |
+|---|---|
+| `Login.test.jsx` | Sign-in lands each role on its own dashboard; a 401 stays on the sign-in page |
+| `RequireRole.test.jsx` | Signed-out or expired sessions go to `/login`; other roles are redirected to their own home |
+| `DraftEditor.test.jsx` | Submit is disabled until every template-required field and the incoming user are set |
+| `usePolling.test.jsx` | 5 s polling, paused while the tab is hidden |
+
 ## Integrity model
 
 - Every state change and its `audit_log` row commit in the same transaction.

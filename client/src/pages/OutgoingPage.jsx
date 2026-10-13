@@ -89,7 +89,7 @@ function SectionLabel({ required }) {
     : <span className="text-meta text-ink-500">Optional</span>;
 }
 
-function DraftEditor({ record, meta, reload }) {
+export function DraftEditor({ record, meta, reload }) {
   const [notes, setNotes] = useState(record.summary_notes || '');
   const [incoming, setIncoming] = useState(record.incoming_user_id || '');
   const [task, setTask] = useState({ description: '', priority: 'medium' });

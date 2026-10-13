@@ -17,7 +17,7 @@ const SupervisorPage = lazy(() => import('./pages/SupervisorPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 // Only lets a user into the dashboard for the role in their JWT.
-function RequireRole({ role }) {
+export function RequireRole({ role }) {
   const { claims } = useAuth();
   if (!claims) return <Navigate to="/login" replace />;
   if (claims.role !== role) return <Navigate to={ROLE_HOME[claims.role]} replace />;
