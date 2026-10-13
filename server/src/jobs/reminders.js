@@ -11,6 +11,7 @@
 const cron = require('node-cron');
 const pool = require('../config/db');
 const { notify } = require('../modules/notifications/notify');
+const { processOutbox } = require('../modules/notifications/email/outbox');
 const { UNACK_ALERT_HOURS } = require('../config/constants');
 
 const minutes = (name, fallback) => {
@@ -181,16 +182,31 @@ async function runReminderCheck(now = new Date(), { db = pool, config = reminder
   return sent;
 }
 
-function startReminderScheduler({ logger = console } = {}) {
+// The jobs tick, every minute: shift reminders, then the email outbox
+// (sending is never done inside a notification's transaction). Either part
+// can be off; a failure in one does not stop the other.
+function startJobs({ reminders = true, email = true, logger = console } = {}) {
   let running = false;
   const task = cron.schedule('* * * * *', async () => {
     if (running) return; // never overlap ticks
     running = true;
     try {
-      const sent = await runReminderCheck(new Date());
-      if (sent.length) logger.log(`[reminders] sent ${sent.length}: ${sent.map((s) => s.type).join(', ')}`);
-    } catch (err) {
-      logger.error('[reminders] check failed:', err.message);
+      if (reminders) {
+        try {
+          const sent = await runReminderCheck(new Date());
+          if (sent.length) logger.log(`[reminders] sent ${sent.length}: ${sent.map((s) => s.type).join(', ')}`);
+        } catch (err) {
+          logger.error('[reminders] check failed:', err.message);
+        }
+      }
+      if (email) {
+        try {
+          const done = await processOutbox();
+          if (done.length) logger.log(`[email] ${done.map((d) => d.status).join(', ')}`);
+        } catch (err) {
+          logger.error('[email] outbox run failed:', err.message);
+        }
+      }
     } finally {
       running = false;
     }
@@ -199,5 +215,5 @@ function startReminderScheduler({ logger = console } = {}) {
 }
 
 module.exports = {
-  runReminderCheck, startReminderScheduler, reminderConfig, hhmm,
+  runReminderCheck, startJobs, reminderConfig, hhmm,
 };

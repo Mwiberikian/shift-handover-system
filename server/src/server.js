@@ -18,17 +18,19 @@ if (!THREADPOOL_FROM_ENV && dotenvValues?.UV_THREADPOOL_SIZE) {
   process.env.UV_THREADPOOL_SIZE = dotenvValues.UV_THREADPOOL_SIZE;
 }
 const app = require('./app');
-const { startReminderScheduler } = require('./jobs/reminders');
+const { startJobs } = require('./jobs/reminders');
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT} (UV_THREADPOOL_SIZE=${process.env.UV_THREADPOOL_SIZE})`);
 });
 
-// Shift reminders tick every minute. Never under tests (they call
-// runReminderCheck directly with an injected clock); REMINDERS_ENABLED=false
-// turns them off.
-if (process.env.NODE_ENV !== 'test' && process.env.REMINDERS_ENABLED !== 'false') {
-  startReminderScheduler();
-  console.log('Shift reminder scheduler started (every minute).');
+// The jobs tick runs every minute: shift reminders (REMINDERS_ENABLED=false
+// turns them off) and the email outbox (only when EMAIL_ENABLED=true). Never
+// under tests, which call runReminderCheck / processOutbox with their own clock.
+const reminders = process.env.REMINDERS_ENABLED !== 'false';
+const email = process.env.EMAIL_ENABLED === 'true';
+if (process.env.NODE_ENV !== 'test' && (reminders || email)) {
+  startJobs({ reminders, email });
+  console.log(`Jobs started (every minute): reminders ${reminders ? 'on' : 'off'}, email outbox ${email ? 'on' : 'off'}.`);
 }

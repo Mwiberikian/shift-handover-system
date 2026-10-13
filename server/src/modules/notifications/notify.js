@@ -64,4 +64,7 @@ async function notify({
   return rows;
 }
 
+// Built-in channels.
+registerChannel('email', require('./email/channel').enqueueEmails);
+
 module.exports = { notify, registerChannel };
