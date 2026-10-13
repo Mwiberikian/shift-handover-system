@@ -310,9 +310,38 @@ async function search(user, query) {
   return rows;
 }
 
-// GET /api/dashboard/supervisor
+// GET /api/dashboard/supervisor?scope=current|all (FR-14)
+//
+// scope=current (default): each department's counts cover only its current
+// shift and the one before it, i.e. the two most recent shifts that have
+// started. scope=all: every record. Overdue items follow the same window;
+// older_outstanding says how many overdue records the window leaves out, so a
+// supervisor is never silently shown "none overdue" while older ones exist.
+//
+// Acknowledgement completion rate = records past acknowledgement
+// (acknowledged, under_review, escalated, closed) / records submitted
+// (anything but draft). The DB trigger only lets a record reach those
+// statuses through 'acknowledged' (NFR-19). null when nothing was submitted.
+const ACKNOWLEDGED_STATUSES = ['acknowledged', 'under_review', 'escalated', 'closed'];
+
 async function supervisorDashboard(user, query) {
   const departmentId = await resolveDepartmentFilter(user, query);
+  const scope = query.scope === 'all' ? 'all' : 'current';
+
+  // The two most recent started shifts per department.
+  const { rows: windowShifts } = await pool.query(
+    `SELECT d.department_id, w.shift_id, w.shift_type, w.start_time, w.end_time
+       FROM department d
+       CROSS JOIN LATERAL (
+         SELECT s.shift_id, s.shift_type, s.start_time, s.end_time FROM shift s
+          WHERE s.department_id = d.department_id AND s.start_time <= now()
+          ORDER BY s.start_time DESC LIMIT 2) w
+      WHERE ($1::uuid IS NULL OR d.department_id = $1)
+      ORDER BY d.department_id, w.start_time DESC`,
+    [departmentId],
+  );
+  const windowIds = windowShifts.map((s) => s.shift_id);
+  const inWindow = (alias) => `($2::text = 'all' OR ${alias}.shift_id = ANY($3::uuid[]))`;
 
   const { rows: departments } = await pool.query(
     `SELECT d.department_id, d.code, d.name,
@@ -323,11 +352,14 @@ async function supervisorDashboard(user, query) {
             count(r.*) FILTER (WHERE r.status = 'acknowledged')  AS acknowledged,
             count(r.*) FILTER (WHERE r.status = 'under_review')  AS under_review,
             count(r.*) FILTER (WHERE r.status = 'escalated')     AS escalated,
-            count(r.*) FILTER (WHERE r.status = 'closed')        AS closed
-       FROM department d LEFT JOIN handover_record r ON r.department_id = d.department_id
+            count(r.*) FILTER (WHERE r.status = 'closed')        AS closed,
+            count(r.*) FILTER (WHERE r.status <> 'draft')        AS acknowledgement_due,
+            count(r.*) FILTER (WHERE r.status = ANY($4::record_status_enum[])) AS acknowledgement_done
+       FROM department d
+       LEFT JOIN handover_record r ON r.department_id = d.department_id AND ${inWindow('r')}
       WHERE ($1::uuid IS NULL OR d.department_id = $1)
       GROUP BY d.department_id ORDER BY d.name`,
-    [departmentId],
+    [departmentId, scope, windowIds, ACKNOWLEDGED_STATUSES],
   );
 
   // Submitted (or queried) but still not acknowledged more than N hours after
@@ -335,7 +367,7 @@ async function supervisorDashboard(user, query) {
   // the incoming shift starts at that shift's end_time. (Measuring from the
   // outgoing shift's start flagged every handover the moment it was submitted.)
   // The shift-reminders job raises the same condition as a notification.
-  const { rows: alerts } = await pool.query(
+  const { rows: overdue } = await pool.query(
     `${RECORD_SELECT}
       WHERE r.status IN ('submitted', 'queried')
         AND s.end_time + make_interval(hours => $2) < now()
@@ -343,25 +375,41 @@ async function supervisorDashboard(user, query) {
       ORDER BY s.start_time`,
     [departmentId, UNACK_ALERT_HOURS],
   );
+  const windowSet = new Set(windowIds);
+  const alerts = scope === 'all' ? overdue : overdue.filter((a) => windowSet.has(a.shift_id));
 
   // count() comes back from pg as a bigint string.
-  const COUNT_KEYS = ['open', 'draft', 'submitted', 'queried', 'acknowledged', 'under_review', 'escalated', 'closed'];
+  const COUNT_KEYS = ['open', 'draft', 'submitted', 'queried', 'acknowledged', 'under_review', 'escalated', 'closed',
+    'acknowledgement_due', 'acknowledgement_done'];
   const toInt = (row) => ({ ...row, ...Object.fromEntries(COUNT_KEYS.map((k) => [k, Number(row[k])])) });
   const alertsByDept = alerts.reduce((acc, a) => ((acc[a.department_id] ||= []).push(a), acc), {});
+  const shiftsByDept = windowShifts.reduce((acc, s) => {
+    const { department_id: dept, ...shift } = s;
+    (acc[dept] ||= []).push(shift);
+    return acc;
+  }, {});
 
   return {
     generated_at: new Date().toISOString(),
+    scope,
     threshold_hours: UNACK_ALERT_HOURS,
-    departments: departments.map((d) => ({
-      ...toInt(d),
-      unacknowledged_overdue: (alertsByDept[d.department_id] || []).length,
-    })),
+    departments: departments.map((d) => {
+      const row = toInt(d);
+      return {
+        ...row,
+        acknowledgement_rate: row.acknowledgement_due ? row.acknowledgement_done / row.acknowledgement_due : null,
+        unacknowledged_overdue: (alertsByDept[d.department_id] || []).length,
+        // Newest first: [current, preceding]. Present in both scopes.
+        window_shifts: shiftsByDept[d.department_id] || [],
+      };
+    }),
     unacknowledged_alerts: alerts.map((a) => ({
       ...a,
       overdue_unacknowledged: true,
       // Hours since the incoming shift started (i.e. since handover was due).
       hours_since_shift_start: Math.round(((Date.now() - new Date(a.shift_end)) / 36e5) * 10) / 10,
     })),
+    older_outstanding: overdue.length - alerts.length,
   };
 }
 

@@ -158,9 +158,14 @@ describe('supervisor alerts', () => {
       );
       await pool.query("UPDATE handover_record SET status = 'submitted', submitted_at = now() WHERE record_id = $1", [r.record_id]);
     }
-    const dash = await as(world, 'supB').get('/api/dashboard/supervisor');
+    // These made-up shifts are older than the department's current and
+    // preceding shift, so they show under scope=all (FR-14 window)...
+    const dash = await as(world, 'supB').get('/api/dashboard/supervisor?scope=all');
     expect(dash.body.unacknowledged_alerts.map((a) => a.shift_id)).toEqual([overdueShift]);
     expect(dash.body.unacknowledged_alerts[0].hours_since_shift_start).toBeCloseTo(2.5, 1);
+    // ...and the default view still says one overdue record is outside it.
+    const current = await as(world, 'supB').get('/api/dashboard/supervisor');
+    expect(current.body.older_outstanding).toBe(1);
   });
 });
 

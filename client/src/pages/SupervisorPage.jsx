@@ -6,8 +6,8 @@ import {
 import api from '../api';
 import { HandoverDetail, RECORD_COLUMNS, RecordTable } from '../components/Handover';
 import {
-  Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Input, PageHeader, Select, SkeletonStats, SkeletonTable, StatusBadge,
-  Table, Textarea, optionsFor,
+  Badge, Button, Callout, Card, ConfirmDialog, Drawer, EmptyState, Input, PageHeader, SegmentedPicker, Select, SkeletonStats,
+  SkeletonTable, StatusBadge, Table, Textarea, optionsFor,
 } from '../components/ui';
 import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
@@ -51,14 +51,24 @@ function StatCard({ label, value, icon: Icon, tone = 'gray', alert = false, hint
 
 const sum = (rows, key) => rows.reduce((n, d) => n + (d[key] || 0), 0);
 
+// FR-14: acknowledgement completion rate, "75%" or "—" when nothing is due.
+const pct = (done, due) => (due ? `${Math.round((done / due) * 100)}%` : '—');
+
+const SCOPE_OPTIONS = [
+  { value: 'current', label: 'Current and preceding shift', tone: 'red-solid' },
+  { value: 'all', label: 'All records', tone: 'red-solid' },
+];
+
 const DEPT_COLUMNS = [
   ['open', 'Open'], ['submitted', 'Submitted'], ['queried', 'Queried'], ['acknowledged', 'Ackd'],
   ['under_review', 'In review'], ['escalated', 'Escalated'], ['closed', 'Closed'],
 ];
 
-function Overview({ data, onOpen }) {
+export function Overview({ data, onOpen, scope, onScope }) {
   const d = data.departments;
   const overdue = sum(d, 'unacknowledged_overdue');
+  const ackDue = sum(d, 'acknowledgement_due');
+  const ackDone = sum(d, 'acknowledgement_done');
   const deptColumns = [
     { key: 'name', header: 'Department', render: (r) => <span className="font-medium text-fg">{r.name}</span> },
     ...DEPT_COLUMNS.map(([key, header]) => ({
@@ -68,6 +78,16 @@ function Overview({ data, onOpen }) {
       hideBelow: ['open', 'closed', 'under_review'].includes(key) ? 'lg' : 'sm',
       render: (r) => <span className={r[key] ? 'text-fg' : 'text-ink-500'}>{r[key]}</span>,
     })),
+    {
+      key: 'ack_rate',
+      header: 'Ack rate',
+      className: 'text-right tabular-nums',
+      render: (r) => (
+        <span title={`${r.acknowledgement_done} of ${r.acknowledgement_due} submitted handovers acknowledged`} className={r.acknowledgement_due ? 'text-fg' : 'text-ink-500'}>
+          {pct(r.acknowledgement_done, r.acknowledgement_due)}
+        </span>
+      ),
+    },
     {
       key: 'overdue',
       header: 'Overdue',
@@ -80,7 +100,26 @@ function Overview({ data, onOpen }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <SegmentedPicker label="Show" value={scope} onChange={onScope} options={SCOPE_OPTIONS} />
+        <p className="text-meta text-ink-600">
+          {scope === 'all'
+            ? 'Every handover record.'
+            : "Each department's current shift and the shift before it."}
+        </p>
+      </div>
+
+      {scope === 'current' && data.older_outstanding > 0 && (
+        <Callout
+          tone="warning"
+          title={`${data.older_outstanding} older handover${data.older_outstanding === 1 ? ' is' : 's are'} still unacknowledged`}
+          action={<Button size="sm" onClick={() => onScope('all')}>Show all records</Button>}
+        >
+          They belong to shifts before the preceding one.
+        </Callout>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 2xl:grid-cols-7">
         <StatCard
           label={`Unacknowledged > ${data.threshold_hours}h`}
           value={overdue}
@@ -88,6 +127,13 @@ function Overview({ data, onOpen }) {
           alert={overdue > 0}
           tone="gray"
           hint={overdue ? 'Needs attention' : 'None overdue'}
+        />
+        <StatCard
+          label="Acknowledgement rate"
+          value={pct(ackDone, ackDue)}
+          icon={CheckCircle2}
+          tone="green"
+          hint={ackDue ? `${ackDone} of ${ackDue} submitted` : 'Nothing submitted'}
         />
         <StatCard label="Awaiting acknowledgement" value={sum(d, 'submitted')} icon={Send} tone="blue" />
         <StatCard label="Queried" value={sum(d, 'queried')} icon={HelpCircle} tone="amber" />
@@ -238,12 +284,13 @@ export default function SupervisorPage({ view }) {
   const [escalated, setEscalated] = useState(null);
   const [selected, setSelected] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [scope, setScope] = useState('current');
 
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
       const [d, q, r, e] = await Promise.all([
-        api.get('/dashboard/supervisor'),
+        api.get('/dashboard/supervisor', { params: { scope } }),
         api.get('/handovers', { params: { status: 'acknowledged' } }),
         api.get('/handovers', { params: { status: 'under_review' } }),
         api.get('/handovers', { params: { status: 'escalated' } }),
@@ -256,7 +303,7 @@ export default function SupervisorPage({ view }) {
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [scope]);
 
   const open = async (id) => {
     try {
@@ -305,7 +352,7 @@ export default function SupervisorPage({ view }) {
         )}
       />
 
-      {view === 'overview' && (dash ? <Overview data={dash} onOpen={open} /> : <div className="space-y-6"><SkeletonStats count={6} /><Card flush><SkeletonTable rows={3} /></Card></div>)}
+      {view === 'overview' && (dash ? <Overview data={dash} onOpen={open} scope={scope} onScope={setScope} /> : <div className="space-y-6"><SkeletonStats count={7} /><Card flush><SkeletonTable rows={3} /></Card></div>)}
       {view === 'queue' && tableFor(queue, Inbox, ['Review queue is clear', 'Acknowledged handovers will appear here for your review.'])}
       {view === 'escalated' && tableFor(escalated, CircleCheckBig, ['No escalations', 'Nothing is currently escalated.'])}
       {view === 'search' && <Search onOpen={open} selectedId={selected?.record_id} columns={columns} rowClassName={rowClassName} />}
