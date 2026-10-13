@@ -2,6 +2,7 @@ const pool = require('../../config/db');
 const AppError = require('../../utils/AppError');
 const { withTransaction } = require('../../db/tx');
 const { writeAudit } = require('../../utils/audit');
+const { notify } = require('../notifications/notify');
 
 // Messaging rules (documented in the README):
 //  - Direct: any active user may message any other active user, across
@@ -162,10 +163,7 @@ async function send(user, body) {
     // Direct messages notify the recipient; broadcasts rely on the unread
     // count instead of fanning out one notification row per person.
     if (m.recipient_type === 'user') {
-      await client.query(
-        "INSERT INTO notification (recipient_id, type, message_id) VALUES ($1, 'message', $2)",
-        [m.recipient_user_id, m.message_id],
-      );
+      await notify({ userIds: [m.recipient_user_id], type: 'message', ref: { message_id: m.message_id } }, { db: client });
     }
     return m;
   });

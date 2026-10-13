@@ -4,6 +4,7 @@ const { withTransaction } = require('../../db/tx');
 const { writeAudit } = require('../../utils/audit');
 const { assertDepartmentAccess } = require('../../middleware/auth');
 const { findMissingFields } = require('./template.validation');
+const { notify } = require('../notifications/notify');
 
 const RECORD_SELECT = `
   SELECT r.*, s.shift_type, s.start_time AS shift_start, s.end_time AS shift_end,
@@ -93,15 +94,11 @@ async function assertValidIncoming(db, departmentId, incomingUserId) {
   if (!u) throw new AppError(400, 'incoming_user_id must be an active incoming_staff member of the same department');
 }
 
-async function notify(client, recipientIds, recordId, type) {
-  const unique = [...new Set(recipientIds.filter(Boolean))];
-  for (const recipientId of unique) {
-    await client.query(
-      'INSERT INTO notification (recipient_id, record_id, type) VALUES ($1, $2, $3)',
-      [recipientId, recordId, type],
-    );
-  }
-  return unique;
+// In-app notification about a record, in the caller's transaction (via the
+// notification service). Returns the recipients' ids.
+async function notifyRecord(client, recipientIds, recordId, type) {
+  const rows = await notify({ userIds: recipientIds, type, ref: { record_id: recordId } }, { db: client });
+  return rows.map((r) => r.recipient_id);
 }
 
 async function departmentSupervisorIds(db, departmentId) {
@@ -387,7 +384,7 @@ async function submit(user, recordId) {
     });
 
     // 4. Notify incoming staff + department supervisors.
-    const notified = await notify(
+    const notified = await notifyRecord(
       client,
       [submitted.incoming_user_id, ...(await departmentSupervisorIds(client, record.department_id))],
       recordId,
@@ -401,7 +398,7 @@ async function submit(user, recordId) {
 module.exports = {
   // shared with other modules
   RECORD_SELECT, auditView, lockRecord, assertStatus, assertOutgoingOwner, fetchRecord, fetchDetail,
-  loadTemplate, notify, departmentSupervisorIds,
+  loadTemplate, notifyRecord, departmentSupervisorIds,
   // phase 3
   list, meta, create, update, addTask, updateTask, addIncident, submit,
 };

@@ -16,7 +16,7 @@ const { withTransaction } = require('../../db/tx');
 const { writeAudit } = require('../../utils/audit');
 const { assertDepartmentAccess } = require('../../middleware/auth');
 const {
-  RECORD_SELECT, auditView, lockRecord, assertStatus, assertOutgoingOwner, fetchDetail, loadTemplate, notify,
+  RECORD_SELECT, auditView, lockRecord, assertStatus, assertOutgoingOwner, fetchDetail, loadTemplate, notifyRecord,
 } = require('./handovers.service');
 const { UNACK_ALERT_HOURS } = require('../../config/constants');
 
@@ -131,7 +131,7 @@ async function acknowledge(user, recordId, { comments }) {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'acknowledge',
       previousValue: auditView(record), newValue: { ...auditView(updated), comments: comments || null },
     });
-    await notify(client, [record.outgoing_user_id], recordId, 'handover_acknowledged');
+    await notifyRecord(client, [record.outgoing_user_id], recordId, 'handover_acknowledged');
     return getByIdTx(client, recordId);
   });
 }
@@ -161,7 +161,7 @@ async function raiseQuery(user, recordId, { comments }) {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'query',
       previousValue: auditView(record), newValue: { ...auditView(updated), comments },
     });
-    await notify(client, [record.outgoing_user_id], recordId, 'handover_queried');
+    await notifyRecord(client, [record.outgoing_user_id], recordId, 'handover_queried');
     return getByIdTx(client, recordId);
   });
 }
@@ -178,7 +178,7 @@ async function clarify(user, recordId, { comments }) {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'clarify',
       previousValue: auditView(record), newValue: { ...auditView(updated), comments },
     });
-    await notify(client, [record.incoming_user_id], recordId, 'handover_clarified');
+    await notifyRecord(client, [record.incoming_user_id], recordId, 'handover_clarified');
     return getByIdTx(client, recordId);
   });
 }
@@ -224,7 +224,7 @@ async function review(user, recordId, { decision, comments }) {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'review',
       previousValue: auditView(record), newValue: { ...auditView(updated), decision, comments: comments || null },
     });
-    await notify(
+    await notifyRecord(
       client,
       [record.outgoing_user_id, record.incoming_user_id],
       recordId,
@@ -256,7 +256,7 @@ async function resolve(user, recordId, { comments }) {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'resolve',
       previousValue: auditView(record), newValue: { ...auditView(updated), comments: comments || null },
     });
-    await notify(client, [record.outgoing_user_id, record.incoming_user_id], recordId, 'handover_closed');
+    await notifyRecord(client, [record.outgoing_user_id, record.incoming_user_id], recordId, 'handover_closed');
     return getByIdTx(client, recordId);
   });
 }

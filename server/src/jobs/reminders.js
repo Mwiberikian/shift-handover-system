@@ -6,10 +6,11 @@
 // every reminder whose due moment is in (now - lookback, now], so a short
 // outage or a slow tick catches up, but an old backlog is not replayed.
 // Delivery inserts into reminder_log first (unique per type/ref/user) and
-// only creates the notification if that insert happened, so a reminder can
-// never be sent twice.
+// only creates the notification if that insert happened, in one transaction,
+// so a reminder can never be sent twice.
 const cron = require('node-cron');
 const pool = require('../config/db');
+const { notify } = require('../modules/notifications/notify');
 const { UNACK_ALERT_HOURS } = require('../config/constants');
 
 const minutes = (name, fallback) => {
@@ -41,17 +42,32 @@ const DUE_WINDOW = (anchor, sign) => `
 const SHIFT_COLUMNS = 's.shift_id, s.shift_type, s.start_time, s.end_time, s.department_id, d.name AS department_name';
 
 async function deliver(db, now, r) {
-  const { rows } = await db.query(
-    `WITH logged AS (
-       INSERT INTO reminder_log (reminder_type, ref_id, user_id, sent_at) VALUES ($1, $2, $3, $4)
-       ON CONFLICT ON CONSTRAINT reminder_log_once DO NOTHING
-       RETURNING 1)
-     INSERT INTO notification (recipient_id, type, reminder_type, title, body, record_id, shift_id, sent_at)
-     SELECT $3, 'reminder', $1, $5, $6, $7, $8, $4 FROM logged
-     RETURNING notification_id`,
-    [r.type, r.refId, r.userId, now, r.title, r.body, r.recordId ?? null, r.shiftId ?? null],
-  );
-  return rows.length > 0;
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+    const { rowCount } = await client.query(
+      `INSERT INTO reminder_log (reminder_type, ref_id, user_id, sent_at) VALUES ($1, $2, $3, $4)
+       ON CONFLICT ON CONSTRAINT reminder_log_once DO NOTHING`,
+      [r.type, r.refId, r.userId, now],
+    );
+    if (rowCount) {
+      await notify({
+        userIds: [r.userId],
+        type: 'reminder',
+        title: r.title,
+        body: r.body,
+        ref: { reminder_type: r.type, record_id: r.recordId, shift_id: r.shiftId },
+        at: now,
+      }, { db: client });
+    }
+    await client.query('COMMIT');
+    return rowCount > 0;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 // Each rule returns reminder candidates for this tick.
