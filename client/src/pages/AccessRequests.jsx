@@ -6,7 +6,7 @@ import api from '../api';
 import {
   Badge, Button, Callout, Card, ConfirmDialog, EmptyState, Input, Modal, Select, SkeletonTable, Table, Textarea,
 } from '../components/ui';
-import { ROLE_LABEL, cx, fmt, fmtRelative } from '../lib/format';
+import { ROLE_LABEL, cx, formatEAT, fmtRelative } from '../lib/format';
 import { toast } from '../lib/toast';
 import useAction from '../lib/useAction';
 
@@ -170,7 +170,7 @@ export default function AccessRequests({ departments }) {
     requester,
     dept,
     { key: 'note', header: 'Note', hideBelow: 'lg', render: (r) => (r.note ? <p className="max-w-xs text-ink-700 line-clamp-2" title={r.note}>{r.note}</p> : <span className="text-ink-500">—</span>) },
-    { key: 'created', header: 'Received', hideBelow: 'sm', render: (r) => <span className="whitespace-nowrap text-ink-700" title={fmt(r.created_at)}>{fmtRelative(r.created_at)}</span> },
+    { key: 'created', header: 'Received', hideBelow: 'sm', render: (r) => <span className="whitespace-nowrap text-ink-700" title={formatEAT(r.created_at)}>{fmtRelative(r.created_at)}</span> },
     {
       key: 'actions',
       header: <span className="sr-only">Actions</span>,
@@ -199,7 +199,7 @@ export default function AccessRequests({ departments }) {
       render: (r) => (
         <div className="text-meta">
           <p className="text-ink-800">{r.reviewed_by_name}</p>
-          <p className="text-ink-600">{fmt(r.reviewed_at)}</p>
+          <p className="text-ink-600">{formatEAT(r.reviewed_at)}</p>
         </div>
       ),
     },

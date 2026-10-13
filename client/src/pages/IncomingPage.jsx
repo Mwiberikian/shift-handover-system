@@ -8,9 +8,7 @@ import {
   Button, Callout, Card, ConfirmDialog, Drawer, EmptyState, Modal, PageHeader, SkeletonCard, SkeletonTable, StatusBadge,
   Textarea,
 } from '../components/ui';
-import {
-  cx, fmt, fmtRelative, shiftLabel,
-} from '../lib/format';
+import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 import ShiftBanner from '../components/shell/ShiftBanner';
@@ -109,7 +107,7 @@ function PendingItem({ record, selected, onSelect }) {
             <span className="font-semibold text-fg">{shiftLabel(record)}</span>
             <StatusBadge value={record.status} />
           </div>
-          <p className="mt-0.5 text-meta text-ink-600">{fmt(record.shift_start)}</p>
+          <p className="mt-0.5 text-meta text-ink-600">{formatEAT(record.shift_start)}</p>
           <p className="mt-1 text-meta text-ink-700">From {record.outgoing_name} · submitted {fmtRelative(record.submitted_at)}</p>
         </div>
         <ChevronRight aria-hidden className="size-4 shrink-0 text-ink-400" />

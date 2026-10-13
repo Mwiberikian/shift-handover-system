@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CalendarClock, CheckCircle2, Clock, TimerReset } from 'lucide-react';
 import api from '../../api';
 import { Callout } from '../ui';
-import { fmtDuration, fmtNairobiTime, shiftLabel } from '../../lib/format';
+import { fmtDuration, formatEAT, shiftLabel } from '../../lib/format';
 
 // Banner for the user's current or next rostered shift (from
 // GET /shifts/mine), refreshed every minute so the countdown stays honest.
@@ -27,7 +27,7 @@ export default function ShiftBanner({ role }) {
   if (current) {
     const endsIn = new Date(current.end_time) - now;
     if (endsIn <= 0) return null; // the next minute's poll moves on to the next shift
-    const ends = `${shiftLabel(current)} ends in ${fmtDuration(endsIn)} (${fmtNairobiTime(current.end_time)}).`;
+    const ends = `${shiftLabel(current)} ends in ${fmtDuration(endsIn)} (${formatEAT(current.end_time, 'time')}).`;
     if (role === 'outgoing_staff') {
       const submitted = current.handover_status && current.handover_status !== 'draft';
       return submitted ? (
@@ -45,7 +45,7 @@ export default function ShiftBanner({ role }) {
     const startsIn = new Date(next.start_time) - now;
     return (
       <Callout tone="info" icon={CalendarClock} className="mb-6" title={`Your next ${shiftLabel(next).toLowerCase()} starts in ${fmtDuration(startsIn)}.`}>
-        {next.department_name}, {fmtNairobiTime(next.start_time)} – {fmtNairobiTime(next.end_time)}.
+        {next.department_name}, {formatEAT(next.start_time, 'time')} – {formatEAT(next.end_time, 'time')}.
       </Callout>
     );
   }

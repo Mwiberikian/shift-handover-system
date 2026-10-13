@@ -3,12 +3,12 @@ import {
   AlertTriangle, CheckCircle2, ClipboardList, CornerDownRight, Eye, FileText, HelpCircle, History, MessageSquareReply,
   Printer, ShieldCheck, ShieldAlert,
 } from 'lucide-react';
-import { cx, fmt, fmtRelative, shiftLabel } from '../lib/format';
+import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import {
   ButtonLink, Callout, EmptyState, StatusBadge, Table,
 } from './ui';
 
-export { fmt };
+export { formatEAT };
 export { StatusBadge };
 
 // Interim inline error, kept for screens not yet moved to toasts.
@@ -25,7 +25,7 @@ export const RECORD_COLUMNS = [
     render: (r) => (
       <div className="min-w-[9rem]">
         <div className="font-medium text-fg">{shiftLabel(r)}</div>
-        <div className="text-meta text-ink-600">{fmt(r.shift_start)}</div>
+        <div className="text-meta text-ink-600">{formatEAT(r.shift_start)}</div>
       </div>
     ),
   },
@@ -33,7 +33,7 @@ export const RECORD_COLUMNS = [
   { key: 'outgoing_name', header: 'Outgoing', hideBelow: 'lg', render: (r) => r.outgoing_name ?? '—' },
   { key: 'incoming_name', header: 'Incoming', hideBelow: 'sm', render: (r) => r.incoming_name ?? <span className="text-ink-500">Unassigned</span> },
   { key: 'status', header: 'Status', render: (r) => <StatusBadge value={r.status} /> },
-  { key: 'submitted_at', header: 'Submitted', hideBelow: 'md', render: (r) => <span className="text-ink-700 whitespace-nowrap">{fmt(r.submitted_at)}</span> },
+  { key: 'submitted_at', header: 'Submitted', hideBelow: 'md', render: (r) => <span className="text-ink-700 whitespace-nowrap">{formatEAT(r.submitted_at)}</span> },
 ];
 
 export function RecordTable({ records, onSelect, selectedId, empty = 'No records.', loading, columns = RECORD_COLUMNS, rowClassName }) {
@@ -43,7 +43,7 @@ export function RecordTable({ records, onSelect, selectedId, empty = 'No records
       rows={records}
       rowKey={(r) => r.record_id}
       onRowClick={onSelect ? (r) => onSelect(r.record_id) : undefined}
-      rowLabel={(r) => `${shiftLabel(r)} ${fmt(r.shift_start)}, ${r.status}`}
+      rowLabel={(r) => `${shiftLabel(r)} ${formatEAT(r.shift_start)}, ${r.status}`}
       selectedKey={selectedId}
       loading={loading}
       rowClassName={rowClassName}
@@ -101,7 +101,7 @@ export function IncidentTable({ incidents }) {
           </div>
           {i.description && <p className="text-ink-700">{i.description}</p>}
           <p className="text-meta text-ink-600">
-            Occurred {fmt(i.occurred_at)}{i.reported_by_name && ` · Reported by ${i.reported_by_name}`}
+            Occurred {formatEAT(i.occurred_at)}{i.reported_by_name && ` · Reported by ${i.reported_by_name}`}
           </p>
         </li>
       ))}
@@ -134,7 +134,7 @@ export function Timeline({ items }) {
                 <span className="font-medium text-fg">{label}</span>
                 <span className="text-ink-600"> by {t.by_name}</span>
               </p>
-              <p className="text-meta text-ink-600" title={fmt(t.logged_at)}>{fmtRelative(t.logged_at)} · {fmt(t.logged_at)}</p>
+              <p className="text-meta text-ink-600" title={formatEAT(t.logged_at)}>{fmtRelative(t.logged_at)} · {formatEAT(t.logged_at)}</p>
               {t.comments && <p className="mt-1.5 rounded-lg bg-ink-50 px-3 py-2 whitespace-pre-wrap text-ink-800">{t.comments}</p>}
             </div>
           </li>
@@ -174,7 +174,7 @@ export function HandoverDetail({ record, headerActions }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-meta font-semibold tracking-wide text-ink-600 uppercase">{record.department_name}</p>
-          <h2 className="text-lg font-semibold text-fg">{shiftLabel(record)} · {fmt(record.shift_start)}</h2>
+          <h2 className="text-lg font-semibold text-fg">{shiftLabel(record)} · {formatEAT(record.shift_start)}</h2>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge value={record.status} className="px-2.5 py-1" />
@@ -186,9 +186,9 @@ export function HandoverDetail({ record, headerActions }) {
       <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg bg-ink-50 px-4 py-3 sm:grid-cols-4">
         <Meta label="Outgoing">{record.outgoing_name ?? '—'}</Meta>
         <Meta label="Incoming">{record.incoming_name ?? '—'}</Meta>
-        <Meta label="Submitted">{fmt(record.submitted_at)}</Meta>
+        <Meta label="Submitted">{formatEAT(record.submitted_at)}</Meta>
         {record.closed_at
-          ? <Meta label="Closed">{fmt(record.closed_at)}</Meta>
+          ? <Meta label="Closed">{formatEAT(record.closed_at)}</Meta>
           : <Meta label="Template">{record.template ? `v${record.template.version}` : '—'}</Meta>}
       </dl>
 

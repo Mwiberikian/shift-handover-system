@@ -1,10 +1,47 @@
 // Display helpers shared across screens.
 
-export const fmt = (d) => (d ? new Date(d).toLocaleString() : '—');
+// DR-02: every date and time is shown in East Africa Time in ISO 8601 order,
+// whatever the browser's own time zone or locale:
+//   formatEAT(d)          "2026-10-13 18:00 EAT"
+//   formatEAT(d, 'date')  "2026-10-13"
+//   formatEAT(d, 'time')  "18:00 EAT"
+// Built from formatToParts so no locale can reorder or translate the fields.
+const EAT_PARTS = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Africa/Nairobi',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
 
-export const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+export function formatEAT(d, part = 'datetime') {
+  if (d === null || d === undefined || d === '') return '—';
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return '—';
+  const p = Object.fromEntries(EAT_PARTS.formatToParts(date).map(({ type, value }) => [type, value]));
+  const day = `${p.year}-${p.month}-${p.day}`;
+  const time = `${p.hour}:${p.minute} EAT`;
+  if (part === 'date') return day;
+  if (part === 'time') return time;
+  return `${day} ${time}`;
+}
 
-export const fmtTime = (d) => (d ? new Date(d).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '—');
+// A datetime-local value ("2026-10-13T18:05") read as East Africa Time
+// (UTC+3, no daylight saving), returned as an ISO 8601 UTC string. The
+// browser's own time zone plays no part.
+export function eatLocalToIso(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value || '');
+  if (!m) return null;
+  const [, y, mo, da, h, mi, se = '0'] = m.map((v, i) => (i === 0 ? v : v && Number(v)));
+  return new Date(Date.UTC(y, mo - 1, da, h - 3, mi, se)).toISOString();
+}
+
+// The current moment as a datetime-local value in East Africa Time.
+export function nowEATLocal(at = new Date()) {
+  return new Date(at.getTime() + 3 * 3600 * 1000).toISOString().slice(0, 16);
+}
 
 // "5 min ago", "3 h ago", falling back to a date for anything older than a week.
 export function fmtRelative(d) {
@@ -15,7 +52,7 @@ export function fmtRelative(d) {
   const hours = Math.round(mins / 60);
   if (hours < 24) return `${hours} h ago`;
   const days = Math.round(hours / 24);
-  return days < 7 ? `${days} d ago` : fmtDate(d);
+  return days < 7 ? `${days} d ago` : formatEAT(d, 'date');
 }
 
 // "night" -> "Night shift"
@@ -36,11 +73,9 @@ export const initials = (name = '') => name.split(/\s+/).filter(Boolean).slice(0
 // Joins truthy class names.
 export const cx = (...c) => c.filter(Boolean).join(' ');
 
-// Shift times are shown in Nairobi time (DR-02), whatever the browser's zone.
-const NAIROBI_TIME = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-const NAIROBI_DAY = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', weekday: 'short', day: 'numeric', month: 'short' });
-export const fmtNairobiTime = (d) => (d ? `${NAIROBI_TIME.format(new Date(d))} EAT` : '—');
-export const fmtNairobiDay = (d) => (d ? NAIROBI_DAY.format(new Date(d)) : '—');
+// "Tue": the weekday in Nairobi, shown beside an ISO date on the roster.
+const NAIROBI_WEEKDAY = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', weekday: 'short' });
+export const fmtWeekdayEAT = (d) => (d ? NAIROBI_WEEKDAY.format(new Date(d)) : '—');
 
 // 25 min, 3 h 10 min, 2 d 4 h
 export function fmtDuration(ms) {

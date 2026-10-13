@@ -4,9 +4,7 @@ import api from '../api';
 import {
   Badge, Button, Card, Checkbox, EmptyState, Modal, PageHeader, SkeletonTable, Table,
 } from '../components/ui';
-import {
-  ROLE_LABEL, fmtDuration, fmtNairobiDay, fmtNairobiTime, shiftLabel,
-} from '../lib/format';
+import { ROLE_LABEL, fmtDuration, fmtWeekdayEAT, formatEAT, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 
@@ -41,7 +39,7 @@ function AssignDialog({ shift, onClose, onSaved }) {
       open
       onClose={busy ? () => {} : onClose}
       title={`Staff for ${shiftLabel(shift).toLowerCase()}`}
-      description={`${shift.department_name} · ${fmtNairobiDay(shift.start_time)}, ${fmtNairobiTime(shift.start_time)} – ${fmtNairobiTime(shift.end_time)}`}
+      description={`${shift.department_name} · ${fmtWeekdayEAT(shift.start_time)} ${formatEAT(shift.start_time, 'date')}, ${formatEAT(shift.start_time, 'time')} – ${formatEAT(shift.end_time, 'time')}`}
       footer={(
         <>
           <Button onClick={onClose} disabled={busy}>Cancel</Button>
@@ -96,7 +94,7 @@ export default function RosterPage() {
               {live && <Badge tone="green">Now</Badge>}
             </div>
             <div className="text-meta text-ink-600">
-              {fmtNairobiDay(s.start_time)} · {fmtNairobiTime(s.start_time)} – {fmtNairobiTime(s.end_time)}
+              {fmtWeekdayEAT(s.start_time)} {formatEAT(s.start_time, 'date')} · {formatEAT(s.start_time, 'time')} – {formatEAT(s.end_time, 'time')}
             </div>
           </div>
         );
@@ -123,7 +121,7 @@ export default function RosterPage() {
       header: <span className="sr-only">Actions</span>,
       className: 'text-right',
       render: (s) => (
-        <Button size="sm" icon={UserCog} onClick={() => setEditing(s)} aria-label={`Edit staff for ${shiftLabel(s)} ${fmtNairobiDay(s.start_time)}`}>
+        <Button size="sm" icon={UserCog} onClick={() => setEditing(s)} aria-label={`Edit staff for ${shiftLabel(s)} ${formatEAT(s.start_time, 'date')}`}>
           <span className="hidden sm:inline">Edit staff</span>
         </Button>
       ),

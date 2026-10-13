@@ -7,9 +7,7 @@ import ComposeDialog from '../components/messages/ComposeDialog';
 import {
   Badge, Button, Card, Drawer, EmptyState, PageHeader, SkeletonTable,
 } from '../components/ui';
-import {
-  ROLE_LABEL, cx, fmt, fmtRelative, initials,
-} from '../lib/format';
+import { ROLE_LABEL, cx, formatEAT, fmtRelative, initials } from '../lib/format';
 import { refreshUnread, useUnreadMessages } from '../lib/unread';
 import { toastError } from '../lib/toast';
 
@@ -48,7 +46,7 @@ function MessageRow({ m, box, onOpen }) {
           </span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1 text-meta text-ink-600">
-          <span title={fmt(m.created_at)}>{fmtRelative(m.created_at)}</span>
+          <span title={formatEAT(m.created_at)}>{fmtRelative(m.created_at)}</span>
           {box === 'sent' && m.recipient_type === 'user' && (
             m.recipient_read_at
               ? <span className="inline-flex items-center gap-1 text-status-green"><CheckCheck aria-hidden className="size-3.5" />Read</span>
@@ -182,7 +180,7 @@ export default function MessagesPage() {
               <div>
                 <dt className="text-meta font-medium text-ink-600">To</dt>
                 <dd className="flex flex-wrap items-center gap-2 text-fg">{recipientLabel(open)} <AudienceBadge m={open} /></dd>
-                <dd className="text-meta text-ink-600">{fmt(open.created_at)}</dd>
+                <dd className="text-meta text-ink-600">{formatEAT(open.created_at)}</dd>
               </div>
             </dl>
             {/* Plain text only: React escapes it, and line breaks are preserved. */}

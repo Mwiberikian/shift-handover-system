@@ -9,7 +9,7 @@ import {
   Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, Input, PageHeader, Select, SkeletonStats, SkeletonTable, StatusBadge,
   Table, Textarea, optionsFor,
 } from '../components/ui';
-import { cx, fmt, fmtRelative, shiftLabel } from '../lib/format';
+import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 
@@ -116,7 +116,7 @@ function Overview({ data, onOpen }) {
                   className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-ink-50 sm:px-5"
                 >
                   <span className="min-w-0 basis-full sm:basis-auto sm:flex-1">
-                    <span className="block font-medium text-fg">{shiftLabel(a)} · {fmt(a.shift_start)}</span>
+                    <span className="block font-medium text-fg">{shiftLabel(a)} · {formatEAT(a.shift_start)}</span>
                     <span className="block text-meta text-ink-600">{a.outgoing_name} → {a.incoming_name ?? 'unassigned'}</span>
                   </span>
                   <StatusBadge value={a.status} />
@@ -329,7 +329,7 @@ export default function SupervisorPage({ view }) {
                         {r.decision === 'approved'
                           ? <Badge tone="green" icon={ShieldCheck}>Approved</Badge>
                           : <Badge tone="red" icon={ShieldAlert}>Escalated</Badge>}
-                        <span className="text-ink-700">by {r.supervisor_name} · {fmt(r.reviewed_at)}</span>
+                        <span className="text-ink-700">by {r.supervisor_name} · {formatEAT(r.reviewed_at)}</span>
                       </div>
                       {r.comments && <p className="mt-1 text-ink-800">{r.comments}</p>}
                     </li>

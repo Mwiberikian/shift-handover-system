@@ -12,7 +12,7 @@ import {
   SegmentedPicker, Select, SEVERITY_OPTIONS, SkeletonCard, StatusBadge, Textarea,
 } from '../components/ui';
 import {
-  cx, fmt, fmtTime, shiftLabel,
+  cx, eatLocalToIso, formatEAT, nowEATLocal, shiftLabel,
 } from '../lib/format';
 import { TASK_DESCRIPTION } from '../lib/limits';
 import { toast, toastError } from '../lib/toast';
@@ -133,7 +133,7 @@ export function DraftEditor({ record, meta, reload }) {
     e.preventDefault();
     addI(async () => {
       await api.post(`/handovers/${record.record_id}/incidents`, {
-        ...incident, occurred_at: new Date(incident.occurred_at).toISOString(),
+        ...incident, occurred_at: eatLocalToIso(incident.occurred_at),
       });
       setIncident({ title: '', description: '', severity: 'low', occurred_at: '' });
       await reload();
@@ -261,7 +261,7 @@ export function DraftEditor({ record, meta, reload }) {
           <form onSubmit={addIncident} className="mt-4 space-y-3 rounded-lg border border-dashed border-ink-300 bg-ink-50/60 p-3 sm:p-4">
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_14rem]">
               <Input label="Incident title" placeholder="Short headline" value={incident.title} onChange={(e) => setIncident({ ...incident, title: e.target.value })} required />
-              <Input label="Occurred at" type="datetime-local" value={incident.occurred_at} onChange={(e) => setIncident({ ...incident, occurred_at: e.target.value })} required />
+              <Input label="Occurred at (EAT)" hint="East Africa Time, whatever your device's time zone" type="datetime-local" value={incident.occurred_at} max={nowEATLocal()} onChange={(e) => setIncident({ ...incident, occurred_at: e.target.value })} required />
             </div>
             <Textarea label="Description" rows={2} placeholder="What happened, and any follow-up (optional)" value={incident.description} onChange={(e) => setIncident({ ...incident, description: e.target.value })} />
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -337,7 +337,7 @@ function ClarifyBox({ record, reload }) {
           <h2 className="text-section text-fg">{record.incoming_name ?? 'The incoming staff member'} raised a query</h2>
           <StatusBadge value="queried" />
         </div>
-        <p className="mt-1 text-meta text-ink-600">{shiftLabel(record)} · {fmt(record.shift_start)}</p>
+        <p className="mt-1 text-meta text-ink-600">{shiftLabel(record)} · {formatEAT(record.shift_start)}</p>
         <blockquote className="mt-3 rounded-lg bg-status-amber-soft px-4 py-3 whitespace-pre-wrap text-ink-800">
           {record.acknowledgement?.comments}
         </blockquote>
@@ -372,8 +372,8 @@ function CurrentView({ meta, records, current, reload }) {
             <Clock aria-hidden className="size-4 text-ink-500" />
             <span className="font-semibold text-fg">{shiftLabel(shift)}</span>
           </div>
-          <span className="text-ink-700">{fmtTime(shift.start_time)} – {fmtTime(shift.end_time)}</span>
-          <span className="text-meta text-ink-600">{fmt(shift.start_time)}</span>
+          <span className="text-ink-700">{formatEAT(shift.start_time, 'time')} – {formatEAT(shift.end_time, 'time')}</span>
+          <span className="text-meta text-ink-600">{formatEAT(shift.start_time, 'date')}</span>
           {current && <StatusBadge value={current.status} className="ml-auto" />}
         </div>
       )}
