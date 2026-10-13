@@ -2,13 +2,14 @@ import { Link } from 'react-router-dom';
 import { CircleHelp, Mail, Phone } from 'lucide-react';
 import { SUPPORT, telHref } from '../../lib/support';
 
-const LINK = 'inline-flex min-w-0 items-center gap-1.5 rounded px-1 py-0.5 text-white/75 transition-colors hover:text-white';
+// IR-01: each link fills the 44 px bar and is at least 44 px wide.
+const LINK = 'inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded px-1.5 text-white/75 transition-colors hover:text-white';
 
 // Slim bar above every header: support contacts on the left (each hidden when
 // unset in .env), Help on the right. Always-dark chrome in both themes.
 export default function UtilityBar() {
   return (
-    <div className="h-8 border-b border-white/10 bg-brand-black text-meta">
+    <div className="h-11 border-b border-white/10 bg-brand-black text-meta">
       <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between gap-3 px-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-3 sm:gap-5">
           {SUPPORT.email && (

@@ -10,7 +10,7 @@ export default function HelpMenu() {
     <Menu>
       <MenuButton
         aria-label="Help"
-        className="grid size-9 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white data-open:bg-white/10 data-open:text-white"
+        className="grid size-11 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white data-open:bg-white/10 data-open:text-white"
       >
         <CircleHelp aria-hidden className="size-[18px]" />
       </MenuButton>

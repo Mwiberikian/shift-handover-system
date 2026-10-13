@@ -30,7 +30,7 @@ function PersonPicker({ people, value, onChange }) {
       <Combobox value={value} onChange={onChange} onClose={() => setQuery('')} by="user_id">
         <div className="relative">
           <ComboboxInput
-            className="block h-9 w-full rounded-lg border border-ink-300 bg-surface px-3 pr-9 text-body text-fg shadow-sm placeholder:text-ink-500 hover:border-ink-400 focus:border-brand-red-dark focus:ring-2 focus:ring-brand-red/25 focus:outline-none"
+            className="block h-11 w-full rounded-lg border border-ink-300 bg-surface px-3 pr-9 text-body text-fg shadow-sm placeholder:text-ink-500 hover:border-ink-400 focus:border-brand-red-dark focus:ring-2 focus:ring-brand-red/25 focus:outline-none"
             displayValue={(p) => p?.full_name ?? ''}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name, role or department…"

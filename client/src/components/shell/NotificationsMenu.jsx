@@ -58,7 +58,7 @@ function DesktopAlertsToggle() {
     return <p className="flex items-center gap-1.5 text-meta text-ink-600"><BellOff aria-hidden className="size-3.5" />Desktop alerts are blocked in your browser settings.</p>;
   }
   return state === 'on' ? (
-    <button type="button" onClick={() => setState(disableDesktopAlerts())} className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-meta font-medium text-status-green hover:bg-ink-100">
+    <button type="button" onClick={() => setState(disableDesktopAlerts())} className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-meta font-medium text-status-green hover:bg-ink-100">
       <BellRing aria-hidden className="size-3.5" /> Desktop alerts on · turn off
     </button>
   ) : (
@@ -69,7 +69,7 @@ function DesktopAlertsToggle() {
         setState(next);
         if (next === 'on') toast.success('Desktop alerts enabled', { description: 'Reminders will also appear as browser notifications.' });
       }}
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-meta font-medium text-ink-700 hover:bg-ink-100 hover:text-fg"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-meta font-medium text-ink-700 hover:bg-ink-100 hover:text-fg"
     >
       <BellRing aria-hidden className="size-3.5" /> Enable desktop alerts
     </button>
@@ -134,7 +134,7 @@ export default function NotificationsMenu() {
     <Popover className="relative">
       <PopoverButton
         aria-label={unread.length ? `Notifications, ${unread.length} unread` : 'Notifications'}
-        className="relative grid size-9 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white data-open:bg-white/10 data-open:text-white"
+        className="relative grid size-11 shrink-0 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white data-open:bg-white/10 data-open:text-white"
       >
         <Bell aria-hidden className="size-5" />
         {unread.length > 0 && (
@@ -152,7 +152,7 @@ export default function NotificationsMenu() {
         <div className="flex items-center justify-between border-b border-ink-200 px-4 py-3">
           <h2 className="m-0 text-section">Notifications</h2>
           {unread.length > 0 && (
-            <button type="button" onClick={markAllRead} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-meta font-medium text-ink-600 hover:bg-ink-100 hover:text-fg">
+            <button type="button" onClick={markAllRead} className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-meta font-medium text-ink-600 hover:bg-ink-100 hover:text-fg">
               <CheckCheck aria-hidden className="size-3.5" /> Mark all read
             </button>
           )}

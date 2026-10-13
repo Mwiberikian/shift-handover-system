@@ -6,7 +6,7 @@ import { useUnreadMessages } from '../../lib/unread';
 export default function SidebarNav({ items, compact = false, onNavigate }) {
   const unread = useUnreadMessages();
   return (
-    <nav aria-label="Main" className="flex flex-col gap-1 p-3">
+    <nav aria-label="Main" className={cx('flex flex-col gap-1', compact ? 'px-2.5 py-3' : 'p-3')}>
       {items.map(({
         to, end, label, icon: Icon, badge,
       }) => {
@@ -21,7 +21,7 @@ export default function SidebarNav({ items, compact = false, onNavigate }) {
           title={compact ? name : undefined}
           aria-label={compact || count ? name : undefined}
           className={({ isActive }) => cx(
-            'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-body font-medium transition-colors',
+            'group relative flex min-h-11 min-w-11 items-center gap-3 rounded-lg px-3 text-body font-medium transition-colors',
             compact && 'justify-center px-0',
             isActive
               ? 'bg-ink-100 text-fg'

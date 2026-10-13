@@ -45,11 +45,11 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen">
-      <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 py-2 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
+      <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:inline-flex focus:min-h-11 focus:items-center">
         Skip to content
       </a>
 
-      {/* Fixed chrome: utility bar (2rem) + header (3.5rem) = top-22 offsets below. */}
+      {/* Fixed chrome: utility bar (2.75rem) + header (3.5rem) = top-25 offsets below. */}
       <div className="fixed inset-x-0 top-0 z-40">
         <UtilityBar />
         <header className="glass-dark flex h-14 items-center gap-2 border-b-2 border-brand-red px-3 sm:px-4">
@@ -57,15 +57,15 @@ export default function Layout() {
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-label="Open navigation"
-            className="grid size-9 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white md:hidden"
+            className="grid size-11 shrink-0 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white md:hidden"
           >
             <Menu aria-hidden className="size-5" />
           </button>
-          <Link to="/" aria-label="Shift Handover home" className="rounded-md">
+          <Link to="/" aria-label="Shift Handover home" className="inline-flex min-h-11 min-w-11 items-center rounded-md">
             <Brand showName={false} className="lg:hidden" />
             <Brand className="hidden lg:flex" />
           </Link>
-          <Link to="/" className="ml-1 hidden shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium whitespace-nowrap text-white/80 transition-colors hover:bg-white/10 hover:text-white md:inline-flex lg:ml-2">
+          <Link to="/" className="ml-1 hidden min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-medium whitespace-nowrap text-white/80 transition-colors hover:bg-white/10 hover:text-white md:inline-flex lg:ml-2">
             <Home aria-hidden className="size-4" /> <span className="sr-only lg:not-sr-only">Home</span>
           </Link>
 
@@ -78,7 +78,7 @@ export default function Layout() {
             <button
               type="button"
               onClick={() => setConfirmLogout(true)}
-              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-2.5 text-sm font-medium whitespace-nowrap text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg px-2.5 text-sm font-medium whitespace-nowrap text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <LogOut aria-hidden className="size-[18px]" />
               <span className="hidden lg:inline">Log out</span>
@@ -89,7 +89,7 @@ export default function Layout() {
       </div>
 
       {/* Rail on tablets, full sidebar from lg up, drawer below md. */}
-      <aside className="fixed top-22 bottom-0 left-0 z-30 hidden w-16 border-r border-ink-200 bg-surface md:block lg:w-60">
+      <aside className="fixed top-25 bottom-0 left-0 z-30 hidden w-16 border-r border-ink-200 bg-surface md:block lg:w-60">
         <div className="lg:hidden"><SidebarNav items={items} compact /></div>
         <div className="hidden lg:block"><SidebarNav items={items} /></div>
       </aside>
@@ -106,7 +106,7 @@ export default function Layout() {
               type="button"
               onClick={() => setDrawerOpen(false)}
               aria-label="Close navigation"
-              className="grid size-9 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white"
+              className="grid size-11 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white"
             >
               <X aria-hidden className="size-5" />
             </button>
@@ -114,7 +114,7 @@ export default function Layout() {
           <div className="flex-1 overflow-y-auto">
             <SidebarNav items={items} onNavigate={() => setDrawerOpen(false)} />
             <div className="border-t border-ink-200 p-3">
-              <Link to="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2 text-body font-medium text-ink-600 hover:bg-ink-50 hover:text-fg">
+              <Link to="/" onClick={() => setDrawerOpen(false)} className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-body font-medium text-ink-600 hover:bg-ink-50 hover:text-fg">
                 <Home aria-hidden className="size-[18px] text-ink-500" /> Home
               </Link>
             </div>
@@ -137,7 +137,7 @@ export default function Layout() {
 
       <main
         id="main"
-        className={cx('min-h-screen pt-22 md:pl-16 lg:pl-60', photo && 'page-photo')}
+        className={cx('min-h-screen pt-25 md:pl-16 lg:pl-60', photo && 'page-photo')}
         style={photo ? { '--page-photo': `url(${photo})` } : undefined}
       >
         {/* Keyed on the route so each screen fades in on navigation. */}

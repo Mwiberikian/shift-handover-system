@@ -84,7 +84,7 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
           required
-          inputClassName="pr-10"
+          inputClassName="pr-12"
           error={!!error}
         />
         <button
@@ -92,7 +92,7 @@ export default function Login() {
           onClick={() => setShowPassword((s) => !s)}
           aria-label={showPassword ? 'Hide password' : 'Show password'}
           aria-pressed={showPassword}
-          className="absolute top-[30px] right-1.5 grid size-7 place-items-center rounded-md text-ink-500 hover:bg-ink-100 hover:text-ink-800"
+          className="absolute top-[26px] right-0 grid size-11 place-items-center rounded-lg text-ink-500 hover:bg-ink-100 hover:text-ink-800"
         >
           {showPassword ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
         </button>

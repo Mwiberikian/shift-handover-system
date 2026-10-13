@@ -114,7 +114,7 @@ function RoleGuide({ guide, mine }) {
   return (
     <Card
       id={`role-${role}`}
-      className={cx('scroll-mt-28', mine && 'ring-2 ring-brand-red/40')}
+      className={cx('scroll-mt-32', mine && 'ring-2 ring-brand-red/40')}
       title={title}
       subtitle={ROLE_LABEL[role]}
       icon={Icon}
@@ -151,7 +151,7 @@ export default function Help() {
 
   return (
     <div className="min-h-screen bg-ink-50">
-      <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 py-2 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
+      <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:inline-flex focus:min-h-11 focus:items-center">
         Skip to content
       </a>
       <PublicHeader />
@@ -162,13 +162,13 @@ export default function Help() {
 
         <nav aria-label="Help sections" className="mt-5 flex flex-wrap gap-2">
           {guides.map((g) => (
-            <a key={g.role} href={`#role-${g.role}`} className="rounded-full border border-ink-200 bg-surface px-3 py-1 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">
+            <a key={g.role} href={`#role-${g.role}`} className="inline-flex min-h-11 items-center rounded-full border border-ink-200 bg-surface px-3.5 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">
               {ROLE_LABEL[g.role]}
             </a>
           ))}
-          <a href="#faq" className="rounded-full border border-ink-200 bg-surface px-3 py-1 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">General questions</a>
-          <a href="#keyboard" className="rounded-full border border-ink-200 bg-surface px-3 py-1 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">Keyboard</a>
-          <a href="#contact" className="rounded-full border border-ink-200 bg-surface px-3 py-1 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">Contact</a>
+          <a href="#faq" className="inline-flex min-h-11 items-center rounded-full border border-ink-200 bg-surface px-3.5 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">General questions</a>
+          <a href="#keyboard" className="inline-flex min-h-11 items-center rounded-full border border-ink-200 bg-surface px-3.5 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">Keyboard</a>
+          <a href="#contact" className="inline-flex min-h-11 items-center rounded-full border border-ink-200 bg-surface px-3.5 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">Contact</a>
         </nav>
 
         {myRole && (
@@ -180,11 +180,11 @@ export default function Help() {
         <div className="mt-6 space-y-6">
           {guides.map((g) => <RoleGuide key={g.role} guide={g} mine={g.role === myRole} />)}
 
-          <Card id="faq" className="scroll-mt-28" title="General questions" icon={LifeBuoy}>
+          <Card id="faq" className="scroll-mt-32" title="General questions" icon={LifeBuoy}>
             <Faq items={GENERAL_FAQ} />
           </Card>
 
-          <Card id="keyboard" className="scroll-mt-28" title="Keyboard controls" subtitle="Everything in Shift Handover can be done without a mouse." icon={Keyboard}>
+          <Card id="keyboard" className="scroll-mt-32" title="Keyboard controls" subtitle="Everything in Shift Handover can be done without a mouse." icon={Keyboard}>
             <dl className="divide-y divide-ink-200">
               {KEYS.map(([a, b, what]) => (
                 <div key={what} className="flex flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:gap-6">
@@ -198,7 +198,7 @@ export default function Help() {
             </dl>
           </Card>
 
-          <Card id="contact" className="scroll-mt-28" title="Contact support" icon={LifeBuoy}>
+          <Card id="contact" className="scroll-mt-32" title="Contact support" icon={LifeBuoy}>
             {SUPPORT.email || SUPPORT.phone ? (
               <ul className="space-y-3">
                 {SUPPORT.email && (

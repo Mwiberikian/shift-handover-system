@@ -11,11 +11,12 @@ const VARIANTS = {
   ghost: 'bg-transparent text-ink-700 hover:bg-ink-100 hover:text-fg disabled:text-ink-400',
 };
 
+// IR-01: every size is at least 44 x 44 px, the minimum touch target.
 const SIZES = {
-  sm: 'h-8 gap-1.5 px-2.5 text-meta',
-  md: 'h-9 gap-2 px-3.5 text-body',
-  lg: 'h-11 gap-2 px-5 text-body',
-  icon: 'size-9 justify-center',
+  sm: 'h-11 min-w-11 gap-1.5 px-3 text-meta',
+  md: 'h-11 min-w-11 gap-2 px-4 text-body',
+  lg: 'h-12 min-w-11 gap-2 px-5 text-body',
+  icon: 'size-11 justify-center',
 };
 
 // Class string for anything that should look like a Button (e.g. a Link).

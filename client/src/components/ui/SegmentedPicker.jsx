@@ -20,7 +20,7 @@ export default function SegmentedPicker({ label, value, onChange, options, class
             key={o.value}
             value={o.value}
             className={cx(
-              'cursor-pointer rounded-full bg-surface px-3 py-1 text-meta font-medium text-ink-600 ring-1 ring-ink-300 transition-colors ring-inset',
+              'inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full bg-surface px-3.5 text-meta font-medium text-ink-600 ring-1 ring-ink-300 transition-colors ring-inset',
               'hover:bg-ink-50 data-checked:ring-2 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-brand-red',
               CHECKED[o.tone ?? 'gray'],
             )}

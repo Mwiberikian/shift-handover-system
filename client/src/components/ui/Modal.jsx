@@ -21,7 +21,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
               <DialogTitle className="text-section text-fg">{title}</DialogTitle>
               {description && <Description className="mt-0.5 text-ink-600">{description}</Description>}
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close" className="-mt-1 -mr-2 size-8" icon={X} />
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close" className="-mt-2 -mr-2" icon={X} />
           </div>
           {children && <div className="px-5 py-4">{children}</div>}
           {footer && <div className="flex flex-col-reverse gap-2 border-t border-ink-200 bg-ink-50/60 px-5 py-3 sm:flex-row sm:justify-end rounded-b-xl">{footer}</div>}

@@ -11,7 +11,7 @@ import UtilityBar from './UtilityBar';
 // `as="form"` makes the card itself the form element.
 export default function AuthShell({ as: Card = 'div', wide = false, children, footer, ...cardProps }) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-brand-black px-4 pt-24 pb-10">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-brand-black px-4 pt-27 pb-10">
       <img src={runwayUrl} alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
       <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-brand-black/55 via-brand-black/25 to-brand-black/70" />
 
@@ -36,7 +36,7 @@ export default function AuthShell({ as: Card = 'div', wide = false, children, fo
           Authorised personnel only. Sign-ins and handover actions are recorded in the audit trail.
         </p>
         <p className="mt-3 text-center">
-          <Link to="/" className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-meta font-medium text-white/90 hover:text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.6)]">
+          <Link to="/" className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-meta font-medium text-white/90 hover:text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.6)]">
             <ArrowLeft aria-hidden className="size-3.5" /> Back to home
           </Link>
         </p>

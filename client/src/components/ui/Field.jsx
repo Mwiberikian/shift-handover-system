@@ -44,7 +44,7 @@ export function Field({ label, hint, error, required, className, children, hideL
 export const Input = forwardRef(function Input({ label, hint, error, required, className, hideLabel, inputClassName, ...props }, ref) {
   return (
     <Field label={label} hint={hint} error={error} required={required} className={className} hideLabel={hideLabel}>
-      {(a11y) => <input ref={ref} {...a11y} {...props} className={cx(CONTROL, 'h-9', borderFor(error), inputClassName)} />}
+      {(a11y) => <input ref={ref} {...a11y} {...props} className={cx(CONTROL, 'h-11', borderFor(error), inputClassName)} />}
     </Field>
   );
 });
@@ -63,7 +63,7 @@ export const Select = forwardRef(function Select({ label, hint, error, required,
     <Field label={label} hint={hint} error={error} required={required} className={className} hideLabel={hideLabel}>
       {(a11y) => (
         <div className="relative">
-          <select ref={ref} {...a11y} {...props} className={cx(CONTROL, 'h-9 appearance-none pr-9', borderFor(error))}>
+          <select ref={ref} {...a11y} {...props} className={cx(CONTROL, 'h-11 appearance-none pr-9', borderFor(error))}>
             {placeholder !== undefined && <option value="">{placeholder}</option>}
             {options.map((o) => {
               const opt = typeof o === 'string' ? { value: o, label: o } : o;
@@ -81,15 +81,16 @@ export const Select = forwardRef(function Select({ label, hint, error, required,
 export function Checkbox({ label, description, className, ...props }) {
   const id = useId();
   return (
-    <div className={cx('flex items-start gap-2.5', className)}>
+    <div className={cx('flex items-center gap-2.5', className)}>
       <input
         id={id}
         type="checkbox"
         {...props}
-        className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-ink-300 accent-brand-red-dark disabled:cursor-not-allowed"
+        className="size-4 shrink-0 cursor-pointer rounded border-ink-300 accent-brand-red-dark disabled:cursor-not-allowed"
       />
+      {/* The label is the touch target (IR-01): at least 44 px tall. */}
       {(label || description) && (
-        <label htmlFor={id} className="cursor-pointer text-sm leading-tight">
+        <label htmlFor={id} className="flex min-h-11 min-w-11 cursor-pointer flex-col justify-center text-sm leading-tight">
           <span className="font-medium text-ink-800">{label}</span>
           {description && <span className="block text-meta text-ink-600">{description}</span>}
         </label>

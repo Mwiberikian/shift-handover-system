@@ -46,19 +46,19 @@ export default function Landing() {
   const { claims } = useAuth();
   return (
     <div className="min-h-screen bg-surface text-fg">
-      <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 py-2 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
+      <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:inline-flex focus:min-h-11 focus:items-center">
         Skip to content
       </a>
 
       {/* Fixed chrome: the hero photo, then page content, scroll beneath it. */}
       <PublicHeader>
-        <a href="#features" className="hidden rounded-md px-2 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white lg:inline">Features</a>
-        <a href="#how-it-works" className="hidden rounded-md px-2 py-1 text-sm font-medium text-white/80 transition-colors hover:text-white lg:inline">How it works</a>
+        <a href="#features" className="hidden min-h-11 items-center rounded-md px-2 text-sm font-medium text-white/80 transition-colors hover:text-white lg:inline-flex">Features</a>
+        <a href="#how-it-works" className="hidden min-h-11 items-center rounded-md px-2 text-sm font-medium text-white/80 transition-colors hover:text-white lg:inline-flex">How it works</a>
       </PublicHeader>
 
       <main id="main">
         {/* Hero */}
-        <section className="relative isolate flex min-h-[92vh] items-center overflow-hidden bg-brand-black pt-24">
+        <section className="relative isolate flex min-h-[92vh] items-center overflow-hidden bg-brand-black pt-27">
           <img src={aircraftUrl} alt="" aria-hidden className="absolute inset-0 -z-10 size-full object-cover" />
           <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-black/80 via-brand-black/40 to-brand-black/10" />
           <div className="mx-auto w-full max-w-screen-xl px-4 py-16 sm:px-6 lg:px-8">
@@ -85,7 +85,7 @@ export default function Landing() {
         </section>
 
         {/* Features */}
-        <section id="features" aria-labelledby="features-title" className="scroll-mt-24 bg-ink-50 py-20 sm:py-24">
+        <section id="features" aria-labelledby="features-title" className="scroll-mt-28 bg-ink-50 py-20 sm:py-24">
           <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl">
               <p className="text-meta font-semibold tracking-widest text-accent-fg uppercase">Capabilities</p>
@@ -107,7 +107,7 @@ export default function Landing() {
         </section>
 
         {/* How it works, beside the control tower photo */}
-        <section id="how-it-works" aria-labelledby="how-title" className="scroll-mt-24 bg-surface py-20 sm:py-24">
+        <section id="how-it-works" aria-labelledby="how-title" className="scroll-mt-28 bg-surface py-20 sm:py-24">
           <div className="mx-auto grid max-w-screen-xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
             <div className="relative order-last lg:order-first">
               <img src={towerUrl} alt="Airport control tower against a cloudy sky" loading="lazy" className="aspect-[4/5] w-full rounded-2xl object-cover shadow-pop sm:aspect-[4/3] lg:aspect-[4/5]" />

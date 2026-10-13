@@ -231,6 +231,23 @@ cd client && npm test
 | `DraftEditor.test.jsx` | Submit is disabled until every template-required field and the incoming user are set |
 | `PrintRecord.test.jsx` | Print view renders each export section; shows the API error on 403 |
 | `usePolling.test.jsx` | 5 s polling, paused while the tab is hidden |
+| `format.test.js` | Times print as `YYYY-MM-DD HH:mm EAT` under three process time zones; `datetime-local` input is read as EAT |
+
+Touch targets and horizontal scroll (IR-01), Playwright in the installed
+Microsoft Edge, against a running client and API with the seed data:
+
+```bash
+cd client && npm run check:touch
+# another instance: BASE_URL=http://localhost:5174 API_URL=http://localhost:4100/api npm run check:touch
+```
+
+It opens login, outgoing, incoming, supervisor and admin at 320, 768 and
+1280 px, measures every button, link, input, select, checkbox and radio
+(a checkbox's label counts as part of its target), checks the first Tab stop
+(the skip link), and fails on anything under 44 x 44 px or any sideways
+scroll. Links inside running text are listed but not failed (WCAG 2.5.5
+exempts inline links). `BROWSER_CHANNEL=chromium` uses Playwright's own
+Chromium instead of Edge.
 
 ## Integrity model
 

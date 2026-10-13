@@ -13,7 +13,7 @@ export default function ThemeToggle({ className }) {
       aria-pressed={dark}
       aria-label="Dark theme"
       title={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-      className={cx('grid size-9 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white', className)}
+      className={cx('grid size-11 shrink-0 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white', className)}
     >
       {dark ? <Sun aria-hidden className="size-[18px]" /> : <Moon aria-hidden className="size-[18px]" />}
     </button>
