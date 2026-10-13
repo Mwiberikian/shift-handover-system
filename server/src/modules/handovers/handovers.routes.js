@@ -140,6 +140,14 @@ router.post(
 );
 
 router.post(
+  '/:id/open-review',
+  requireRole('supervisor', 'admin'),
+  recordId,
+  validate,
+  async (req, res) => res.json(await workflow.openReview(req.user, req.params.id)),
+);
+
+router.post(
   '/:id/review',
   supervisorOnly,
   recordId,

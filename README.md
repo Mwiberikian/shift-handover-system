@@ -185,6 +185,7 @@ end in `_test`.
 | `handover.submit.test.js` | Template-mandated fields, specific missing-field errors, audit + notifications |
 | `rbac.test.js` | Role and department scoping (401/403) |
 | `handover.acknowledgement.test.js` | Acknowledgement required before `closed`; query/clarify; escalate/resolve |
+| `handover.open-review.test.js` | Acknowledged → under_review: roles, department scope, 409 on other statuses, audit entry with who/when |
 | `handover.carryforward.test.js` | Open/in-progress tasks carried with `carried_from_task_id` |
 | `auth.login.test.js` | Login, JWT claims/expiry, bcrypt cost 12 |
 | `messaging.test.js` | Cross-department direct messages, broadcast permissions (403s), private direct messages, append-only (API and DB), per-user rate limit |
@@ -211,6 +212,7 @@ end in `_test`.
 | `GET /api/handovers/meta`, `POST /api/handovers`, `PATCH /:id`, `POST /:id/tasks`, `PATCH /:id/tasks/:taskId`, `POST /:id/incidents`, `POST /:id/submit`, `POST /:id/clarify` | outgoing_staff |
 | `POST /:id/acknowledgement`, `POST /:id/query` | incoming_staff |
 | `POST /:id/review`, `POST /:id/resolve` | supervisor |
+| `POST /:id/open-review` (acknowledged → under_review, audited) | supervisor (own department), admin |
 | `GET /api/handovers/search`, `GET /api/dashboard/supervisor` | supervisor, admin |
 | `GET /api/notifications`, `POST /api/notifications/:id/read` | any |
 | `/api/admin/users[/:id]`, `/api/admin/departments`, `/api/admin/templates/:departmentCode` | admin |

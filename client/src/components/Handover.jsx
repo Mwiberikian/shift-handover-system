@@ -1,6 +1,6 @@
 // Shared, read-only building blocks for displaying handover records.
 import {
-  AlertTriangle, CheckCircle2, ClipboardList, CornerDownRight, FileText, HelpCircle, History, MessageSquareReply,
+  AlertTriangle, CheckCircle2, ClipboardList, CornerDownRight, Eye, FileText, HelpCircle, History, MessageSquareReply,
   ShieldCheck, ShieldAlert,
 } from 'lucide-react';
 import { cx, fmt, fmtRelative, shiftLabel } from '../lib/format';
@@ -111,6 +111,7 @@ const THREAD = {
   query: ['Query raised', HelpCircle, 'text-status-amber bg-status-amber-soft'],
   clarify: ['Clarification', MessageSquareReply, 'text-status-blue bg-status-blue-soft'],
   acknowledge: ['Acknowledged', CheckCircle2, 'text-status-green bg-status-green-soft'],
+  open_review: ['Review opened', Eye, 'text-status-amber bg-status-amber-soft'],
   review: ['Supervisor review', ShieldCheck, 'text-ink-700 bg-ink-100'],
   resolve: ['Escalation resolved', ShieldAlert, 'text-status-green bg-status-green-soft'],
 };

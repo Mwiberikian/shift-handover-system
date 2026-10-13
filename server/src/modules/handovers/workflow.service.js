@@ -2,10 +2,10 @@
  * Phase 4: what happens to a record after submission.
  *
  *   submitted --acknowledge--> acknowledged --review(approved)--> closed
- *       |  ^                           \--review(escalated)--> escalated --resolve--> closed
- *     query clarify
- *       v  |
- *     queried
+ *       |  ^                         |  \--review(escalated)--> escalated --resolve--> closed
+ *     query clarify             open-review
+ *       v  |                         v
+ *     queried                   under_review --review(approved|escalated)--> closed | escalated
  *
  * A record cannot reach 'closed' without passing through 'acknowledged'; the
  * DB trigger enforces the same transition table.
@@ -65,7 +65,7 @@ async function getById(user, recordId) {
       `SELECT a.action, a.new_value->>'comments' AS comments, a.logged_at, u.full_name AS by_name
          FROM audit_log a LEFT JOIN app_user u ON u.user_id = a.user_id
         WHERE a.entity_type = 'handover_record' AND a.entity_id = $1
-          AND a.action IN ('query', 'clarify', 'acknowledge', 'review', 'resolve')
+          AND a.action IN ('query', 'clarify', 'acknowledge', 'open_review', 'review', 'resolve')
         ORDER BY a.logged_at, a.log_id`,
       [recordId],
     ),
@@ -153,11 +153,30 @@ async function clarify(user, recordId, { comments }) {
   });
 }
 
-async function review(user, recordId, { decision, comments }) {
+// Marks an acknowledged record as being reviewed. Who opened it and when are
+// kept in audit_log (action 'open_review'), not on the record.
+async function openReview(user, recordId) {
   return withTransaction(async (client) => {
     const record = await lockRecord(client, recordId);
     assertDepartmentAccess(user, record.department_id);
     assertStatus(record, 'acknowledged');
+
+    const updated = await setStatus(client, record, 'under_review');
+    const { rows: [{ now: openedAt }] } = await client.query('SELECT now()');
+    await writeAudit(client, {
+      userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'open_review',
+      previousValue: auditView(record),
+      newValue: { ...auditView(updated), opened_by: user.user_id, opened_at: openedAt },
+    });
+    return getByIdTx(client, recordId);
+  });
+}
+
+async function review(user, recordId, { decision, comments }) {
+  return withTransaction(async (client) => {
+    const record = await lockRecord(client, recordId);
+    assertDepartmentAccess(user, record.department_id);
+    assertStatus(record, 'acknowledged', 'under_review');
 
     const { rows: [rev] } = await client.query(
       `INSERT INTO supervisor_review (record_id, supervisor_id, decision, comments)
@@ -313,4 +332,4 @@ async function supervisorDashboard(user, query) {
   };
 }
 
-module.exports = { getById, acknowledge, raiseQuery, clarify, review, resolve, search, supervisorDashboard };
+module.exports = { getById, acknowledge, raiseQuery, clarify, openReview, review, resolve, search, supervisorDashboard };

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle, CheckCircle2, CircleCheckBig, Eye, FileSearch, HelpCircle, Inbox, Layers, RefreshCw, Search as SearchIcon,
+  AlertTriangle, CheckCircle2, CircleCheckBig, Eye, FileSearch, FolderOpen, HelpCircle, Inbox, Layers, RefreshCw, Search as SearchIcon,
   Send, ShieldAlert, ShieldCheck,
 } from 'lucide-react';
 import api from '../api';
@@ -15,7 +15,7 @@ import useAction from '../lib/useAction';
 
 const TITLES = {
   overview: ['Overview', 'Handover status across your departments.'],
-  queue: ['Review queue', 'Acknowledged handovers awaiting supervisor review.'],
+  queue: ['Review queue', 'Acknowledged handovers awaiting supervisor review, and those under review.'],
   escalated: ['Escalated', 'Handovers escalated for resolution.'],
   search: ['Search', 'Find handover records by keyword, status or date.'],
 };
@@ -135,6 +135,9 @@ function Overview({ data, onOpen }) {
   );
 }
 
+// Statuses the drawer offers supervisor actions for.
+const REVIEWABLE = ['acknowledged', 'under_review', 'escalated'];
+
 function ReviewActions({ record, onDone }) {
   const [comments, setComments] = useState('');
   const [confirmEscalate, setConfirmEscalate] = useState(false);
@@ -152,14 +155,19 @@ function ReviewActions({ record, onDone }) {
     }
   };
 
-  if (!['acknowledged', 'escalated'].includes(record.status)) return null;
-  const isReview = record.status === 'acknowledged';
+  if (!REVIEWABLE.includes(record.status)) return null;
+  const isReview = record.status !== 'escalated';
   return (
     <div className="space-y-3">
       <Textarea label={isReview ? 'Review comments' : 'Resolution notes'} rows={2} value={comments} onChange={(e) => setComments(e.target.value)} placeholder="Optional" />
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {isReview ? (
           <>
+            {record.status === 'acknowledged' && (
+              <Button icon={FolderOpen} loading={pending === 'open-review'} disabled={busy} onClick={() => act('open-review', {}, 'Review opened')}>
+                Open review
+              </Button>
+            )}
             <Button variant="danger" icon={ShieldAlert} onClick={() => setConfirmEscalate(true)} disabled={busy}>Escalate</Button>
             <Button variant="primary" icon={ShieldCheck} loading={pending === 'reviewapproved'} disabled={busy} onClick={() => act('review', { decision: 'approved' }, 'Handover approved and closed')}>
               Approve &amp; close
@@ -227,13 +235,14 @@ export default function SupervisorPage({ view }) {
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [d, q, e] = await Promise.all([
+      const [d, q, r, e] = await Promise.all([
         api.get('/dashboard/supervisor'),
         api.get('/handovers', { params: { status: 'acknowledged' } }),
+        api.get('/handovers', { params: { status: 'under_review' } }),
         api.get('/handovers', { params: { status: 'escalated' } }),
       ]);
       setDash(d.data);
-      setQueue(q.data);
+      setQueue([...r.data, ...q.data]);
       setEscalated(e.data);
     } catch (err) {
       toastError(err);
@@ -298,7 +307,7 @@ export default function SupervisorPage({ view }) {
         open={!!selected}
         onClose={() => setSelected(null)}
         title="Handover record"
-        footer={selected && ['acknowledged', 'escalated'].includes(selected.status)
+        footer={selected && REVIEWABLE.includes(selected.status)
           ? <ReviewActions record={selected} onDone={(id) => { load(); open(id); }} />
           : null}
       >
