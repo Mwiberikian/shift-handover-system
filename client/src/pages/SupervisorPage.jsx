@@ -17,7 +17,7 @@ const TITLES = {
   overview: ['Overview', 'Handover status across your departments.'],
   queue: ['Review queue', 'Acknowledged handovers awaiting supervisor review, and those under review.'],
   escalated: ['Escalated', 'Handovers escalated for resolution.'],
-  search: ['Search', 'Find handover records by keyword, status or date.'],
+  search: ['Search', 'Find handover records by keyword, status, shift or date.'],
 };
 
 const STAT_TONE = {
@@ -193,33 +193,40 @@ function ReviewActions({ record, onDone }) {
   );
 }
 
-function Search({ onOpen, selectedId, columns, rowClassName }) {
-  const [q, setQ] = useState({ q: '', status: '', from: '', to: '' });
+const SHIFT_OPTIONS = [{ value: 'day', label: 'Day shift' }, { value: 'night', label: 'Night shift' }];
+
+export function Search({ onOpen, selectedId, columns, rowClassName }) {
+  const [q, setQ] = useState({
+    q: '', status: '', shift_type: '', from: '', to: '',
+  });
   const [results, setResults] = useState(null);
   const [run, busy] = useAction();
 
   const submit = (e) => {
     e.preventDefault();
     const params = Object.fromEntries(Object.entries(q).filter(([, v]) => v));
-    if (params.to) params.to = `${params.to}T23:59:59`;
+    // Dates are East Africa Time days (DR-02), whatever the browser's zone.
+    if (params.from) params.from = `${params.from}T00:00:00+03:00`;
+    if (params.to) params.to = `${params.to}T23:59:59.999+03:00`;
     run(async () => setResults((await api.get('/handovers/search', { params })).data));
   };
 
   return (
     <div className="space-y-6">
       <Card>
-        <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_10rem_10rem_auto] lg:items-end">
+        <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_9rem_10rem_10rem_auto] lg:items-end">
           <Input label="Keyword" placeholder="Summary or task text" value={q.q} onChange={(e) => setQ({ ...q, q: e.target.value })} className="sm:col-span-2 lg:col-span-1" />
           <Select label="Status" value={q.status} onChange={(e) => setQ({ ...q, status: e.target.value })} placeholder="Any status" options={optionsFor('record')} className="sm:col-span-2 lg:col-span-1" />
-          <Input label="From" type="date" value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} />
-          <Input label="To" type="date" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
+          <Select label="Shift" value={q.shift_type} onChange={(e) => setQ({ ...q, shift_type: e.target.value })} placeholder="Any shift" options={SHIFT_OPTIONS} />
+          <Input label="From (EAT)" type="date" value={q.from} onChange={(e) => setQ({ ...q, from: e.target.value })} />
+          <Input label="To (EAT)" type="date" value={q.to} onChange={(e) => setQ({ ...q, to: e.target.value })} />
           <Button type="submit" variant="primary" icon={SearchIcon} loading={busy} className="sm:col-span-2 lg:col-span-1">Search</Button>
         </form>
       </Card>
       <Card flush title={results ? `${results.length} result${results.length === 1 ? '' : 's'}` : undefined}>
         {busy && !results ? <SkeletonTable /> : results
           ? <RecordTable records={results} onSelect={onOpen} selectedId={selectedId} columns={columns} rowClassName={rowClassName} empty="No records match these filters." />
-          : <EmptyState icon={FileSearch} title="Search handover records" message="Filter by keyword, status or shift date. Leave fields blank to match everything." />}
+          : <EmptyState icon={FileSearch} title="Search handover records" message="Filter by keyword, status, shift or shift date. Leave fields blank to match everything." />}
       </Card>
     </div>
   );

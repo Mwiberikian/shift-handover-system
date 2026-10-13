@@ -281,8 +281,9 @@ async function resolveDepartmentFilter(user, { department_id: deptId, department
   return departmentId;
 }
 
-// GET /api/handovers/search?from&to&department_id|department_code&status&q
-// Date range applies to the shift start time.
+// GET /api/handovers/search?from&to&department_id|department_code&status&shift_type&shift_id&q
+// Date range applies to the shift start time. shift_type is 'day' or 'night';
+// shift_id picks one shift (FR-16).
 async function search(user, query) {
   const departmentId = await resolveDepartmentFilter(user, query);
   const params = [];
@@ -291,6 +292,8 @@ async function search(user, query) {
 
   if (departmentId) add('r.department_id = ?', departmentId);
   if (query.status) add('r.status = ?', query.status);
+  if (query.shift_type) add('s.shift_type = ?', query.shift_type);
+  if (query.shift_id) add('r.shift_id = ?', query.shift_id);
   if (query.from) add('s.start_time >= ?', query.from);
   if (query.to) add('s.start_time <= ?', query.to);
   if (query.q) {

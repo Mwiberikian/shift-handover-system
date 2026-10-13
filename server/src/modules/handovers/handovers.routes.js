@@ -11,6 +11,7 @@ const router = express.Router();
 router.use(requireAuth);
 
 const RECORD_STATUSES = ['draft', 'submitted', 'queried', 'acknowledged', 'under_review', 'escalated', 'closed'];
+const SHIFT_TYPES = ['day', 'night'];
 const outgoingOnly = requireRole('outgoing_staff');
 const recordId = param('id').isUUID().withMessage('id must be a UUID');
 
@@ -40,6 +41,8 @@ router.get(
   query('department_id').optional().isUUID(),
   query('department_code').optional().isString(),
   query('status').optional().isIn(RECORD_STATUSES),
+  query('shift_type', "shift_type must be 'day' or 'night'").optional().isIn(SHIFT_TYPES),
+  query('shift_id', 'shift_id must be a UUID').optional().isUUID(),
   query('q').optional().isString().trim(),
   validate,
   async (req, res) => res.json(await workflow.search(req.user, req.query)),
