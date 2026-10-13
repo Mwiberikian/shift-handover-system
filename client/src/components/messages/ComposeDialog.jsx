@@ -12,6 +12,18 @@ import {
 } from '../ui';
 
 const BROADCASTERS = ['supervisor', 'admin'];
+// Email (and Both) are for supervisors and admins; the API enforces it.
+const EMAIL_SENDERS = ['supervisor', 'admin'];
+const SEND_AS_OPTIONS = [
+  { value: 'notification', label: 'System notification', tone: 'gray' },
+  { value: 'email', label: 'Email', tone: 'gray' },
+  { value: 'both', label: 'Both', tone: 'gray' },
+];
+const SEND_AS_HINT = {
+  notification: 'Recipients see it in Messages, and a direct message also appears under the bell.',
+  email: 'Recipients see it in Messages and get an email alert. If the email cannot be sent, the alert appears under the bell instead.',
+  both: 'Recipients see it in Messages, under the bell, and get an email alert.',
+};
 const MAX = 2000;
 
 // Searchable person picker (Headless UI Combobox: type to filter, arrows to
@@ -75,9 +87,11 @@ export default function ComposeDialog({ open, onClose, onSent, initial }) {
   const [departmentId, setDepartmentId] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [sendAs, setSendAs] = useState('notification');
   const [run, busy] = useAction();
 
   const canBroadcastAnywhere = BROADCASTERS.includes(claims.role);
+  const canEmail = EMAIL_SENDERS.includes(claims.role);
   const myDept = claims.department_id;
 
   useEffect(() => {
@@ -87,6 +101,7 @@ export default function ComposeDialog({ open, onClose, onSent, initial }) {
     setSubject(initial?.subject ?? '');
     setDepartmentId('');
     setBody('');
+    setSendAs('notification');
     api.get('/directory').then((r) => setPeople(r.data.filter((p) => p.user_id !== claims.user_id))).catch(() => {});
     if (canBroadcastAnywhere) api.get('/directory/departments').then((r) => setDepartments(r.data)).catch(() => {});
   }, [open, initial, claims.user_id, canBroadcastAnywhere]);
@@ -104,7 +119,7 @@ export default function ComposeDialog({ open, onClose, onSent, initial }) {
     && (type !== 'user' || personValue) && (type !== 'dept' || departmentId);
 
   const send = async () => {
-    const payload = { subject: subject.trim() || undefined, body };
+    const payload = { subject: subject.trim() || undefined, body, ...(canEmail && { send_as: sendAs }) };
     if (type === 'user') Object.assign(payload, { recipient_type: 'user', recipient_user_id: personValue.user_id });
     if (type === 'mydept') Object.assign(payload, { recipient_type: 'department', recipient_department_id: myDept });
     if (type === 'dept') Object.assign(payload, { recipient_type: 'department', recipient_department_id: departmentId });
@@ -155,6 +170,15 @@ export default function ComposeDialog({ open, onClose, onSent, initial }) {
           maxLength={MAX}
           hint={`${body.length} / ${MAX} characters. Messages can't be edited or deleted once sent.`}
         />
+        {canEmail && (
+          <div className="grid gap-1.5">
+            <SegmentedPicker label="Send as" value={sendAs} onChange={setSendAs} options={SEND_AS_OPTIONS} />
+            <p className="text-meta text-ink-600">
+              {SEND_AS_HINT[sendAs]}
+              {sendAs !== 'notification' && ' The email only says there is a new message and links to Shift Handover; the message text is not emailed. People who turned email alerts off get no email.'}
+            </p>
+          </div>
+        )}
       </div>
     </Modal>
   );

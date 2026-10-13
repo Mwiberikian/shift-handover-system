@@ -115,6 +115,14 @@ deliberate:
 - Sending is limited to 30 messages per user per hour (`MESSAGE_RATE_LIMIT`).
 - Each send writes an audit row with ids and recipient type, never the body.
 - Bodies are plain text (1–2000 characters) and are never rendered as HTML.
+- **Send as** (supervisors and admins): *System notification* (the default
+  above), *Email* (an email alert; the bell row that tracks it starts read, and
+  turns unread if no email can be sent or the email finally fails) or *Both*
+  (bell and email for every recipient). The email says only that a message
+  arrived and links to the app; the subject and text are never emailed.
+  Recipients who turned email alerts off get no email. Email sends are limited
+  separately to 10 per user per hour (`MESSAGE_EMAIL_RATE_LIMIT`). See
+  [docs/FEATURES_ADDED.md](docs/FEATURES_ADDED.md).
 
 ## Shift reminders
 

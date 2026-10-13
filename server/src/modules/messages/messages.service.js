@@ -3,6 +3,7 @@ const AppError = require('../../utils/AppError');
 const { withTransaction } = require('../../db/tx');
 const { writeAudit } = require('../../utils/audit');
 const { notify } = require('../notifications/notify');
+const { onFinalFailure } = require('../notifications/email/outbox');
 
 // Messaging rules (documented in the README):
 //  - Direct: any active user may message any other active user, across
@@ -12,7 +13,39 @@ const { notify } = require('../notifications/notify');
 //    broadcast to any department.
 //  - Organisation-wide: supervisors and admins only.
 //  - Messages are append-only: there are no edit or delete operations.
+//  - "Send as" (send_as): every message is in the recipients' inbox. Then
+//      notification (default): a direct message rings the bell; broadcasts
+//        rely on the inbox's unread count (no row per person).
+//      both: every recipient gets a bell notification and an email alert.
+//      email: an email alert; the bell row that tracks it (IR-06) is created
+//        already read, so the alert is not doubled. Where no email could be
+//        queued (opted out, domain not allowed, email off) the bell row stays
+//        unread, and if the email finally fails it is reopened, so the alert
+//        still arrives in-app (IR-07).
+//    email and both are for supervisors and admins only, rate-limited
+//    separately (messages.routes.js). The email never contains the message.
 const BROADCASTERS = ['supervisor', 'admin'];
+const EMAIL_SENDERS = ['supervisor', 'admin'];
+
+// An email-only alert whose email finally failed is turned back into an
+// unread in-app notification. read_at = sent_at marks "created already read".
+onFinalFailure(async (client, row) => {
+  await client.query(
+    "UPDATE notification SET read_at = NULL WHERE notification_id = $1 AND type = 'message' AND read_at = sent_at",
+    [row.notification_id],
+  );
+});
+
+// Active recipients of a message, never the sender.
+async function recipientIds(client, sender, m) {
+  if (m.recipient_type === 'user') return [m.recipient_user_id];
+  const { rows } = await client.query(
+    `SELECT user_id FROM app_user
+      WHERE is_active AND user_id <> $1 AND ($2::uuid IS NULL OR department_id = $2)`,
+    [sender.user_id, m.recipient_type === 'department' ? m.recipient_department_id : null],
+  );
+  return rows.map((r) => r.user_id);
+}
 
 // Messages visible to user $1 in department $2 (direct to them, their
 // department's broadcasts, organisation broadcasts), excluding their own.
@@ -140,6 +173,10 @@ async function assertMaySend(client, user, body) {
 }
 
 async function send(user, body) {
+  const sendAs = body.send_as || 'notification';
+  if (sendAs !== 'notification' && !EMAIL_SENDERS.includes(user.role)) {
+    throw new AppError(403, 'Only supervisors and administrators can send a message by email');
+  }
   return withTransaction(async (client) => {
     await assertMaySend(client, user, body);
     const { rows: [m] } = await client.query(
@@ -158,14 +195,34 @@ async function send(user, body) {
       newValue: {
         message_id: m.message_id, recipient_type: m.recipient_type,
         recipient_user_id: m.recipient_user_id, recipient_department_id: m.recipient_department_id,
+        send_as: sendAs,
       },
     });
-    // Direct messages notify the recipient; broadcasts rely on the unread
-    // count instead of fanning out one notification row per person.
-    if (m.recipient_type === 'user') {
-      await notify({ userIds: [m.recipient_user_id], type: 'message', ref: { message_id: m.message_id } }, { db: client });
+    if (sendAs === 'notification') {
+      // Direct messages notify the recipient; broadcasts rely on the unread
+      // count instead of fanning out one notification row per person.
+      if (m.recipient_type === 'user') {
+        await notify({ userIds: [m.recipient_user_id], type: 'message', ref: { message_id: m.message_id } }, { db: client });
+      }
+      return { ...m, send_as: sendAs };
     }
-    return m;
+    const rows = await notify(
+      { userIds: await recipientIds(client, user, m), type: 'message', ref: { message_id: m.message_id } },
+      { db: client, channels: ['email'] },
+    );
+    if (sendAs === 'email' && rows.length) {
+      await client.query(
+        "UPDATE notification SET read_at = sent_at WHERE notification_id = ANY($1::uuid[]) AND email_status = 'pending'",
+        [rows.map((r) => r.notification_id)],
+      );
+    }
+    const { rows: [{ queued }] } = await client.query(
+      "SELECT count(*)::int AS queued FROM notification WHERE notification_id = ANY($1::uuid[]) AND email_status = 'pending'",
+      [rows.map((r) => r.notification_id)],
+    );
+    return {
+      ...m, send_as: sendAs, recipients: rows.length, emails_queued: queued,
+    };
   });
 }
 

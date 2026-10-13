@@ -34,6 +34,21 @@ const sendLimiter = rateLimit({
   handler: (req, res, next) => next(new AppError(429, 'You have sent too many messages. Please wait before sending more.')),
 });
 
+// Sends that also email (send_as 'email' or 'both'; supervisors and admins
+// only) have their own, lower limit: 10 an hour per user by default.
+const emailSendLimitStore = new MemoryStore();
+const emailSendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: Number(process.env.MESSAGE_EMAIL_RATE_LIMIT) || 10,
+  keyGenerator: (req) => req.user.user_id,
+  skip: (req) => !['email', 'both'].includes(req.body?.send_as),
+  skipFailedRequests: true,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: emailSendLimitStore,
+  handler: (req, res, next) => next(new AppError(429, 'You have sent too many email messages. Please wait before sending more, or send as a system notification.')),
+});
+
 router.get('/inbox', pageQuery, validate, async (req, res) => res.json(await service.inbox(req.user, req.query)));
 router.get('/sent', pageQuery, validate, async (req, res) => res.json(await service.sent(req.user, req.query)));
 router.get('/unread-count', async (req, res) => res.json(await service.unreadCount(req.user)));
@@ -41,6 +56,7 @@ router.get('/unread-count', async (req, res) => res.json(await service.unreadCou
 router.post(
   '/',
   sendLimiter,
+  emailSendLimiter,
   body('recipient_type', 'recipient_type must be user, department or organisation').isIn(['user', 'department', 'organisation']),
   oneOf([
     [body('recipient_type').equals('user'), body('recipient_user_id', 'recipient_user_id must be a user id').isUUID()],
@@ -49,6 +65,7 @@ router.post(
   ], { message: 'Choose a recipient for this message type' }),
   body('subject', 'Subject must be at most 160 characters').optional({ values: 'falsy' }).isString().trim().isLength({ max: 160 }),
   body('body', 'Message must be 1 to 2000 characters').isString().trim().isLength({ min: 1, max: 2000 }),
+  body('send_as', "send_as must be 'notification', 'email' or 'both'").optional().isIn(['notification', 'email', 'both']),
   validate,
   async (req, res) => res.status(201).json(await service.send(req.user, req.body)),
 );
@@ -59,6 +76,7 @@ router.post('/:id/read', messageId, validate, async (req, res) => res.json(await
 
 module.exports = router;
 module.exports.sendLimitStore = sendLimitStore;
+module.exports.emailSendLimitStore = emailSendLimitStore;
 
 // GET /api/directory — active users with minimal fields, for the recipient picker.
 const directory = express.Router();
