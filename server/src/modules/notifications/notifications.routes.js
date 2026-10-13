@@ -25,6 +25,19 @@ router.get('/', async (req, res) => {
   res.json(rows);
 });
 
+// GET /api/notifications/unread-count — cheap check the client polls every
+// 5 s (NFR-03). latest_id changes whenever a new notification arrives, even if
+// another one was read in the meantime, so the client knows to refetch.
+router.get('/unread-count', async (req, res) => {
+  const { rows: [r] } = await pool.query(
+    `SELECT count(*) FILTER (WHERE read_at IS NULL)::int AS count,
+            (array_agg(notification_id ORDER BY sent_at DESC, notification_id DESC))[1] AS latest_id
+       FROM notification WHERE recipient_id = $1`,
+    [req.user.user_id],
+  );
+  res.json({ count: r.count, latest_id: r.latest_id });
+});
+
 // POST /api/notifications/:id/read — mark one of the caller's notifications read.
 router.post('/:id/read', param('id').isUUID(), validate, async (req, res) => {
   const { rows: [n] } = await pool.query(

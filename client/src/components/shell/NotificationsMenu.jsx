@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import {
@@ -11,8 +11,7 @@ import { toast } from '../../lib/toast';
 import {
   desktopAlertState, disableDesktopAlerts, enableDesktopAlerts, showDesktopAlert,
 } from '../../lib/desktopAlerts';
-
-const POLL_MS = 30000;
+import usePolling from '../../lib/usePolling';
 
 const NOTIFICATION_LABEL = {
   handover_submitted: 'Handover submitted',
@@ -103,11 +102,23 @@ export default function NotificationsMenu() {
     setItems(list);
   }, []);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, POLL_MS);
-    return () => clearInterval(t);
+  // Poll the cheap unread count (every 5 s while the tab is visible) and fetch
+  // the full list only when it changes.
+  const lastCount = useRef(null);
+  const check = useCallback(async () => {
+    let data;
+    try {
+      data = (await api.get('/notifications/unread-count')).data;
+    } catch {
+      return;
+    }
+    const key = `${data.count}:${data.latest_id}`;
+    if (key !== lastCount.current) {
+      lastCount.current = key;
+      load();
+    }
   }, [load]);
+  usePolling(check);
 
   const unread = items.filter((n) => !n.read_at);
   const markRead = async (n) => {

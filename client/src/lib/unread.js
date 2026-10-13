@@ -1,8 +1,10 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import api from '../api';
+import usePolling from './usePolling';
 
 // Unread message count shared by the sidebar badge and the Messages page.
-// Polled every 30 seconds (no websockets); refreshUnread() forces an update,
+// Polled every 5 seconds while the tab is visible (no websockets);
+// refreshUnread() forces an update,
 // e.g. right after a message is opened.
 let count = 0;
 const subscribers = new Set();
@@ -33,8 +35,7 @@ export function useUnreadPolling(userId) {
     if (!userId) return undefined;
     count = 0;
     emit();
-    refreshUnread();
-    const t = setInterval(refreshUnread, 30000);
-    return () => clearInterval(t);
+    return undefined;
   }, [userId]);
+  usePolling(refreshUnread, undefined, !!userId);
 }

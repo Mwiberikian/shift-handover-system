@@ -47,6 +47,8 @@ incoming user on the next one.
 - Request access (public form; an admin approves and assigns the role).
 - Optional Sign in with Google for existing accounts (see below).
 - In-app messaging, shift reminders, a supervisor roster.
+- The notification bell and message badge poll an unread count every 5 s
+  (NFR-03) and pause while the browser tab is hidden.
 - Light and dark themes (follows the OS until the user picks one), a help
   centre at `/help`, and a support contact bar driven by `client/.env`.
 
@@ -192,6 +194,7 @@ end in `_test`.
 | `access-request.workflow.test.js` | Request access grants nothing until approved; admin approve/reject; rate limit; RBAC |
 | `shift-reminders.test.js` | Reminders with an injected clock: fire at the lead time and not before, never twice (incl. racing ticks), none once submitted, supervisor alerts; roster API scoping |
 | `auth.google.test.js` | Google sign-in (token verification mocked): known user, no account, unverified email, deactivated user, wrong audience, conflicting Google account, 503 when unconfigured |
+| `notifications.unread-count.test.js` | Unread count is per user, drops on read, and `latest_id` changes when a new notification arrives |
 | `admin.templates.test.js` | Template versioning keeps history |
 
 ## Integrity model
@@ -214,7 +217,7 @@ end in `_test`.
 | `POST /:id/review`, `POST /:id/resolve` | supervisor |
 | `POST /:id/open-review` (acknowledged → under_review, audited) | supervisor (own department), admin |
 | `GET /api/handovers/search`, `GET /api/dashboard/supervisor` | supervisor, admin |
-| `GET /api/notifications`, `POST /api/notifications/:id/read` | any |
+| `GET /api/notifications`, `GET /api/notifications/unread-count`, `POST /api/notifications/:id/read` | any |
 | `/api/admin/users[/:id]`, `/api/admin/departments`, `/api/admin/templates/:departmentCode` | admin |
 | `GET /api/access-requests/departments`, `POST /api/access-requests` (rate-limited) | public |
 | `GET /api/admin/access-requests`, `POST /api/admin/access-requests/:id/approve`, `POST .../:id/reject` | admin |
