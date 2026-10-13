@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarSync, Check, Copy, RefreshCw, Trash2 } from 'lucide-react';
 import api from '../../api';
 import { Button, Callout, Modal } from '../ui';
+import { CalendarNote } from '../CalendarButtons';
 import { formatEAT } from '../../lib/format';
 import { toast } from '../../lib/toast';
 import useAction from '../../lib/useAction';
@@ -55,6 +56,7 @@ export default function CalendarFeedDialog({ open, onClose }) {
           The feed lists your shifts from 30 days ago to 90 days ahead: shift name, times and department, with a reminder
           30 minutes before each. It never includes handover details.
         </p>
+        <CalendarNote />
 
         {url && (
           <div className="space-y-2">

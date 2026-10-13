@@ -6,6 +6,8 @@ import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import api, { tokenStore } from '../api';
 import { googleCalendarUrl } from '../lib/calendar';
 import MyShiftsPage from '../pages/MyShiftsPage';
+import RosterPage from '../pages/RosterPage';
+import { CALENDAR_NOTE } from '../components/CalendarButtons';
 import { fakeToken, renderWithProviders } from './helpers';
 
 vi.mock('../api', async (importOriginal) => {
@@ -66,5 +68,22 @@ describe('My shifts page', () => {
     api.get.mockResolvedValue({ data: [] });
     renderWithProviders(<MyShiftsPage />);
     expect(await screen.findByText('No shifts rostered')).toBeInTheDocument();
+  });
+});
+
+describe('data-leaves-the-system note', () => {
+  test('My shifts shows it', async () => {
+    tokenStore.set(fakeToken('outgoing_staff'));
+    api.get.mockResolvedValue({ data: [SHIFT] });
+    renderWithProviders(<MyShiftsPage />);
+    expect(await screen.findByText(CALENDAR_NOTE)).toBeInTheDocument();
+  });
+
+  test('the Roster shows it', async () => {
+    tokenStore.set(fakeToken('supervisor'));
+    api.get.mockResolvedValue({ data: [{ ...SHIFT, assigned: [] }] });
+    renderWithProviders(<RosterPage />);
+    expect(await screen.findByText(CALENDAR_NOTE)).toBeInTheDocument();
+    expect(CALENDAR_NOTE).toMatch(/leave Shift Handover/);
   });
 });

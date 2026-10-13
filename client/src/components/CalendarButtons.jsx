@@ -1,8 +1,21 @@
-import { CalendarPlus, Download } from 'lucide-react';
+import { CalendarPlus, Download, Info } from 'lucide-react';
 import { Button, buttonClass } from './ui';
 import { googleCalendarUrl, downloadIcs } from '../lib/calendar';
 import { formatEAT, shiftLabel } from '../lib/format';
 import useAction from '../lib/useAction';
+
+export const CALENDAR_NOTE = 'Shifts you add to Google Calendar, Outlook or another calendar leave Shift Handover: '
+  + 'their name, times and department are then held by that calendar service.';
+
+// One-line notice shown wherever shifts can be sent to an external calendar.
+export function CalendarNote({ className }) {
+  return (
+    <p className={['flex items-start gap-1.5 text-meta text-ink-600', className].filter(Boolean).join(' ')}>
+      <Info aria-hidden className="mt-px size-3.5 shrink-0" />
+      {CALENDAR_NOTE}
+    </p>
+  );
+}
 
 // Per-shift calendar actions: Google Calendar template link and a .ics file.
 export function ShiftCalendarButtons({ shift }) {

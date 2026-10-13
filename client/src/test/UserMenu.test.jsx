@@ -59,6 +59,7 @@ describe('calendar subscription', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Account menu for Brian Kamau' }));
     await user.click(screen.getByRole('button', { name: 'Calendar subscription' }));
+    expect(await screen.findByText(/leave Shift Handover/)).toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Create my feed link' }));
     expect(api.post).toHaveBeenCalledWith('/auth/me/calendar-feed');
     expect(await screen.findByText(FEED)).toBeInTheDocument();

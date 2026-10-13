@@ -4,7 +4,7 @@ import api from '../api';
 import {
   Badge, Card, EmptyState, PageHeader, SkeletonTable, Table,
 } from '../components/ui';
-import { Next30DaysButton, ShiftCalendarButtons } from '../components/CalendarButtons';
+import { CalendarNote, Next30DaysButton, ShiftCalendarButtons } from '../components/CalendarButtons';
 import { fmtDuration, fmtWeekdayEAT, formatEAT, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
 
@@ -65,6 +65,7 @@ export default function MyShiftsPage() {
           ? <EmptyState icon={CalendarClock} title="No shifts rostered" message="Your supervisor has not rostered you on any shift in the next 30 days." />
           : <Table columns={columns} rows={shifts} rowKey={(s) => s.shift_id} caption="Your rostered shifts" />}
       </Card>
+      <CalendarNote className="mt-3" />
     </>
   );
 }

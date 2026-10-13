@@ -6,7 +6,7 @@ import {
 } from '../components/ui';
 import { ROLE_LABEL, fmtDuration, fmtWeekdayEAT, formatEAT, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
-import { Next30DaysButton, ShiftCalendarButtons } from '../components/CalendarButtons';
+import { CalendarNote, Next30DaysButton, ShiftCalendarButtons } from '../components/CalendarButtons';
 import useAction from '../lib/useAction';
 
 // Staff multi-select for one shift (checkbox list: Tab/Space operable).
@@ -150,6 +150,7 @@ export default function RosterPage() {
           />
         )}
       </Card>
+      <CalendarNote className="mt-3" />
       {editing && <AssignDialog shift={editing} onClose={() => setEditing(null)} onSaved={load} />}
     </>
   );
