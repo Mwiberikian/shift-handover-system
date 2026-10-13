@@ -174,6 +174,32 @@ Google only proves identity. It **never creates an account or assigns a role**
   client sends the person to Request Access with those details prefilled.
 - A different Google account using an already-linked email is refused.
 
+**How it works, in one paragraph (FR-24; `docs/requirements.md` has no FR-24
+text, so this describes the code).** Google sign-in is off unless
+`GOOGLE_CLIENT_ID` is set in `server/.env`; the client asks
+`GET /api/auth/google/config` for that public client id and shows Google's own
+"Continue with Google" button (Google Identity Services, `@react-oauth/google`)
+only when it gets one, otherwise the endpoints answer 503. Clicking it opens
+Google's sign-in, and Google hands the browser a signed ID token (a JWT about
+the person; no access token, no Google API scopes, nothing about their mailbox
+or calendar). The browser posts that token to `POST /api/auth/google`, and the
+server verifies it with `google-auth-library` (`verifyIdToken`: Google's
+signature, expiry, issuer, and audience equal to our client id, which is
+checked a second time) and requires `email_verified`. It then looks for an
+account already linked to that Google subject id (`sub`); failing that, for an
+account whose email equals the verified Google email, and if that account has
+no Google link yet it stores the `sub` in `app_user.google_sub` (audited as
+`link_google`). An account linked to a different Google account, or a Google
+account already linked to another user, is refused (409); a deactivated
+account is refused (403). A match gets exactly the same 30-minute SHMS JWT as a
+password login (same claims, including `pwd_change` if the account still has a
+temporary password), and the login is audited with `{ method: 'google' }`. No
+match returns 404 `no_account` with the verified name and email and no token,
+and the client carries those to the Request Access form (which can also fetch
+them with `POST /api/auth/google/profile`, which signs nobody in). Google never
+creates an account, never picks a role or department, and its token is not
+stored; after sign-in the session is SHMS's own, not Google's.
+
 ## Planned
 
 - **Sign in with Apple.** Not implemented: it needs an Apple Developer account
