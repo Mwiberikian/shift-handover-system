@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
-import { Home, LogOut, Menu, X } from 'lucide-react';
+import { Home, LogOut, Menu, Moon, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { ROLE_LABEL, initials } from '../lib/format';
 import { NAV } from './shell/nav';
@@ -15,6 +15,7 @@ import { pagePhotoFor } from './shell/pagePhotos';
 import { useUnreadPolling } from '../lib/unread';
 import { cx } from '../lib/format';
 import { ConfirmDialog } from './ui';
+import { useTheme } from '../theme/ThemeContext';
 import Brand from './shell/Brand';
 
 function UserBlock({ profile, role, dark = true }) {
@@ -31,6 +32,22 @@ function UserBlock({ profile, role, dark = true }) {
         </span>
       </span>
     </div>
+  );
+}
+
+// The theme switch as an account-menu row (small screens only).
+function MenuThemeSwitch() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={theme === 'dark'}
+      onClick={toggle}
+      className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg sm:hidden"
+    >
+      <Moon aria-hidden className="size-4 text-ink-500" /> Dark theme
+    </button>
   );
 }
 
@@ -71,15 +88,25 @@ export default function Layout() {
           </Link>
 
           <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2 lg:gap-3">
-            <ThemeToggle />
+            <ThemeToggle className="hidden sm:grid" />
             <div className="hidden sm:block"><HelpMenu /></div>
             <NotificationsMenu />
             <span aria-hidden className="hidden h-6 w-px bg-white/15 lg:block" />
-            <UserMenu />
+            <UserMenu>
+              {/* Below sm the header has no room for the theme and Log out buttons. */}
+              <MenuThemeSwitch />
+              <button
+                type="button"
+                onClick={() => setConfirmLogout(true)}
+                className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg sm:hidden"
+              >
+                <LogOut aria-hidden className="size-4 text-ink-500" /> Log out
+              </button>
+            </UserMenu>
             <button
               type="button"
               onClick={() => setConfirmLogout(true)}
-              className="inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg px-2.5 text-sm font-medium whitespace-nowrap text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="hidden h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg px-2.5 text-sm sm:inline-flex font-medium whitespace-nowrap text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <LogOut aria-hidden className="size-[18px]" />
               <span className="hidden lg:inline">Log out</span>

@@ -12,6 +12,9 @@
 //
 // Hit area: the control's own box. For a checkbox or radio input, the box of
 // its <label> counts too, because clicking the label operates the control.
+// A control partly outside the viewport also fails (it cannot be tapped),
+// unless it sits in a sideways-scrolling container such as a wide table:
+// those are counted in their own column.
 // Links inside running text (<p>) are listed separately as inline links,
 // which WCAG 2.5.5 exempts; they are not counted as failures.
 import { writeFileSync } from 'node:fs';
@@ -79,6 +82,7 @@ function measure({ selector, min }) {
   const seen = new Set();
   const controls = [];
   const inline = [];
+  const scrolled = [];
   for (const el of document.querySelectorAll(selector)) {
     if (seen.has(el) || !visible(el)) continue;
     // A focusable wrapper around a real control is measured as that control.
@@ -93,13 +97,27 @@ function measure({ selector, min }) {
       for (const l of el.labels || []) rects.push(l.getBoundingClientRect());
     }
     const { width, height } = union(rects);
+    // A control pushed (partly) outside the viewport cannot be tapped there.
+    // Inside a sideways-scrolling container (a wide table) it can be reached by
+    // scrolling that container; those are listed separately, not failed.
+    const box = el.getBoundingClientRect();
+    const offscreen = box.left < -0.5 || box.right > window.innerWidth + 0.5;
+    let scroller = null;
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+      if (['auto', 'scroll'].includes(getComputedStyle(n).overflowX) && n.scrollWidth > n.clientWidth) { scroller = n; break; }
+    }
+    const what = describe(el);
+    if (offscreen && scroller) scrolled.push(what);
     controls.push({
-      what: describe(el), width: Math.round(width * 10) / 10, height: Math.round(height * 10) / 10, ok: width >= min - 0.5 && height >= min - 0.5,
+      what: `${what}${offscreen && !scroller ? ' [outside the viewport]' : ''}`,
+      width: Math.round(width * 10) / 10,
+      height: Math.round(height * 10) / 10,
+      ok: width >= min - 0.5 && height >= min - 0.5 && (!offscreen || Boolean(scroller)),
     });
   }
   const doc = document.documentElement;
   return {
-    controls, inline, scrollWidth: doc.scrollWidth, clientWidth: doc.clientWidth,
+    controls, inline, scrolled, scrollWidth: doc.scrollWidth, clientWidth: doc.clientWidth,
   };
 }
 
@@ -131,7 +149,7 @@ async function main() {
       const failures = m.controls.filter((c) => !c.ok);
       const hScroll = m.scrollWidth > m.clientWidth;
       results.push({
-        page: p.name, path: p.path, width, url: page.url(), controls: m.controls.length, failures, inline: m.inline,
+        page: p.name, path: p.path, width, url: page.url(), controls: m.controls.length, failures, inline: m.inline, scrolled: m.scrolled,
         horizontalScroll: hScroll, scrollWidth: m.scrollWidth, clientWidth: m.clientWidth,
       });
       await context.close();
@@ -141,11 +159,13 @@ async function main() {
 
   let failed = 0;
   console.log(`IR-01 touch targets (min ${MIN} x ${MIN} px) and horizontal scroll — ${BASE_URL}\n`);
-  console.log('page        width  controls  under 44 px  h-scroll  inline links');
+  console.log('page        width  controls  failing  h-scroll  inline links  in scrolled table');
   for (const r of results) {
-    console.log(`${r.page.padEnd(11)} ${String(r.width).padStart(5)}  ${String(r.controls).padStart(8)}  ${String(r.failures.length).padStart(11)}  ${(r.horizontalScroll ? `YES (${r.scrollWidth})` : 'no').padStart(8)}  ${String(r.inline.length).padStart(12)}`);
+    console.log(`${r.page.padEnd(11)} ${String(r.width).padStart(5)}  ${String(r.controls).padStart(8)}  ${String(r.failures.length).padStart(7)}  ${(r.horizontalScroll ? `YES (${r.scrollWidth})` : 'no').padStart(8)}  ${String(r.inline.length).padStart(12)}  ${String(r.scrolled.length).padStart(17)}`);
     if (r.failures.length || r.horizontalScroll) failed += 1;
   }
+  console.log('\nfailing = under 44 x 44 px, or outside the viewport with no way to scroll to it.');
+  console.log('in scrolled table = beyond the screen edge inside a table that scrolls sideways (reachable, not failed).');
   for (const r of results.filter((x) => x.failures.length)) {
     console.log(`\n${r.page} @ ${r.width}px:`);
     for (const f of r.failures) console.log(`  ${f.width} x ${f.height}  ${f.what}`);
