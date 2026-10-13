@@ -191,6 +191,34 @@ database. Options: `-BackupFile`, `-TargetDatabase`, `-Database`/`-OutDir`
 (backup), `-Container`. If script execution is blocked, run them with
 `powershell -ExecutionPolicy Bypass -File scripts\backup.ps1`.
 
+`backup.ps1 -Keep N` deletes all but the newest N dumps of that database after
+a successful backup. It only touches files named `<database>-yyyyMMdd-HHmmss.dump`.
+
+### Daily backups (Windows Task Scheduler)
+
+```powershell
+.\scripts\schedule-backup.ps1                 # register: daily at 02:00, keep the newest 14 dumps
+.\scripts\schedule-backup.ps1 -At 23:30       # another time (re-running replaces the task)
+.\scripts\schedule-backup.ps1 -RunNow         # register, then run once to check
+.\scripts\schedule-backup.ps1 -Unregister     # remove it
+Get-ScheduledTaskInfo -TaskName 'SHMS daily backup'   # last run time and result (0 = success)
+```
+
+The task "SHMS daily backup" runs `backup.ps1 -Keep 14` as the current user,
+only while that user is signed in, because Docker Desktop (and so the Postgres
+container) runs in the user's session. A run missed while the machine was off
+or asleep starts as soon as possible. Output is appended to
+`backups\backup-task.log` (UTF-16, as written by Windows PowerShell).
+
+Scheduled backups never restore anything. **Never restore into `shms_dev`**:
+`restore.ps1` refuses any target whose name does not end in `_scratch` or
+`_restore`; restore into one of those, check the row counts, and only then
+decide what to do with the live database by hand.
+
+Not covered: write-ahead-log archiving (DR-09 asks for it, and the compose
+file does not enable `archive_mode`), so a restore returns the database to the
+last daily dump.
+
 ## Tests
 
 ```bash

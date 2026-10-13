@@ -12,13 +12,21 @@
 .EXAMPLE
   .\scripts\backup.ps1
   .\scripts\backup.ps1 -Database shms_dev -OutDir D:\shms-backups
+  .\scripts\backup.ps1 -Keep 14     # then delete all but the newest 14 dumps of this database
+
+.NOTES
+  scripts\schedule-backup.ps1 registers a daily Windows Task Scheduler job that
+  runs this script with -Keep 14 (NFR-11, DR-09).
 #>
 param(
   [string]$Database = 'shms_dev',
   [string]$User = 'shms_user',
   [string]$OutDir = (Join-Path (Split-Path $PSScriptRoot -Parent) 'backups'),
   # Container id or name; defaults to the docker compose 'postgres' service.
-  [string]$Container = ''
+  [string]$Container = '',
+  # After a successful backup keep only the newest N dumps of this database
+  # in -OutDir (0 = keep everything). Other files are never touched.
+  [ValidateRange(0, 3650)][int]$Keep = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -53,3 +61,18 @@ $size = (Get-Item $target).Length
 Write-Output ("Backup written: {0}" -f $target)
 Write-Output ("Size: {0:N1} KB" -f ($size / 1KB))
 Write-Output ("Elapsed: {0:N2} s" -f $timer.Elapsed.TotalSeconds)
+
+# Retention: only files named <Database>-yyyyMMdd-HHmmss.dump, newest first by
+# the timestamp in the name. Runs only after this backup succeeded.
+if ($Keep -gt 0) {
+  $pattern = '^' + [regex]::Escape($Database) + '-\d{8}-\d{6}\.dump$'
+  $old = Get-ChildItem -Path $OutDir -Filter "$Database-*.dump" -File |
+    Where-Object { $_.Name -match $pattern } |
+    Sort-Object Name -Descending |
+    Select-Object -Skip $Keep
+  foreach ($f in $old) {
+    Remove-Item -LiteralPath $f.FullName
+    Write-Output ("Removed old backup: {0}" -f $f.Name)
+  }
+  Write-Output ("Kept the newest {0} backup(s) of {1}." -f $Keep, $Database)
+}
