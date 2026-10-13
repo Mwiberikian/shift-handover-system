@@ -14,5 +14,12 @@
       interval: 5s
       timeout: 3s
       retries: 5
+  # Development mail catcher (IR-05): the API's SMTP default. Every message is
+  # kept here and none is delivered. Web UI: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.31.2
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 volumes:
   pgdata:
