@@ -59,7 +59,7 @@ async function deliver(db, now, r) {
         body: r.body,
         ref: { reminder_type: r.type, record_id: r.recordId, shift_id: r.shiftId },
         at: now,
-      }, { db: client });
+      }, { db: client, channels: ['email'] });
     }
     await client.query('COMMIT');
     return rowCount > 0;

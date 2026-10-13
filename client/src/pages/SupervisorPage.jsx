@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle, CheckCircle2, CircleCheckBig, Eye, FileSearch, FolderOpen, HelpCircle, Inbox, Layers, RefreshCw, Search as SearchIcon,
-  Send, ShieldAlert, ShieldCheck,
+  AlertTriangle, CheckCircle2, CircleCheckBig, Eye, FileSearch, FolderOpen, HelpCircle, Inbox, Layers, MailWarning, RefreshCw,
+  Search as SearchIcon, Send, ShieldAlert, ShieldCheck,
 } from 'lucide-react';
 import api from '../api';
 import { HandoverDetail, RECORD_COLUMNS, RecordTable } from '../components/Handover';
@@ -89,6 +89,15 @@ export function Overview({ data, onOpen, scope, onScope }) {
       ),
     },
     {
+      key: 'failed_emails',
+      header: 'Email failed',
+      className: 'text-right tabular-nums',
+      hideBelow: 'md',
+      render: (r) => (r.failed_emails
+        ? <span className="inline-flex items-center gap-1 font-semibold text-status-amber"><MailWarning aria-hidden className="size-3.5" />{r.failed_emails}</span>
+        : <span className="text-ink-500">0</span>),
+    },
+    {
       key: 'overdue',
       header: 'Overdue',
       className: 'text-right',
@@ -174,10 +183,56 @@ export function Overview({ data, onOpen, scope, onScope }) {
         </Card>
       )}
 
+      <FailedEmails items={data.failed_emails} onOpen={onOpen} />
+
       <Card title="By department" subtitle={`Updated ${fmtRelative(data.generated_at)}`} icon={Layers} flush>
         <Table columns={deptColumns} rows={d} rowKey={(r) => r.department_id} caption="Handover counts by department" />
       </Card>
     </div>
+  );
+}
+
+// IR-07: what a failed email was about, in words.
+const EMAIL_ABOUT = {
+  handover_submitted: 'Handover submitted',
+  handover_queried: 'Query raised',
+  handover_clarified: 'Query answered',
+  handover_escalated: 'Handover escalated',
+  handover_resolved: 'Escalation resolved',
+  message: 'Message',
+  reminder: 'Reminder',
+};
+
+// IR-07: email alerts that could not be delivered. The in-app notification
+// was delivered regardless; this tells the supervisor who missed the email.
+export function FailedEmails({ items, onOpen }) {
+  if (!items?.length) return null;
+  return (
+    <Card flush className="overflow-hidden border-status-amber-line">
+      <div className="flex items-start gap-3 border-b border-status-amber-line bg-status-amber-soft px-4 py-3 sm:px-5">
+        <MailWarning aria-hidden className="mt-0.5 size-5 shrink-0 text-status-amber" />
+        <div>
+          <h2 className="text-section text-status-amber">
+            {items.length} email alert{items.length === 1 ? '' : 's'} could not be delivered
+          </h2>
+          <p className="text-meta text-ink-700">The in-app notifications were delivered. Tell these people directly if it matters.</p>
+        </div>
+      </div>
+      <ul className="divide-y divide-ink-100">
+        {items.map((f) => (
+          <li key={f.notification_id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 sm:px-5">
+            <span className="min-w-0 basis-full sm:basis-auto sm:flex-1">
+              <span className="block font-medium text-fg">{f.recipient_name}</span>
+              <span className="block text-meta text-ink-600">
+                {EMAIL_ABOUT[f.type] ?? f.type} · failed {formatEAT(f.failed_at)} after {f.attempts} attempt{f.attempts === 1 ? '' : 's'}
+              </span>
+              {f.last_error && <span className="block truncate text-meta text-ink-500" title={f.last_error}>{f.last_error}</span>}
+            </span>
+            {f.record_id && <Button size="sm" onClick={() => onOpen(f.record_id)}>Open record</Button>}
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 

@@ -94,10 +94,12 @@ async function assertValidIncoming(db, departmentId, incomingUserId) {
   if (!u) throw new AppError(400, 'incoming_user_id must be an active incoming_staff member of the same department');
 }
 
-// In-app notification about a record, in the caller's transaction (via the
-// notification service). Returns the recipients' ids.
+// Notification about a record, in the caller's transaction (via the
+// notification service): in-app always, and an email alert queued for the
+// types and recipients that qualify (email/channel.js). Returns the
+// recipients' ids.
 async function notifyRecord(client, recipientIds, recordId, type) {
-  const rows = await notify({ userIds: recipientIds, type, ref: { record_id: recordId } }, { db: client });
+  const rows = await notify({ userIds: recipientIds, type, ref: { record_id: recordId } }, { db: client, channels: ['email'] });
   return rows.map((r) => r.recipient_id);
 }
 

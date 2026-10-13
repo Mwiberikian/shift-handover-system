@@ -378,6 +378,33 @@ async function supervisorDashboard(user, query) {
   const windowSet = new Set(windowIds);
   const alerts = scope === 'all' ? overdue : overdue.filter((a) => windowSet.has(a.shift_id));
 
+  // IR-07: email alerts that finally failed. An email belongs to the
+  // department of its record, else its shift, else its recipient. With
+  // scope=current only failures since the start of the preceding shift count.
+  // The recipient's name is shown, not their address.
+  const { rows: failedEmails } = await pool.query(
+    `SELECT n.notification_id, n.type, n.reminder_type, n.record_id, n.email_status_at AS failed_at,
+            o.attempts, o.last_error, u.full_name AS recipient_name,
+            COALESCE(r.department_id, s.department_id, u.department_id) AS department_id
+       FROM notification n
+       JOIN email_outbox o ON o.notification_id = n.notification_id
+       JOIN app_user u ON u.user_id = n.recipient_id
+       LEFT JOIN handover_record r ON r.record_id = n.record_id
+       LEFT JOIN shift s ON s.shift_id = n.shift_id
+      WHERE n.email_status = 'failed'
+        AND ($1::uuid IS NULL OR COALESCE(r.department_id, s.department_id, u.department_id) = $1)
+      ORDER BY n.email_status_at DESC`,
+    [departmentId],
+  );
+  const windowStart = windowShifts.reduce((acc, s) => {
+    const t = new Date(s.start_time).getTime();
+    acc[s.department_id] = Math.min(acc[s.department_id] ?? t, t);
+    return acc;
+  }, {});
+  const emailFailures = scope === 'all' ? failedEmails
+    : failedEmails.filter((f) => windowStart[f.department_id] !== undefined && new Date(f.failed_at).getTime() >= windowStart[f.department_id]);
+  const failuresByDept = emailFailures.reduce((acc, f) => ((acc[f.department_id] ||= 0), (acc[f.department_id] += 1), acc), {});
+
   // count() comes back from pg as a bigint string.
   const COUNT_KEYS = ['open', 'draft', 'submitted', 'queried', 'acknowledged', 'under_review', 'escalated', 'closed',
     'acknowledgement_due', 'acknowledgement_done'];
@@ -399,6 +426,7 @@ async function supervisorDashboard(user, query) {
         ...row,
         acknowledgement_rate: row.acknowledgement_due ? row.acknowledgement_done / row.acknowledgement_due : null,
         unacknowledged_overdue: (alertsByDept[d.department_id] || []).length,
+        failed_emails: failuresByDept[d.department_id] || 0,
         // Newest first: [current, preceding]. Present in both scopes.
         window_shifts: shiftsByDept[d.department_id] || [],
       };
@@ -410,6 +438,7 @@ async function supervisorDashboard(user, query) {
       hours_since_shift_start: Math.round(((Date.now() - new Date(a.shift_end)) / 36e5) * 10) / 10,
     })),
     older_outstanding: overdue.length - alerts.length,
+    failed_emails: emailFailures,
   };
 }
 
