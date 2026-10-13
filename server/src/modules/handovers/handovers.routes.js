@@ -5,6 +5,7 @@ const { requireAuth, requireRole } = require('../../middleware/auth');
 const service = require('./handovers.service');
 const workflow = require('./workflow.service');
 const { TASK_DESCRIPTION } = require('../../config/constants');
+const { logRejectedWrite } = require('../../utils/rejections');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -180,5 +181,8 @@ router.post(
   validate,
   async (req, res) => res.json(await workflow.resolve(req.user, req.params.id, req.body)),
 );
+
+// DR-12: rejected writes (400 validation, 422 incomplete submit) are audited.
+router.use(logRejectedWrite);
 
 module.exports = router;
