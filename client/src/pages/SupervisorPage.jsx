@@ -226,7 +226,7 @@ export function FailedEmails({ items, onOpen }) {
               <span className="block text-meta text-ink-600">
                 {EMAIL_ABOUT[f.type] ?? f.type} · failed {formatEAT(f.failed_at)} after {f.attempts} attempt{f.attempts === 1 ? '' : 's'}
               </span>
-              {f.last_error && <span className="block truncate text-meta text-ink-500" title={f.last_error}>{f.last_error}</span>}
+              {f.last_error && <span className="block text-meta break-words text-ink-500 md:truncate" title={f.last_error}>{f.last_error}</span>}
             </span>
             {f.record_id && <Button size="sm" onClick={() => onOpen(f.record_id)}>Open record</Button>}
           </li>

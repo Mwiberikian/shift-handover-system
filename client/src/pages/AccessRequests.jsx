@@ -189,7 +189,7 @@ export default function AccessRequests({ departments }) {
   const pendingColumns = [
     requester,
     dept,
-    { key: 'note', header: 'Note', hideBelow: 'lg', render: (r) => (r.note ? <p className="max-w-xs text-ink-700 line-clamp-2" title={r.note}>{r.note}</p> : <span className="text-ink-500">—</span>) },
+    { key: 'note', header: 'Note', hideBelow: 'lg', render: (r) => (r.note ? <p className="max-w-xs text-ink-700 md:line-clamp-2" title={r.note}>{r.note}</p> : <span className="text-ink-500">—</span>) },
     { key: 'created', header: 'Received', hideBelow: 'sm', render: (r) => <span className="whitespace-nowrap text-ink-700" title={formatEAT(r.created_at)}>{fmtRelative(r.created_at)}</span> },
     {
       key: 'actions',

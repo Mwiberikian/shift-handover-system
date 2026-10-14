@@ -287,11 +287,11 @@ export function DraftEditor({ record, meta, reload }) {
         </div>
       </aside>
 
-      {/* Mobile/tablet: checklist inline, submit pinned to the bottom. */}
+      {/* Mobile/tablet: checklist inline, submit pinned to the bottom (above the phone tab bar). */}
       <Card title="Requirements" className="lg:hidden">
         <Checklist items={req.items} />
       </Card>
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-200 bg-surface/95 px-4 py-3 shadow-[0_-4px_12px_rgb(0_0_0/0.05)] backdrop-blur md:left-16 lg:hidden">
+      <div className="safe-x fixed inset-x-0 bottom-[calc(var(--tabbar-h,0px)+var(--safe-bottom))] z-30 border-t border-ink-200 bg-surface/95 px-4 py-3 shadow-[0_-4px_12px_rgb(0_0_0/0.05)] backdrop-blur md:left-16 lg:hidden">
         <div className="mb-2 flex items-center gap-3">
           <span className="shrink-0 text-meta font-semibold text-fg">{req.done}/{req.total} complete</span>
           <ProgressBar done={req.done} total={req.total} />

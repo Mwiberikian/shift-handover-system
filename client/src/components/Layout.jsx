@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
-import { Home, LogOut, Menu, Moon, X } from 'lucide-react';
+import { Home, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { ROLE_LABEL, initials } from '../lib/format';
 import { NAV } from './shell/nav';
@@ -9,13 +9,13 @@ import SidebarNav from './shell/Sidebar';
 import NotificationsMenu from './shell/NotificationsMenu';
 import ThemeToggle from './shell/ThemeToggle';
 import HelpMenu from './shell/HelpMenu';
-import UserMenu from './shell/UserMenu';
+import UserMenu, { ThemeSwitchRow } from './shell/UserMenu';
+import TabBar from './shell/TabBar';
 import UtilityBar from './shell/UtilityBar';
 import { pagePhotoFor } from './shell/pagePhotos';
 import { useUnreadPolling } from '../lib/unread';
 import { cx } from '../lib/format';
 import { ConfirmDialog } from './ui';
-import { useTheme } from '../theme/ThemeContext';
 import Brand from './shell/Brand';
 
 function UserBlock({ profile, role, dark = true }) {
@@ -32,22 +32,6 @@ function UserBlock({ profile, role, dark = true }) {
         </span>
       </span>
     </div>
-  );
-}
-
-// The theme switch as an account-menu row (small screens only).
-function MenuThemeSwitch() {
-  const { theme, toggle } = useTheme();
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={theme === 'dark'}
-      onClick={toggle}
-      className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg sm:hidden"
-    >
-      <Moon aria-hidden className="size-4 text-ink-500" /> Dark theme
-    </button>
   );
 }
 
@@ -94,7 +78,7 @@ export default function Layout() {
             <span aria-hidden className="hidden h-6 w-px bg-white/15 lg:block" />
             <UserMenu>
               {/* Below sm the header has no room for the theme and Log out buttons. */}
-              <MenuThemeSwitch />
+              <ThemeSwitchRow className="sm:hidden" />
               <button
                 type="button"
                 onClick={() => setConfirmLogout(true)}
@@ -165,7 +149,7 @@ export default function Layout() {
 
       <main
         id="main"
-        className={cx('safe-x min-h-screen pt-(--chrome-top) md:pl-16 lg:pl-60', photo && 'page-photo')}
+        className={cx('safe-x min-h-screen pt-(--chrome-top) pb-[calc(var(--tabbar-h,0px)+var(--safe-bottom))] md:pl-16 lg:pl-60', photo && 'page-photo')}
         style={photo ? { '--page-photo': `url(${photo})` } : undefined}
       >
         {/* Keyed on the route so each screen fades in on navigation. */}
@@ -173,6 +157,8 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      <TabBar role={claims.role} onLogout={() => setConfirmLogout(true)} />
     </div>
   );
 }

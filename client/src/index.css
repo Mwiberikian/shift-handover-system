@@ -214,3 +214,20 @@
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
 }
+
+/* Phones (below md) with the bottom tab bar (Q4). TabBar sets
+   html.with-tabbar while it is mounted; --tabbar-h then lifts main content,
+   sticky action bars and the offline banner above it. */
+@media (width < 48rem) {
+  html.with-tabbar {
+    --tabbar-h: 4rem;
+  }
+}
+
+/* iOS Safari zooms into any field whose text is under 16 px. Unlayered, so it
+   wins over the text-body utility on inputs. */
+@media (width < 48rem) {
+  input:not([type='checkbox'], [type='radio'], [type='range']), select, textarea {
+    font-size: 1rem;
+  }
+}

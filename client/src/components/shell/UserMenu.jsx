@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { CalendarSync, ChevronDown, Download, KeyRound, Mail } from 'lucide-react';
+import {
+  CalendarSync, ChevronDown, Download, KeyRound, Mail, Moon,
+} from 'lucide-react';
 import api from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_LABEL, cx, initials } from '../../lib/format';
 import { toast, toastError } from '../../lib/toast';
 import CalendarFeedDialog from './CalendarFeedDialog';
 import { promptInstall, useInstallMode } from '../../pwa/install';
+import { useTheme } from '../../theme/ThemeContext';
 
 const ROW = 'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg';
 
@@ -74,6 +77,47 @@ function InstallAppItem() {
   );
 }
 
+// The theme switch as an account row (phones, where the header has no room
+// for the sun/moon button).
+export function ThemeSwitchRow({ className }) {
+  const { theme, toggle } = useTheme();
+  return (
+    <button type="button" role="switch" aria-checked={theme === 'dark'} onClick={toggle} className={cx(ROW, className)}>
+      <Moon aria-hidden className="size-4 text-ink-500" /> Dark theme
+    </button>
+  );
+}
+
+// Who is signed in: name, role and department, email.
+export function AccountSummary() {
+  const { claims, profile } = useAuth();
+  return (
+    <div className="border-b border-ink-100 px-3 pt-2 pb-3">
+      <p className="font-medium text-fg">{profile?.full_name ?? '…'}</p>
+      <p className="text-meta text-ink-600">{ROLE_LABEL[claims?.role]}{profile?.department_name && ` · ${profile.department_name}`}</p>
+      {profile?.email && <p className="truncate text-meta text-ink-600">{profile.email}</p>}
+    </div>
+  );
+}
+
+// The account rows, shared by this menu and the phone's Me sheet. The caller
+// owns the calendar dialog, so it outlives the menu that opened it.
+export function AccountItems({ onCalendar, children }) {
+  return (
+    <>
+      <EmailAlertsSwitch />
+      <button type="button" onClick={onCalendar} className={ROW}>
+        <CalendarSync aria-hidden className="size-4 text-ink-500" /> Calendar subscription
+      </button>
+      <InstallAppItem />
+      {children}
+      <Link to="/change-password" className={ROW}>
+        <KeyRound aria-hidden className="size-4 text-ink-500" /> Change password
+      </Link>
+    </>
+  );
+}
+
 // Account menu in the header: who you are, your email alert switch and a
 // password change link. Name and role show beside the avatar from lg up.
 export default function UserMenu({ children }) {
@@ -103,21 +147,9 @@ export default function UserMenu({ children }) {
         anchor={{ to: 'bottom end', gap: 8, padding: 8 }}
         className="z-50 w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-ink-200 bg-surface p-1.5 shadow-pop transition duration-150 ease-out focus:outline-none data-closed:-translate-y-1 data-closed:opacity-0"
       >
-        <div className="border-b border-ink-100 px-3 pt-2 pb-3">
-          <p className="font-medium text-fg">{name}</p>
-          <p className="text-meta text-ink-600">{ROLE_LABEL[claims?.role]}{profile?.department_name && ` · ${profile.department_name}`}</p>
-          {profile?.email && <p className="truncate text-meta text-ink-600">{profile.email}</p>}
-        </div>
+        <AccountSummary />
         <div className="pt-1.5">
-          <EmailAlertsSwitch />
-          <button type="button" onClick={() => setFeedOpen(true)} className={ROW}>
-            <CalendarSync aria-hidden className="size-4 text-ink-500" /> Calendar subscription
-          </button>
-          <InstallAppItem />
-          {children}
-          <Link to="/change-password" className={ROW}>
-            <KeyRound aria-hidden className="size-4 text-ink-500" /> Change password
-          </Link>
+          <AccountItems onCalendar={() => setFeedOpen(true)}>{children}</AccountItems>
         </div>
       </PopoverPanel>
     </Popover>

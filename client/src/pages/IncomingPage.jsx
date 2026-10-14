@@ -159,7 +159,7 @@ function PendingView({ records, loading, reloadList }) {
             <Card><HandoverDetail record={record} /></Card>
             <ResponseActions
               record={record}
-              className="sticky bottom-4 z-20"
+              className="sticky bottom-[calc(var(--tabbar-h,0px)+var(--safe-bottom)+1rem)] z-20"
               onDone={async (id) => { await reloadList(); open(id); }}
             />
           </>
