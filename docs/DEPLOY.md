@@ -111,6 +111,45 @@ values into the files.
 5. Put the site's final address in the API's `CLIENT_ORIGIN` (and `APP_URL`).
    With a custom domain as well as the host's default address, list both,
    comma-separated.
+6. Set cache headers so the installable app picks up new versions:
+   `/sw.js`, `/index.html`, `/manifest.webmanifest` and `/push-sw.js` with
+   `Cache-Control: no-cache`; `/assets/*` (file names carry a content hash)
+   may be cached for a year. Most static hosts already do this for HTML. If
+   `sw.js` is cached, users keep the old version until that cache expires.
+
+## 4. Installable app and push notifications
+
+The client is a Progressive Web App (`client/pwa.config.js`): a manifest
+(name "SHMS – Shift Handover Management", short name SHMS, standalone, start
+URL and scope `/`), icons in `client/public/icons`, and a service worker that
+precaches the app shell only. API calls are never cached (NetworkOnly), so the
+app shows "You are offline. Changes cannot be saved." instead of old data.
+After a deploy, open tabs and installed apps show "Update available" and switch
+when the user chooses Reload.
+
+- **HTTPS is required** for installation, the service worker and push
+  (`localhost` is the only exception, for development).
+- Users install from the browser (Chrome, Edge: the install icon, or
+  "Install app" in their account menu; iPhone and iPad: Share, then Add to
+  Home Screen).
+
+Push (Web Push, VAPID) is **off by default**. To turn it on:
+
+1. Run `cd server && npm run vapid` once. It prints a key pair.
+2. In the API's environment set `PUSH_ENABLED=true`, `VAPID_PUBLIC_KEY`,
+   `VAPID_PRIVATE_KEY` (a secret) and `VAPID_SUBJECT` (a contact,
+   `mailto:ops@example.com`). In production the API refuses to start with
+   `PUSH_ENABLED=true` and any of the three missing.
+3. Users turn on "Push notifications on this device" in their account menu.
+   The browser asks for permission then, not before. On iPhone and iPad, push
+   works only in the installed app (iOS 16.4 or later).
+
+A push carries a title and a link only, never handover, report or message
+content, for the same notification types as email (`EMAIL_NOTIFICATION_TYPES`).
+It is sent after the change commits. A device the push service reports gone
+(404 or 410) is removed. Signing out removes this device's subscription.
+Keep the key pair: a new one drops every subscription, and users must turn
+push on again.
 
 ## Environment variables
 
@@ -187,6 +226,15 @@ values into the files.
       `Jobs started (every minute): sessions on, reminders on, ...`.
 - [ ] Optional: `GOOGLE_CLIENT_ID` set and the client's origin authorised in
       Google Cloud Console. SMTP credentials set and `EMAIL_ENABLED=true`.
+- [ ] Optional: push keys from `npm run vapid` and `PUSH_ENABLED=true`; on a
+      phone, "Push notifications on this device" turns on and a submitted
+      handover arrives as a notification.
+- [ ] Installable app: over HTTPS the browser offers to install it, and
+      `/sw.js` is served with `Cache-Control: no-cache`.
+- [ ] Checks, from `client/` with `BASE_URL` and `API_URL` set, against a
+      **staging** deployment seeded with synthetic data (`npm run seed`), never
+      production (they sign in as the seed accounts, and `check:sync` submits a
+      handover): `npm run check:touch`, `npm run check:axe`, `npm run check:sync`.
 - [ ] Rollback plan: redeploy the previous image tag. The migrations so far
       only add tables and columns, but read any new migration before relying
       on the previous image against the newer schema.

@@ -1,6 +1,6 @@
 # Build Report — Shift Handover Management System
 
-Date: 2026-10-13, updated 2026-10-14 (Parts H–K). Baseline commit: `52273b2`.
+Date: 2026-10-13, updated 2026-10-14 (Parts H–K, then P–R). Baseline commit: `52273b2`.
 All figures below were measured on the machine described in
 [Test environment](#test-environment); none were tuned to meet a target.
 
@@ -366,6 +366,123 @@ function` on 20). Dependencies that declare newer engines: `google-auth-library`
 `node-cron` 4 and `node-pg-migrate` 9 (>=20), `vite` 8 (>=20.19), `vitest` 5 and `jsdom` 30 (>=22.12).
 Options: pin older majors that support Node 18 (e.g. `node-pg-migrate` 7, `vitest` 2 with
 `jsdom` 24), or accept Node 22 as the floor, which would conflict with NFR-18 as written.
+
+## Part F — Parts P, Q and R: hosting, installable app, sync and push (2026-10-14)
+
+One commit per numbered item, authored by Mwiberikian, no co-author or
+generated-by lines. All server and client tests passed after every step. The
+untracked, unfinished `server/src/modules/reports/` (Part L) was left out of
+every commit.
+
+| # | Commit | Change | Server | Client |
+|---|---|---|---|---|
+| — | `8a1f574` | Starting point (after M3) | 316 | 79 |
+| P1 | `ad25d60` | `server/Dockerfile` (node 22-alpine, user `node`, health check), `.dockerignore`; `node-pg-migrate` moved to dependencies for the release command | 322 | 79 |
+| P2 | `6cffb6c` | `CLIENT_ORIGIN` list, trust proxy, refuse to start in production on a missing or `change_me` JWT secret | 333 | 79 |
+| P3 | `d359e66` | `docs/DEPLOY.md`; test that its env table covers every variable the server reads | 337 | 79 |
+| Q1 | `417d345` | Manifest, monogram icons, apple-touch-icon, meta tags, safe-area insets | 337 | 85 |
+| Q2 | `f5c7514` | Service worker: shell-only precache, API NetworkOnly; offline banner; update prompt | 337 | 95 |
+| Q3 | `3346758` | "Install app" item; iOS Share → Add to Home Screen hint | 337 | 99 |
+| Q4 | `ae98d41` | Bottom tab bar per role, Me sheet, tables as cards, 16 px inputs, bars above the tabs | 337 | 110 |
+| R1 | `9ffaa8f` | `app_user.theme_preference`; preferences synced through the server | 345 | 115 |
+| R2 | `e0a6eae` | Refetch on focus / tab shown / online / new notification; "Updated just now" | 345 | 123 |
+| R3 | `c7b7ec2` | Web Push channel, `push_subscription`, VAPID script, per-device switch; seed fixed for the new table | 368 | 131 |
+| R4 | `9e84825` | `client/e2e/sync.mjs` (two browser contexts) | 368 | 131 |
+| — | `1d49bca` | Client tests on half the cores (`maxWorkers: '50%'`): three typing-heavy tests passed alone in about 2 s but went past 5 s with one jsdom fork per core on a busy machine; no test or timeout changed | 368 | 131 |
+| R5 | `c2a28e4` | Lighthouse and axe fixes: robots.txt, logo width/height, Google config no longer a 503; `client/e2e/axe-phone.mjs` | 368 | 131 |
+| T | this commit | DEPLOY, FEATURES_ADDED, REQUIREMENTS_STATUS, TRACEABILITY, this report | 368 | 131 |
+
+Notes:
+- P1: the image was built and run against a scratch database: `id` → `uid=1000(node)`, health
+  `healthy`, `/api/health` 200, and `docker run … npm run migrate up` applied all migrations.
+- R3: adding `push_subscription` broke `npm run seed` (its TRUNCATE did not list the new table).
+  Found while preparing R4, fixed in the same commit, and `seed.truncate.test.js` now checks
+  that the seed and the test reset list every table.
+- R5: `GET /api/auth/google/config` now answers 200 `{ "client_id": null }` when Google sign-in
+  is off, instead of 503 (the browser logged that 503 as a console error on every sign-in page;
+  Lighthouse best-practices). The sign-in endpoints still answer 503. One assertion in
+  `auth.google.test.js` changed with it; README updated.
+- R2: a first version of `RefreshOnReturn.test.jsx` ran the inbox test after tests that used fake
+  timers; that combination hung its worker with React "Maximum update depth exceeded" warnings,
+  and the orphaned worker kept a CPU busy for about 40 minutes until it was found and stopped
+  (it was part of the load behind the client timeouts above). The inbox test now has its own
+  file with real timers (`RefreshScreens.test.jsx`). The cause inside the combination was not
+  pinned down; in the browser runs (C9) the inbox refetched normally with no runaway rendering.
+- Not built: the Reports and Live tabs (no screens yet), so R4 step 3 is BLOCKED (C9).
+
+### C8. Server test coverage at the end of Part R
+
+368 tests in 42 suites, all passing, at `c2a28e4`. `jest --runInBand --coverage --collectCoverageFrom='src/**/*.js'
+--collectCoverageFrom='!src/modules/reports/**'` (the untracked, unfinished reports service is excluded; it is
+not in any commit): **93.47 % statements, 83.54 % branches, 96.21 % functions, 96.02 % lines**
+(1,675 / 1,792 statements). At `f810696` it was 93.31 % statements (C1 update).
+
+### C9. Sync between a desktop and a phone (R4)
+
+`client/e2e/sync.mjs`, Playwright 1.56.1 driving installed Microsoft Edge, headless. Two
+browser contexts: desktop 1280 × 800, phone 390 × 844 (mobile, touch, DPR 3). Dev client
+(Vite) on :5300 against an API on :4300 and a scratch database `shms_e2e`, freshly seeded
+(synthetic) before each run; reminders off. The clock starts when the submit (or preference)
+response reaches the desktop browser.
+
+| Step | Run 1 | Run 2 | Run 3 | Run 4 | Limit |
+|---|---|---|---|---|---|
+| 1a. Outgoing submits on desktop → bell badge on the incoming phone | 3,442 ms | 2,930 ms | 3,438 ms | 3,425 ms | 5,000 ms |
+| 1b. … → the record and its summary on the phone, no reload | 3,444 ms | 3,443 ms | 3,439 ms | 3,426 ms | 5,000 ms |
+| 2. Theme changed on desktop → dark on the phone after a reload (reload included) | 488 ms | 508 ms | 501 ms | 527 ms | — |
+| 3. Session started on the phone → supervisor live board | BLOCKED | BLOCKED | BLOCKED | BLOCKED | 5,000 ms |
+
+Step 1 is bounded by the 5 s poll: the badge appears at the first unread-count poll after the
+commit, and the inbox refetches straight after (R2), so 1b trails 1a by a few milliseconds when
+the badge is late in its cycle. Step 3: the session started from the phone (`POST
+/api/sessions/start` 201, held by `GET /api/sessions/mine` within 239–251 ms), but there is no
+live board screen or API for a supervisor to see it on; that is Part M, not built.
+
+### C10. Lighthouse and axe at the phone viewport (R5)
+
+Production build (`vite build`, `VITE_API_URL` → :4300) served by `vite preview` on :5301.
+
+**Lighthouse 11.7.1** (the last version with the PWA category; Lighthouse 12 removed it), headless
+Edge, default mobile emulation and simulated throttling. Only the public pages can be audited
+without signing in.
+
+| Page | Performance | Accessibility | Best practices | SEO | PWA |
+|---|---|---|---|---|---|
+| `/login`, before R5 fixes | 89 | 100 | 96 | 92 | 100 |
+| `/login`, after | 91 | 100 | 100 | 100 | 100 |
+| `/` (landing), before | 88 | 100 | 100 | 92 | 100 |
+| `/` (landing), after | 89 | 100 | 100 | 100 | 100 |
+
+Failures and what was done:
+
+| Audit | Page | Cause | Ours? | Action |
+|---|---|---|---|---|
+| errors-in-console | login | 503 from `/api/auth/google/config` with Google sign-in off | yes | Fixed: config answers 200 with `client_id: null` |
+| robots-txt (39 errors) | both | No `robots.txt`, so the SPA fallback served `index.html` | yes | Fixed: `client/public/robots.txt` (app screens disallowed) |
+| unsized-images | both | Logo `<img>` without width and height | yes | Fixed: intrinsic 160 × 30 (the logo's aspect ratio); CSS still sets the drawn size |
+| uses-responsive-images | both | Page photos (WebP, 96–219 KiB to save) larger than a phone shows | yes | **Not fixed**: needs smaller variants of each photo and `srcset`; a performance opportunity, not a pass/fail audit |
+| unused-javascript | both | About 81–85 KiB of the first-load JavaScript unused on these pages | yes | Not fixed (opportunity) |
+| uses-rel-preconnect | login | API on another origin | yes | Not fixed: the origin is a build-time variable (opportunity) |
+| FCP 2.5–2.6 s, LCP 3.0–3.1 s, Speed Index 2.8–3.5 s | both | Simulated slow 4G on a local preview | — | Reported only |
+
+PWA checks passed on both pages (installable manifest, service worker, maskable icon, themed
+address bar, splash screen, viewport). Chromium's own check, `Page.getInstallabilityErrors` over
+CDP in a persistent Edge profile, returned **no errors** (in a throwaway context it reports only
+`in-incognito`, which is the test browser, not the app). Also checked in Edge: after browsing
+three signed-in screens, Cache Storage held 41 shell files, **0 API responses and 0 photos**;
+with the network off, `/supervisor/queue` loaded from the cache and showed "You are offline.
+Changes cannot be saved."
+
+**axe-core 4.11.0** (`client/e2e/axe-phone.mjs`, rules tagged WCAG 2.0/2.1/2.2 A and AA), 390 × 844,
+light and dark: landing, login, request access, outgoing, outgoing with the Me sheet open, my
+shifts, incoming, incoming history, messages, supervisor overview, review queue, roster, admin
+users, templates and requests. **30 / 30 combinations, 0 violations**, before and after the R5
+fixes. Keyboard-only operation was not tested.
+
+**Touch targets** (`client/e2e/touch-targets.mjs`, same instance as C9) after Q4: **15 / 15**
+page/width combinations pass, no horizontal scroll. The first run after Q4 failed admin at
+320 px (346 px wide: the user cell's 12rem minimum inside the new card); fixed before Q4 was
+committed.
 
 ---
 
