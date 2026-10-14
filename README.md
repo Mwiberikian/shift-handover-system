@@ -73,7 +73,7 @@ incoming user on the next one.
 | `JWT_EXPIRY` | `30m` | Session length |
 | `CLIENT_ORIGIN` | — | Allowed CORS origin (the UI) |
 | `PORT` | `4000` | API port |
-| `GOOGLE_CLIENT_ID` | unset | Enables Sign in with Google; unset = disabled (503) |
+| `GOOGLE_CLIENT_ID` | unset | Enables Sign in with Google; unset = disabled (config gives `client_id: null`, sign-in endpoints 503) |
 | `ACCESS_REQUEST_RATE_LIMIT` | `5` | Public access requests per IP per hour |
 | `MESSAGE_RATE_LIMIT` | `30` | Messages per user per hour |
 | `REMINDERS_ENABLED` | `true` | `false` turns the reminder scheduler off |
@@ -168,8 +168,9 @@ reminder is expected.
 Google sign-in is off unless `GOOGLE_CLIENT_ID` is set in `server/.env` (an
 OAuth 2.0 *Web application* client ID from Google Cloud Console, with
 `http://localhost:5173` as an authorised JavaScript origin). When it is unset
-the Google endpoints return 503, the client hides the Google buttons, and
-password sign-in works as normal.
+`GET /api/auth/google/config` answers `{ "client_id": null }`, the sign-in
+endpoints return 503, the client hides the Google buttons, and password
+sign-in works as normal.
 
 Google only proves identity. It **never creates an account or assigns a role**
 (account creation stays admin-gated, FR-01):
@@ -187,7 +188,8 @@ text, so this describes the code).** Google sign-in is off unless
 `GOOGLE_CLIENT_ID` is set in `server/.env`; the client asks
 `GET /api/auth/google/config` for that public client id and shows Google's own
 "Continue with Google" button (Google Identity Services, `@react-oauth/google`)
-only when it gets one, otherwise the endpoints answer 503. Clicking it opens
+only when it gets one (off, config answers `client_id: null` and the sign-in
+endpoints answer 503). Clicking it opens
 Google's sign-in, and Google hands the browser a signed ID token (a JWT about
 the person; no access token, no Google API scopes, nothing about their mailbox
 or calendar). The browser posts that token to `POST /api/auth/google`, and the
@@ -282,7 +284,7 @@ end in `_test`.
 | `access-request.workflow.test.js` | Request access grants nothing until approved; admin approve/reject; rate limit; RBAC |
 | `auth.temporary-password.test.js` | Approve response has no password; one-time reveal (owner only, expires); first sign-in blocked until the password changes; bcrypt 12; audit without values |
 | `shift-reminders.test.js` | Reminders with an injected clock: fire at the lead time and not before, never twice (incl. racing ticks), none once submitted, supervisor alerts; roster API scoping |
-| `auth.google.test.js` | Google sign-in (token verification mocked): known user, no account, unverified email, deactivated user, wrong audience, conflicting Google account, 503 when unconfigured |
+| `auth.google.test.js` | Google sign-in (token verification mocked): known user, no account, unverified email, deactivated user, wrong audience, conflicting Google account, config null and sign-in 503 when unconfigured |
 | `handover.export.test.js` | Export holds tasks, incidents, acknowledgement, reviews and only this record's audit entries; same access as `GET /:id` |
 | `notifications.unread-count.test.js` | Unread count is per user, drops on read, and `latest_id` changes when a new notification arrives |
 | `admin.templates.test.js` | Template versioning keeps history |
@@ -342,7 +344,7 @@ Chromium instead of Edge.
 | `/api/admin/users[/:id]`, `/api/admin/departments`, `/api/admin/templates/:departmentCode` | admin |
 | `GET /api/access-requests/departments`, `POST /api/access-requests` (rate-limited) | public |
 | `GET /api/admin/access-requests`, `POST /api/admin/access-requests/:id/approve`, `POST .../:id/reject` | admin |
-| `GET /api/auth/google/config`, `POST /api/auth/google`, `POST /api/auth/google/profile` (503 when unconfigured) | public |
+| `GET /api/auth/google/config` (`client_id: null` when unconfigured), `POST /api/auth/google`, `POST /api/auth/google/profile` (503 when unconfigured) | public |
 | `GET /api/messages/inbox`, `GET /api/messages/sent`, `GET /api/messages/unread-count`, `GET /api/messages/:id`, `POST /api/messages`, `POST /api/messages/:id/read` | any (rules above) |
 | `GET /api/directory`, `GET /api/directory/departments` | any |
 | `GET /api/shifts/mine` | any |

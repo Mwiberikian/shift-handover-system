@@ -98,8 +98,10 @@ async function verifyGoogleCredential(credential) {
   return payload;
 }
 
+// The client asks this on every sign-in page, so "off" is an answer (200,
+// client_id null), not an error. The sign-in endpoints answer 503 when off.
 function googleConfig() {
-  return { client_id: requireGoogle() };
+  return { client_id: googleClientId() };
 }
 
 // Verified name/email only: used to prefill the access-request form. Looks up

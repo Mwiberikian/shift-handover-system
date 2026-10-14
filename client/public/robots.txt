@@ -1,0 +1,11 @@
+# SHMS is a staff tool: the public pages may be indexed, the signed-in app
+# screens may not.
+User-agent: *
+Disallow: /outgoing
+Disallow: /incoming
+Disallow: /supervisor
+Disallow: /admin
+Disallow: /messages
+Disallow: /shifts
+Disallow: /handovers
+Disallow: /change-password

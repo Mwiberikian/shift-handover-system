@@ -129,9 +129,11 @@ describe('POST /api/auth/google', () => {
 });
 
 describe('when GOOGLE_CLIENT_ID is unset', () => {
-  test('every Google endpoint returns 503 and password login is unaffected', async () => {
+  test('config says off (client_id null), the sign-in endpoints return 503, password login is unaffected', async () => {
     delete process.env.GOOGLE_CLIENT_ID;
-    expect((await request(app).get('/api/auth/google/config')).status).toBe(503);
+    const cfg = await request(app).get('/api/auth/google/config');
+    expect(cfg.status).toBe(200);
+    expect(cfg.body).toEqual({ client_id: null });
     expect((await google(token('any', { sub: 's', email: 'outa@test.example' }))).status).toBe(503);
     expect((await request(app).post('/api/auth/google/profile').send({ credential: 'any' })).status).toBe(503);
     expect(mockVerify).not.toHaveBeenCalled();
