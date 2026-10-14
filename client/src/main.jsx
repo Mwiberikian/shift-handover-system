@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from './auth/AuthContext';
 import { ThemeProvider, useTheme } from './theme/ThemeContext';
 import App from './App';
+import { PreferenceSync } from './lib/preferences';
 import OfflineBanner from './components/shell/OfflineBanner';
 import UpdatePrompt from './components/shell/UpdatePrompt';
 import { startServiceWorker } from './pwa/registerSW';
@@ -44,6 +45,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ThemeProvider>
       <BrowserRouter>
         <AuthProvider>
+          <PreferenceSync />
           <App />
         </AuthProvider>
         <ThemedToaster />

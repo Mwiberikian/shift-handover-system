@@ -1,10 +1,10 @@
 import { Moon, Sun } from 'lucide-react';
-import { useTheme } from '../../theme/ThemeContext';
+import { useThemeSwitch } from '../../lib/preferences';
 import { cx } from '../../lib/format';
 
 // Sun/moon switch for the dark header bars (app, landing, help, sign-in).
 export default function ThemeToggle({ className }) {
-  const { theme, toggle } = useTheme();
+  const { theme, toggle } = useThemeSwitch();
   const dark = theme === 'dark';
   return (
     <button

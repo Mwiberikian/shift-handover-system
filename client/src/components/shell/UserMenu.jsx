@@ -10,7 +10,7 @@ import { ROLE_LABEL, cx, initials } from '../../lib/format';
 import { toast, toastError } from '../../lib/toast';
 import CalendarFeedDialog from './CalendarFeedDialog';
 import { promptInstall, useInstallMode } from '../../pwa/install';
-import { useTheme } from '../../theme/ThemeContext';
+import { useThemeSwitch } from '../../lib/preferences';
 
 const ROW = 'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg';
 
@@ -80,7 +80,7 @@ function InstallAppItem() {
 // The theme switch as an account row (phones, where the header has no room
 // for the sun/moon button).
 export function ThemeSwitchRow({ className }) {
-  const { theme, toggle } = useTheme();
+  const { theme, toggle } = useThemeSwitch();
   return (
     <button type="button" role="switch" aria-checked={theme === 'dark'} onClick={toggle} className={cx(ROW, className)}>
       <Moon aria-hidden className="size-4 text-ink-500" /> Dark theme

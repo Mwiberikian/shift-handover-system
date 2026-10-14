@@ -144,7 +144,7 @@ describe('per-user opt-out', () => {
 
     const off = await as(world, 'incA').patch('/api/auth/me/preferences', { email_notifications: false });
     expect(off.status).toBe(200);
-    expect(off.body).toEqual({ email_notifications: false });
+    expect(off.body).toEqual({ email_notifications: false, theme_preference: 'system' });
     expect((await me()).body.email_notifications).toBe(false);
 
     const { rows } = await pool.query(

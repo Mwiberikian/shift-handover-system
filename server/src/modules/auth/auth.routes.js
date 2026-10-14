@@ -54,7 +54,7 @@ router.post('/google/profile', credential, validate, async (req, res) => res.jso
 router.get('/me', requireAuthForPasswordChange, async (req, res) => {
   const { rows: [me] } = await pool.query(
     `SELECT u.user_id, u.staff_number, u.full_name, u.email, u.role, u.department_id, u.must_change_password,
-            u.email_notifications,
+            u.email_notifications, u.theme_preference,
             d.code AS department_code, d.name AS department_name
        FROM app_user u LEFT JOIN department d USING (department_id) WHERE u.user_id = $1`,
     [req.user.user_id],
@@ -62,26 +62,42 @@ router.get('/me', requireAuthForPasswordChange, async (req, res) => {
   res.json(me);
 });
 
-// PATCH /api/auth/me/preferences { email_notifications } — the caller's own
-// switch for email alerts (in-app notifications are unaffected). Audited.
+// PATCH /api/auth/me/preferences { email_notifications?, theme_preference? }
+// The caller's own settings, kept on the server so every device shows the
+// same (R1). email_notifications: the switch for email alerts (in-app
+// notifications are unaffected). theme_preference: light, dark or system.
+// Send one or both; the response has both. A change is audited with the
+// fields that changed.
+const PREFERENCES = ['email_notifications', 'theme_preference'];
+const THEMES = ['light', 'dark', 'system'];
+
 router.patch(
   '/me/preferences',
   requireAuth,
-  body('email_notifications', 'email_notifications must be true or false').isBoolean({ strict: true }),
+  body('email_notifications', 'email_notifications must be true or false').optional().isBoolean({ strict: true }),
+  body('theme_preference', `theme_preference must be one of ${THEMES.join(', ')}`).optional().isIn(THEMES),
+  body().custom((b) => {
+    if (!PREFERENCES.some((k) => b?.[k] !== undefined)) throw new Error(`Send at least one of ${PREFERENCES.join(', ')}`);
+    return true;
+  }),
   validate,
   async (req, res) => {
+    const changes = PREFERENCES.filter((k) => req.body[k] !== undefined);
     const result = await withTransaction(async (client) => {
       const { rows: [before] } = await client.query(
-        'SELECT email_notifications FROM app_user WHERE user_id = $1 FOR UPDATE', [req.user.user_id],
+        'SELECT email_notifications, theme_preference FROM app_user WHERE user_id = $1 FOR UPDATE', [req.user.user_id],
       );
       const { rows: [after] } = await client.query(
-        'UPDATE app_user SET email_notifications = $2 WHERE user_id = $1 RETURNING email_notifications',
-        [req.user.user_id, req.body.email_notifications],
+        `UPDATE app_user SET ${changes.map((k, i) => `${k} = $${i + 2}`).join(', ')}
+          WHERE user_id = $1 RETURNING email_notifications, theme_preference`,
+        [req.user.user_id, ...changes.map((k) => req.body[k])],
       );
-      if (before.email_notifications !== after.email_notifications) {
+      const changed = changes.filter((k) => before[k] !== after[k]);
+      if (changed.length) {
+        const pick = (row) => Object.fromEntries(changed.map((k) => [k, row[k]]));
         await writeAudit(client, {
           userId: req.user.user_id, entityType: 'app_user', entityId: req.user.user_id, action: 'update_preferences',
-          previousValue: before, newValue: after,
+          previousValue: pick(before), newValue: pick(after),
         });
       }
       return after;

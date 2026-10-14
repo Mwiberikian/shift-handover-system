@@ -13,6 +13,7 @@ let dummyHash;
 
 const PROFILE_SELECT = `SELECT u.user_id, u.staff_number, u.full_name, u.email, u.password_hash, u.role,
                                u.department_id, u.is_active, u.google_sub, u.must_change_password,
+                               u.email_notifications, u.theme_preference,
                                d.code AS department_code, d.name AS department_name
                           FROM app_user u LEFT JOIN department d USING (department_id)`;
 
