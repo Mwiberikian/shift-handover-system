@@ -12,6 +12,7 @@ import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 import ShiftBanner from '../components/shell/ShiftBanner';
+import { useRefresh } from '../lib/refresh';
 
 // Acknowledge (primary, confirmed) and Raise query (secondary) for a submitted record.
 // `bare` drops the card chrome (for use inside a drawer footer).
@@ -130,6 +131,11 @@ function PendingView({ records, loading, reloadList }) {
     }
   }, []);
 
+  // R2: refetch the open record when the user returns or a notification arrives.
+  useRefresh(() => {
+    if (selectedId) api.get(`/handovers/${selectedId}`).then((r) => setRecord(r.data)).catch(() => {});
+  });
+
   // Open the oldest pending handover automatically.
   useEffect(() => {
     if (!selectedId && pending.length) open(pending[0].record_id);
@@ -171,6 +177,10 @@ function PendingView({ records, loading, reloadList }) {
 
 function AllView({ records, loading, reloadList }) {
   const [selected, setSelected] = useState(null);
+  // R2: refetch the open record when the user returns or a notification arrives.
+  useRefresh(() => {
+    if (selected?.record_id) api.get(`/handovers/${selected?.record_id}`).then((r) => setSelected(r.data)).catch(() => {});
+  });
   const open = async (id) => {
     try {
       setSelected((await api.get(`/handovers/${id}`)).data);
@@ -214,6 +224,7 @@ export default function IncomingPage({ view }) {
   }, []);
 
   useEffect(() => { loadList(); }, [loadList]);
+  useRefresh(loadList);
 
   return (
     <>

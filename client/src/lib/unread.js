@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import api from '../api';
 import usePolling from './usePolling';
+import { markSynced } from './refresh';
 
 // Unread message count shared by the sidebar badge and the Messages page.
 // Polled every 5 seconds while the tab is visible (no websockets);
@@ -13,6 +14,7 @@ const emit = () => subscribers.forEach((fn) => fn());
 export async function refreshUnread() {
   try {
     const { data } = await api.get('/messages/unread-count');
+    markSynced();
     if (data.count !== count) {
       count = data.count;
       emit();

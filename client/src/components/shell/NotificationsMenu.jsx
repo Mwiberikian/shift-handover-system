@@ -12,6 +12,7 @@ import {
   desktopAlertState, disableDesktopAlerts, enableDesktopAlerts, showDesktopAlert,
 } from '../../lib/desktopAlerts';
 import usePolling from '../../lib/usePolling';
+import { markSynced, requestRefresh } from '../../lib/refresh';
 
 const NOTIFICATION_LABEL = {
   handover_submitted: 'Handover submitted',
@@ -113,8 +114,12 @@ export default function NotificationsMenu() {
     } catch {
       return;
     }
+    markSynced();
     const key = `${data.count}:${data.latest_id}`;
     if (key !== lastCount.current) {
+      // A new notification (not the first count): open screens refetch too,
+      // so the record it is about shows up without a reload (R2).
+      if (lastCount.current !== null) requestRefresh('notification');
       lastCount.current = key;
       load();
     }

@@ -12,6 +12,7 @@ import {
 import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
+import { useRefresh } from '../lib/refresh';
 
 const TITLES = {
   overview: ['Overview', 'Handover status across your departments.'],
@@ -369,6 +370,11 @@ export default function SupervisorPage({ view }) {
   };
 
   useEffect(() => { load(); }, [load]);
+  useRefresh(load);
+  // R2: refetch the open record when the user returns or a notification arrives.
+  useRefresh(() => {
+    if (selected?.record_id) api.get(`/handovers/${selected?.record_id}`).then((r) => setSelected(r.data)).catch(() => {});
+  });
 
   // Records flagged by the dashboard as unacknowledged past the threshold get
   // a red accent and alert icon wherever they appear in a table.

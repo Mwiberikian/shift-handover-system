@@ -10,9 +10,11 @@ import OfflineBanner from './components/shell/OfflineBanner';
 import UpdatePrompt from './components/shell/UpdatePrompt';
 import { startServiceWorker } from './pwa/registerSW';
 import { listenForInstall } from './pwa/install';
+import { startRefreshTriggers } from './lib/refresh';
 import './index.css';
 
 listenForInstall();
+startRefreshTriggers();
 
 // Toasts follow the app theme.
 function ThemedToaster() {

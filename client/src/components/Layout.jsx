@@ -12,6 +12,7 @@ import HelpMenu from './shell/HelpMenu';
 import UserMenu, { ThemeSwitchRow } from './shell/UserMenu';
 import TabBar from './shell/TabBar';
 import UtilityBar from './shell/UtilityBar';
+import SyncStatus from './shell/SyncStatus';
 import { pagePhotoFor } from './shell/pagePhotos';
 import { useUnreadPolling } from '../lib/unread';
 import { cx } from '../lib/format';
@@ -53,7 +54,7 @@ export default function Layout() {
 
       {/* Fixed chrome: utility bar (2.75rem) + header (3.5rem) + the top safe area = --chrome-top offsets below. */}
       <div className="safe-top safe-x fixed inset-x-0 top-0 z-40 bg-brand-black">
-        <UtilityBar />
+        <UtilityBar><SyncStatus /></UtilityBar>
         <header className="glass-dark flex h-14 items-center gap-2 border-b-2 border-brand-red px-3 sm:px-4">
           <button
             type="button"

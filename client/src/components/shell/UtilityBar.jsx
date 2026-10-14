@@ -6,8 +6,9 @@ import { SUPPORT, telHref } from '../../lib/support';
 const LINK = 'inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded px-1.5 text-white/75 transition-colors hover:text-white';
 
 // Slim bar above every header: support contacts on the left (each hidden when
-// unset in .env), Help on the right. Always-dark chrome in both themes.
-export default function UtilityBar() {
+// unset in .env), Help on the right, with `children` (the sync status when
+// signed in) just before it. Always-dark chrome in both themes.
+export default function UtilityBar({ children }) {
   return (
     <div className="h-11 border-b border-white/10 bg-brand-black text-meta">
       <div className="mx-auto flex h-full max-w-screen-2xl items-center justify-between gap-3 px-3 sm:px-4">
@@ -25,10 +26,13 @@ export default function UtilityBar() {
             </a>
           )}
         </div>
-        <Link to="/help" className={LINK}>
-          <CircleHelp aria-hidden className="size-3.5 shrink-0" />
-          Help
-        </Link>
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+          {children}
+          <Link to="/help" className={LINK}>
+            <CircleHelp aria-hidden className="size-3.5 shrink-0" />
+            Help
+          </Link>
+        </div>
       </div>
     </div>
   );

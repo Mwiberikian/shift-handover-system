@@ -18,6 +18,7 @@ import { TASK_DESCRIPTION } from '../lib/limits';
 import { toast, toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 import ShiftBanner from '../components/shell/ShiftBanner';
+import { useRefresh } from '../lib/refresh';
 
 // Requirement list for the department template, evaluated against what the
 // user currently sees (including unsaved edits).
@@ -421,6 +422,10 @@ function CurrentView({ meta, records, current, reload }) {
 
 function HistoryView({ records }) {
   const [selected, setSelected] = useState(null);
+  // R2: refetch the open record when the user returns or a notification arrives.
+  useRefresh(() => {
+    if (selected?.record_id) api.get(`/handovers/${selected?.record_id}`).then((r) => setSelected(r.data)).catch(() => {});
+  });
   const open = async (id) => {
     try {
       setSelected((await api.get(`/handovers/${id}`)).data);
@@ -459,6 +464,8 @@ export default function OutgoingPage({ view }) {
   }, []);
 
   useEffect(() => { reload(); }, [reload]);
+  // R2: the list and the current record (a draft keeps its unsaved edits).
+  useRefresh(reload);
 
   return (
     <>
