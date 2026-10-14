@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { CalendarSync, ChevronDown, KeyRound, Mail } from 'lucide-react';
+import { CalendarSync, ChevronDown, Download, KeyRound, Mail } from 'lucide-react';
 import api from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_LABEL, cx, initials } from '../../lib/format';
 import { toast, toastError } from '../../lib/toast';
 import CalendarFeedDialog from './CalendarFeedDialog';
+import { promptInstall, useInstallMode } from '../../pwa/install';
 
 const ROW = 'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg';
 
@@ -43,6 +44,33 @@ function EmailAlertsSwitch() {
         <span className={cx('absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform', on ? 'translate-x-[18px]' : 'translate-x-0.5')} />
       </span>
     </button>
+  );
+}
+
+// Q3: offered only when the browser says the app can be installed, or on an
+// iPhone or iPad (Safari has no install prompt), where it explains how.
+function InstallAppItem() {
+  const installMode = useInstallMode();
+  const [hint, setHint] = useState(false);
+  if (!installMode) return null;
+  if (installMode === 'prompt') {
+    return (
+      <button type="button" onClick={promptInstall} className={ROW}>
+        <Download aria-hidden className="size-4 text-ink-500" /> Install app
+      </button>
+    );
+  }
+  return (
+    <>
+      <button type="button" aria-expanded={hint} aria-controls="ios-install-hint" onClick={() => setHint((v) => !v)} className={ROW}>
+        <Download aria-hidden className="size-4 text-ink-500" /> Install app
+      </button>
+      {hint && (
+        <p id="ios-install-hint" className="px-3 pb-2 text-meta text-ink-600">
+          In Safari, tap <span className="font-medium text-fg">Share</span>, then <span className="font-medium text-fg">Add to Home Screen</span>.
+        </p>
+      )}
+    </>
   );
 }
 
@@ -85,6 +113,7 @@ export default function UserMenu({ children }) {
           <button type="button" onClick={() => setFeedOpen(true)} className={ROW}>
             <CalendarSync aria-hidden className="size-4 text-ink-500" /> Calendar subscription
           </button>
+          <InstallAppItem />
           {children}
           <Link to="/change-password" className={ROW}>
             <KeyRound aria-hidden className="size-4 text-ink-500" /> Change password
