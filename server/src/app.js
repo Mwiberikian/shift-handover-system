@@ -3,11 +3,17 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const errorHandler = require('./middleware/errorHandler');
+const { clientOrigins, trustProxy } = require('./config/env');
 
 const app = express();
 
+// Behind the host's load balancer, so per-IP rate limits key on the client.
+app.set('trust proxy', trustProxy());
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_ORIGIN }));
+// CLIENT_ORIGIN may be a comma-separated list. Unset (development only, the
+// server refuses to start without it in production) keeps the cors default.
+const origins = clientOrigins();
+app.use(cors({ origin: origins.length > 1 ? origins : origins[0] }));
 app.use(express.json());
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 

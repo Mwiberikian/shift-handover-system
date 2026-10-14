@@ -17,6 +17,13 @@ const { parsed: dotenvValues } = require('dotenv').config({ quiet: true });
 if (!THREADPOOL_FROM_ENV && dotenvValues?.UV_THREADPOOL_SIZE) {
   process.env.UV_THREADPOOL_SIZE = dotenvValues.UV_THREADPOOL_SIZE;
 }
+// In production, refuse to start on a missing or placeholder secret (P2).
+const configErrors = require('./config/env').productionConfigErrors();
+if (configErrors.length) {
+  console.error(`Refusing to start in production:\n${configErrors.map((e) => `  - ${e}`).join('\n')}`);
+  process.exit(1);
+}
+
 const app = require('./app');
 const { startJobs } = require('./jobs/reminders');
 
