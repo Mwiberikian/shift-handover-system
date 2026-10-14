@@ -12,7 +12,8 @@
     "migrate": "node-pg-migrate",
     "seed": "node src/db/seeds/seed.js",
     "test": "jest --runInBand",
-    "demo:reminders": "node src/db/seeds/demo-reminders.js"
+    "demo:reminders": "node src/db/seeds/demo-reminders.js",
+    "vapid": "node scripts/vapid.js"
   },
   "keywords": [],
   "author": "",
@@ -32,7 +33,8 @@
     "node-cron": "^4.6.0",
     "node-pg-migrate": "^9.0.0",
     "nodemailer": "9.1.1",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "jest": "^30.5.2",

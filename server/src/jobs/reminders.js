@@ -14,6 +14,7 @@ const { notify } = require('../modules/notifications/notify');
 const { processOutbox } = require('../modules/notifications/email/outbox');
 const { runSessionCheck } = require('./sessions');
 const { UNACK_ALERT_HOURS } = require('../config/constants');
+const { trackAfterCommit } = require('../db/tx');
 
 const minutes = (name, fallback) => {
   const v = Number(process.env[name]);
@@ -45,6 +46,7 @@ const SHIFT_COLUMNS = 's.shift_id, s.shift_type, s.start_time, s.end_time, s.dep
 
 async function deliver(db, now, r) {
   const client = await db.connect();
+  const runAfterCommit = trackAfterCommit(client);
   try {
     await client.query('BEGIN');
     const { rowCount } = await client.query(
@@ -60,11 +62,13 @@ async function deliver(db, now, r) {
         body: r.body,
         ref: { reminder_type: r.type, record_id: r.recordId, shift_id: r.shiftId },
         at: now,
-      }, { db: client, channels: ['email'] });
+      }, { db: client, channels: ['email', 'push'] });
     }
     await client.query('COMMIT');
+    runAfterCommit();
     return rowCount > 0;
   } catch (err) {
+    delete client.afterCommit;
     await client.query('ROLLBACK');
     throw err;
   } finally {

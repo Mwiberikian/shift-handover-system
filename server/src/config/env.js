@@ -37,6 +37,11 @@ function productionConfigErrors(env = process.env) {
   if (!clientOrigins(env).length) errors.push('CLIENT_ORIGIN is not set');
   if (!env.DATABASE_URL?.trim()) errors.push('DATABASE_URL is not set');
   try { trustProxy(env); } catch (err) { errors.push(err.message); }
+  if (env.PUSH_ENABLED === 'true') {
+    for (const k of ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT']) {
+      if (!env[k]?.trim()) errors.push(`PUSH_ENABLED=true but ${k} is not set`);
+    }
+  }
   return errors;
 }
 

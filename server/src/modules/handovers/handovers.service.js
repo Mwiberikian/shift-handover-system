@@ -100,7 +100,7 @@ async function assertValidIncoming(db, departmentId, incomingUserId) {
 // types and recipients that qualify (email/channel.js). Returns the
 // recipients' ids.
 async function notifyRecord(client, recipientIds, recordId, type) {
-  const rows = await notify({ userIds: recipientIds, type, ref: { record_id: recordId } }, { db: client, channels: ['email'] });
+  const rows = await notify({ userIds: recipientIds, type, ref: { record_id: recordId } }, { db: client, channels: ['email', 'push'] });
   return rows.map((r) => r.recipient_id);
 }
 

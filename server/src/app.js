@@ -22,6 +22,7 @@ app.use('/api/auth', require('./modules/auth/auth.routes'));
 app.use('/api/handovers', require('./modules/handovers/handovers.routes'));
 app.use('/api/dashboard', require('./modules/dashboard/dashboard.routes'));
 app.use('/api/notifications', require('./modules/notifications/notifications.routes'));
+app.use('/api/push', require('./modules/notifications/push/push.routes'));
 const messages = require('./modules/messages/messages.routes');
 
 app.use('/api/messages', messages);

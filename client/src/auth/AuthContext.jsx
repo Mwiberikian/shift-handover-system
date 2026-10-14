@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import api, { decodeToken, tokenStore } from '../api';
+import { disablePush } from '../pwa/push';
 
 const AuthContext = createContext(null);
 
@@ -25,6 +26,8 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
 
   const logout = useCallback(() => {
+    // A shared device stops getting this user's push notifications (R3).
+    disablePush({ token: tokenStore.get() }).catch(() => {});
     tokenStore.clear();
     setClaims(null);
     setProfile(null);

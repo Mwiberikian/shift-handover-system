@@ -208,7 +208,7 @@ async function send(user, body) {
     }
     const rows = await notify(
       { userIds: await recipientIds(client, user, m), type: 'message', ref: { message_id: m.message_id } },
-      { db: client, channels: ['email'] },
+      { db: client, channels: ['email', 'push'] },
     );
     if (sendAs === 'email' && rows.length) {
       await client.query(

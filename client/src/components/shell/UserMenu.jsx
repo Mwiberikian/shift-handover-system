@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import {
-  CalendarSync, ChevronDown, Download, KeyRound, Mail, Moon,
+  BellRing, CalendarSync, ChevronDown, Download, KeyRound, Mail, Moon,
 } from 'lucide-react';
 import api from '../../api';
 import { useAuth } from '../../auth/AuthContext';
@@ -11,6 +11,9 @@ import { toast, toastError } from '../../lib/toast';
 import CalendarFeedDialog from './CalendarFeedDialog';
 import { promptInstall, useInstallMode } from '../../pwa/install';
 import { useThemeSwitch } from '../../lib/preferences';
+import {
+  currentSubscription, disablePush, enablePush, pushConfig, pushSupported,
+} from '../../pwa/push';
 
 const ROW = 'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg';
 
@@ -35,12 +38,20 @@ function EmailAlertsSwitch() {
   };
 
   return (
-    <button type="button" role="switch" aria-checked={on} onClick={toggle} disabled={busy || !profile} className={cx(ROW, 'justify-between disabled:opacity-60')}>
+    <SwitchRow icon={Mail} label="Email alerts" detail={on ? 'On: some alerts are also emailed' : 'Off: in-app only'} on={on} onClick={toggle} disabled={busy || !profile} />
+  );
+}
+
+function SwitchRow({
+  icon: Icon, label, detail, on, onClick, disabled,
+}) {
+  return (
+    <button type="button" role="switch" aria-checked={on} onClick={onClick} disabled={disabled} className={cx(ROW, 'justify-between disabled:opacity-60')}>
       <span className="flex items-center gap-2.5">
-        <Mail aria-hidden className="size-4 text-ink-500" />
+        <Icon aria-hidden className="size-4 shrink-0 text-ink-500" />
         <span>
-          <span className="block">Email alerts</span>
-          <span className="block text-meta text-ink-600">{on ? 'On: some alerts are also emailed' : 'Off: in-app only'}</span>
+          <span className="block">{label}</span>
+          <span className="block text-meta text-ink-600">{detail}</span>
         </span>
       </span>
       <span aria-hidden className={cx('relative h-6 w-10 shrink-0 rounded-full transition-colors', on ? 'bg-brand-red-dark' : 'bg-ink-300')}>
@@ -48,6 +59,58 @@ function EmailAlertsSwitch() {
       </span>
     </button>
   );
+}
+
+// R3: Web Push for this browser or installed app only. Shown when the browser
+// supports it and the server has push turned on. The permission prompt comes
+// only from clicking the switch.
+let pushConfigCache = null;
+function PushSwitch() {
+  const [state, setState] = useState(null); // null (hidden), 'off', 'on', 'denied'
+  const [busy, setBusy] = useState(false);
+  const [publicKey, setPublicKey] = useState(null);
+
+  useEffect(() => {
+    if (!pushSupported()) return undefined;
+    let live = true;
+    (async () => {
+      try {
+        pushConfigCache ??= await pushConfig();
+        if (!pushConfigCache.enabled || !live) return;
+        setPublicKey(pushConfigCache.public_key);
+        const sub = await currentSubscription();
+        if (!live) return;
+        setState(Notification.permission === 'denied' ? 'denied' : sub ? 'on' : 'off');
+      } catch {
+        // No push on this device.
+      }
+    })();
+    return () => { live = false; };
+  }, []);
+
+  if (!state) return null;
+  const on = state === 'on';
+  const toggle = async () => {
+    setBusy(true);
+    try {
+      if (on) {
+        await disablePush();
+        setState('off');
+        toast.success('Push notifications off on this device');
+      } else {
+        const result = await enablePush(publicKey);
+        setState(result === 'on' ? 'on' : 'denied');
+        if (result === 'on') toast.success('Push notifications on for this device');
+        else toast.error('Notifications are blocked for this site. Allow them in your browser settings, then try again.');
+      }
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const detail = { on: 'On: alerts reach this device', off: 'Off: in-app only', denied: 'Blocked in browser settings' }[state];
+  return <SwitchRow icon={BellRing} label="Push notifications on this device" detail={detail} on={on} onClick={toggle} disabled={busy} />;
 }
 
 // Q3: offered only when the browser says the app can be installed, or on an
@@ -106,6 +169,7 @@ export function AccountItems({ onCalendar, children }) {
   return (
     <>
       <EmailAlertsSwitch />
+      <PushSwitch />
       <button type="button" onClick={onCalendar} className={ROW}>
         <CalendarSync aria-hidden className="size-4 text-ink-500" /> Calendar subscription
       </button>

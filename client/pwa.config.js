@@ -43,6 +43,8 @@ export const workbox = {
   navigateFallback: '/index.html',
   navigateFallbackDenylist: [/^\/api\//],
   cleanupOutdatedCaches: true,
+  // Push and notification-click handlers (R3), kept in public/push-sw.js.
+  importScripts: ['push-sw.js'],
   // The new version waits until the user chooses Reload in the prompt.
   skipWaiting: false,
   clientsClaim: false,

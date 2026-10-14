@@ -150,6 +150,10 @@ values into the files.
 | `EMAIL_ALLOW_EXTERNAL` | no | `false` | `true` allows other domains |
 | `EMAIL_RETRY_BASE_MINUTES` | no | `1` | Outbox retry backoff base |
 | `EMAIL_NOTIFICATION_TYPES` | no | see `server/.env.example` | Notification types that may be emailed |
+| `PUSH_ENABLED` | no | `false` | `true` sends Web Push to devices that turned it on (same types as email) |
+| `VAPID_PUBLIC_KEY` | with push | | From `npm run vapid`. Public, sent to browsers |
+| `VAPID_PRIVATE_KEY` | with push | | From `npm run vapid` (secret). Changing the pair drops every subscription |
+| `VAPID_SUBJECT` | with push | | Contact for push services, e.g. `mailto:ops@example.com` |
 
 ### Client (`client`, build time)
 
