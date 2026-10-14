@@ -2,8 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23ED1C24'/%3E%3C/svg%3E" />
+    <!-- viewport-fit=cover: the app draws under the notch and home indicator and
+         pads itself with env(safe-area-inset-*) (index.css, .safe-x/.safe-top). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Digital shift handovers with acknowledgement, supervisor review and an audit trail." />
+    <!-- Installable app (Q1). The manifest link is added by vite-plugin-pwa. -->
+    <meta name="theme-color" content="#0d0d0d" />
+    <meta name="application-name" content="SHMS" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="SHMS" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
     <!-- Apply the saved (or OS) theme before first paint to avoid a flash. -->
     <script>
       (function () {

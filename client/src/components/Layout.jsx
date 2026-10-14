@@ -67,8 +67,8 @@ export default function Layout() {
         Skip to content
       </a>
 
-      {/* Fixed chrome: utility bar (2.75rem) + header (3.5rem) = top-25 offsets below. */}
-      <div className="fixed inset-x-0 top-0 z-40">
+      {/* Fixed chrome: utility bar (2.75rem) + header (3.5rem) + the top safe area = --chrome-top offsets below. */}
+      <div className="safe-top safe-x fixed inset-x-0 top-0 z-40 bg-brand-black">
         <UtilityBar />
         <header className="glass-dark flex h-14 items-center gap-2 border-b-2 border-brand-red px-3 sm:px-4">
           <button
@@ -117,7 +117,7 @@ export default function Layout() {
       </div>
 
       {/* Rail on tablets, full sidebar from lg up, drawer below md. */}
-      <aside className="fixed top-25 bottom-0 left-0 z-30 hidden w-16 border-r border-ink-200 bg-surface md:block lg:w-60">
+      <aside className="fixed top-(--chrome-top) bottom-0 left-0 z-30 hidden w-16 border-r border-ink-200 bg-surface md:block lg:w-60">
         <div className="lg:hidden"><SidebarNav items={items} compact /></div>
         <div className="hidden lg:block"><SidebarNav items={items} /></div>
       </aside>
@@ -165,7 +165,7 @@ export default function Layout() {
 
       <main
         id="main"
-        className={cx('min-h-screen pt-25 md:pl-16 lg:pl-60', photo && 'page-photo')}
+        className={cx('safe-x min-h-screen pt-(--chrome-top) md:pl-16 lg:pl-60', photo && 'page-photo')}
         style={photo ? { '--page-photo': `url(${photo})` } : undefined}
       >
         {/* Keyed on the route so each screen fades in on navigation. */}

@@ -194,3 +194,23 @@
     }
   }
 }
+
+/* Safe areas (Q1). index.html sets viewport-fit=cover, so on phones with a
+   notch or home indicator the page runs edge to edge; fixed chrome pads
+   itself back in. --chrome-top is the app header's height (utility bar
+   2.75rem + header 3.5rem) plus the top inset; main content and the side rail
+   start below it. All insets are 0 on desktops. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --chrome-top: calc(6.25rem + var(--safe-top));
+}
+@utility safe-top {
+  padding-top: var(--safe-top);
+}
+@utility safe-x {
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}

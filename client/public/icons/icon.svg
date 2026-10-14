@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<rect width="512" height="512" rx="96" fill="#0d0d0d"/>
+<g transform="translate(256 256) scale(1) translate(-256 -256)">
+<text x="256" y="300" text-anchor="middle" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-weight="750" font-size="224" letter-spacing="-8" fill="#ffffff">SH</text>
+<rect x="156" y="350" width="200" height="22" rx="11" fill="#ed1c24"/>
+</g>
+</svg>

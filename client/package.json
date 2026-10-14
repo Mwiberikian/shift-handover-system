@@ -5,7 +5,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "check:touch": "node e2e/touch-targets.mjs"
+    "check:touch": "node e2e/touch-targets.mjs",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "type": "module",
   "private": true,
@@ -33,6 +34,8 @@
     "playwright": "1.56.1",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.2",
-    "vitest": "^5.0.4"
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.4",
+    "workbox-window": "^7.4.1"
   }
 }
