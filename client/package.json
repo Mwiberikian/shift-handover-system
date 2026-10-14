@@ -6,7 +6,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "check:touch": "node e2e/touch-targets.mjs",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "check:sync": "node e2e/sync.mjs"
   },
   "type": "module",
   "private": true,
