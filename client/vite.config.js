@@ -9,6 +9,9 @@ export default defineConfig({
   server: { port: 5173 },
   test: {
     environment: 'jsdom',
+    // Half the cores: with one jsdom fork per core, the typing-heavy tests ran
+    // past their 5 s timeout on a busy machine (22 files since Part R).
+    maxWorkers: '50%',
     setupFiles: ['./src/test/setup.js'],
   },
 });
