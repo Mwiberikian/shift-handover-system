@@ -5,6 +5,7 @@ const { writeAudit } = require('../../utils/audit');
 const { assertDepartmentAccess } = require('../../middleware/auth');
 const { findMissingFields } = require('./template.validation');
 const { notify } = require('../notifications/notify');
+const { stopTimersForRecord } = require('../sessions/sessions.service');
 
 const RECORD_SELECT = `
   SELECT r.*, s.shift_type, s.start_time AS shift_start, s.end_time AS shift_end,
@@ -373,6 +374,8 @@ async function submit(user, recordId) {
       [recordId],
     );
     if (!submitted) throw new AppError(409, 'Handover record is no longer a draft and is locked against edits');
+    // Part M: running timers on this record's tasks stop at submission.
+    await stopTimersForRecord(client, recordId, submitted.submitted_at);
     await writeAudit(client, {
       userId: user.user_id, entityType: 'handover_record', entityId: recordId, action: 'submit',
       previousValue: auditView(record),

@@ -21,6 +21,10 @@ const messages = require('./modules/messages/messages.routes');
 app.use('/api/messages', messages);
 app.use('/api/directory', messages.directory);
 app.use('/api/shifts', require('./modules/shifts/shifts.routes'));
+const sessions = require('./modules/sessions/sessions.routes');
+
+app.use('/api/sessions', sessions.sessions);
+app.use('/api/tasks', sessions.tasks);
 app.use('/api/admin', require('./modules/admin/admin.routes'));
 // Public: unauthenticated, rate-limited request form (grants no access).
 app.use('/api/access-requests', require('./modules/accessRequests/accessRequests.routes'));

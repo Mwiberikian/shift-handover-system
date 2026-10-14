@@ -12,6 +12,7 @@ const cron = require('node-cron');
 const pool = require('../config/db');
 const { notify } = require('../modules/notifications/notify');
 const { processOutbox } = require('../modules/notifications/email/outbox');
+const { runSessionCheck } = require('./sessions');
 const { UNACK_ALERT_HOURS } = require('../config/constants');
 
 const minutes = (name, fallback) => {
@@ -182,15 +183,26 @@ async function runReminderCheck(now = new Date(), { db = pool, config = reminder
   return sent;
 }
 
-// The jobs tick, every minute: shift reminders, then the email outbox
-// (sending is never done inside a notification's transaction). Either part
-// can be off; a failure in one does not stop the other.
-function startJobs({ reminders = true, email = true, logger = console } = {}) {
+// The jobs tick, every minute: work sessions (Part M), shift reminders, then
+// the email outbox (sending is never done inside a notification's
+// transaction). Each part can be off; a failure in one does not stop the
+// others.
+function startJobs({
+  reminders = true, email = true, sessions = true, logger = console,
+} = {}) {
   let running = false;
   const task = cron.schedule('* * * * *', async () => {
     if (running) return; // never overlap ticks
     running = true;
     try {
+      if (sessions) {
+        try {
+          const { ended, timers_stopped_on_submit: stopped } = await runSessionCheck(new Date());
+          if (ended.length || stopped) logger.log(`[sessions] ended ${ended.length} (${ended.map((e) => e.end_reason).join(', ')}), ${stopped} timers stopped on submit`);
+        } catch (err) {
+          logger.error('[sessions] check failed:', err.message);
+        }
+      }
       if (reminders) {
         try {
           const sent = await runReminderCheck(new Date());

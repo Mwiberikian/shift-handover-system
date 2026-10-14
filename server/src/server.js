@@ -25,12 +25,14 @@ app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT} (UV_THREADPOOL_SIZE=${process.env.UV_THREADPOOL_SIZE})`);
 });
 
-// The jobs tick runs every minute: shift reminders (REMINDERS_ENABLED=false
-// turns them off) and the email outbox (only when EMAIL_ENABLED=true). Never
-// under tests, which call runReminderCheck / processOutbox with their own clock.
+// The jobs tick runs every minute: work sessions (always: ends silent and
+// finished sessions, stops their timers), shift reminders
+// (REMINDERS_ENABLED=false turns them off) and the email outbox (only when
+// EMAIL_ENABLED=true). Never under tests, which call runSessionCheck /
+// runReminderCheck / processOutbox with their own clock.
 const reminders = process.env.REMINDERS_ENABLED !== 'false';
 const email = process.env.EMAIL_ENABLED === 'true';
-if (process.env.NODE_ENV !== 'test' && (reminders || email)) {
-  startJobs({ reminders, email });
-  console.log(`Jobs started (every minute): reminders ${reminders ? 'on' : 'off'}, email outbox ${email ? 'on' : 'off'}.`);
+if (process.env.NODE_ENV !== 'test') {
+  startJobs({ reminders, email, sessions: true });
+  console.log(`Jobs started (every minute): sessions on, reminders ${reminders ? 'on' : 'off'}, email outbox ${email ? 'on' : 'off'}.`);
 }
