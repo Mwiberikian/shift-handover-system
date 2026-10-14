@@ -9,7 +9,7 @@ function errorHandler(err, req, res, next) {
 
   // Raised by the integrity triggers in the initial migration.
   if (err.code === 'P0001') {
-    const status = ['record_locked', 'illegal_transition', 'append_only'].includes(err.hint) ? 409 : 400;
+    const status = ['record_locked', 'illegal_transition', 'append_only', 'not_submitted'].includes(err.hint) ? 409 : 400;
     return res.status(status).json({ error: err.message, code: err.hint });
   }
   if (err.code === '23505') return res.status(409).json({ error: 'Duplicate value', detail: err.detail });
