@@ -26,9 +26,40 @@ export const manifest = {
   ],
 };
 
+// True for every request the service worker must leave to the network: API
+// calls (any origin: in production the API is usually on its own host) and
+// anything carrying an Authorization header. Workbox serialises this function
+// into sw.js, so it must not use anything outside its own body.
+export function isNetworkOnly({ url, request }) {
+  return url.pathname.startsWith('/api/') || request.headers.has('authorization');
+}
+
+export const workbox = {
+  // App shell only: the HTML, the JS and CSS chunks, the font and the icons.
+  // Not the page photos, and never data. Section 1.5.1: no offline data.
+  globPatterns: ['**/*.{html,js,css,woff2}', 'icons/*.{png,svg}', 'manifest.webmanifest'],
+  globIgnores: ['**/assets/images/**', '**/*.webp'],
+  // Deep links (/supervisor/queue) open the shell; the API is never a page.
+  navigateFallback: '/index.html',
+  navigateFallbackDenylist: [/^\/api\//],
+  cleanupOutdatedCaches: true,
+  // The new version waits until the user chooses Reload in the prompt.
+  skipWaiting: false,
+  clientsClaim: false,
+  runtimeCaching: [
+    // NetworkOnly: never stored in any cache, so a response to a request with
+    // Authorization cannot be cached either. Offline, the call fails and the
+    // offline banner explains why. Other methods are not routed at all: the
+    // service worker passes them straight to the network, and the Cache API
+    // cannot store them.
+    { urlPattern: isNetworkOnly, handler: 'NetworkOnly', method: 'GET' },
+  ],
+};
+
 export const pwaOptions = {
   manifest,
-  // The service worker is not registered yet (Q2 adds it).
+  // Registered from src/pwa/registerSW.js, which drives the update prompt.
+  registerType: 'prompt',
   injectRegister: false,
-  includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
+  workbox,
 };

@@ -5,6 +5,9 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from './auth/AuthContext';
 import { ThemeProvider, useTheme } from './theme/ThemeContext';
 import App from './App';
+import OfflineBanner from './components/shell/OfflineBanner';
+import UpdatePrompt from './components/shell/UpdatePrompt';
+import { startServiceWorker } from './pwa/registerSW';
 import './index.css';
 
 // Toasts follow the app theme.
@@ -41,7 +44,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <App />
         </AuthProvider>
         <ThemedToaster />
+        <OfflineBanner />
+        <UpdatePrompt />
       </BrowserRouter>
     </ThemeProvider>
   </React.StrictMode>,
 );
+
+startServiceWorker();
