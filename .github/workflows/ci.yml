@@ -1,4 +1,5 @@
-# NFR-18: server and client tests on Node 18, 20 and 22 against PostgreSQL 15.
+# NFR-18: server and client tests on Node 22 and 24 against PostgreSQL 15
+# (Node 18 and 20 are end of life, and the dependencies need 20 or 22).
 # The database credentials below exist only inside the throwaway CI service
 # container; they are not secrets.
 name: CI
@@ -14,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [18, 20, 22]
+        node: [22, 24]
     services:
       postgres:
         image: postgres:15
@@ -55,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [18, 20, 22]
+        node: [22, 24]
     defaults:
       run:
         working-directory: client

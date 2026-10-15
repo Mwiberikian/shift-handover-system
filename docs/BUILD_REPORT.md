@@ -367,6 +367,19 @@ function` on 20). Dependencies that declare newer engines: `google-auth-library`
 Options: pin older majors that support Node 18 (e.g. `node-pg-migrate` 7, `vitest` 2 with
 `jsdom` 24), or accept Node 22 as the floor, which would conflict with NFR-18 as written.
 
+**Decision (2026-10-15): Node 22 is the floor.** Both `package.json` files (and their lockfiles)
+now declare `"engines": {"node": ">=22"}` and CI runs on Node **22 and 24**. Node 18 and 20 are
+dropped because:
+- both are end of life: Node 18 since 30 April 2025, Node 20 since 30 April 2026, so neither gets
+  security fixes;
+- the dependencies require newer versions: `node-pg-migrate` 9, `node-cron` 4 and `vite` 8 need
+  Node 20 or later, and `google-auth-library` 11, `vitest` 5 and `jsdom` 30 need Node 22 or later.
+
+Pinning older majors would mean running unsupported releases on an unsupported runtime. This
+**departs from NFR-18 as written** ("Node.js 18 or later"), so NFR-18 stays Partly met
+(REQUIREMENTS_STATUS). `server/tests/node-version.test.js` checks the engines fields, the CI
+matrix and the Docker base image.
+
 ## Part F — Parts P, Q and R: hosting, installable app, sync and push (2026-10-14)
 
 One commit per numbered item, authored by Mwiberikian, no co-author or
