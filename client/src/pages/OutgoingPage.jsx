@@ -18,6 +18,8 @@ import { TASK_DESCRIPTION } from '../lib/limits';
 import { toast, toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 import ShiftBanner from '../components/shell/ShiftBanner';
+import { TaskTimerButton } from '../components/work/SessionControls';
+import { useWorkSession } from '../lib/workSession';
 import { useRefresh } from '../lib/refresh';
 
 // Requirement list for the department template, evaluated against what the
@@ -109,6 +111,7 @@ export function DraftEditor({ record, meta, reload }) {
   const [addI, addingIncident] = useAction();
   const [submitRun, submitting] = useAction();
   const [statusRun] = useAction();
+  const { refresh: refreshSession } = useWorkSession();
 
   const fields = Object.fromEntries(meta.template.field_definition.fields.map((f) => [f.key, f]));
   const req = requirementsFor(meta.template, record, notes, incoming);
@@ -157,7 +160,10 @@ export function DraftEditor({ record, meta, reload }) {
       });
     });
     setConfirmOpen(false);
-    if (ok) reload();
+    if (ok) {
+      reload();
+      refreshSession(); // submitting stopped any task timer
+    }
   };
 
   const summaryField = fields.summary_notes;
@@ -223,14 +229,17 @@ export function DraftEditor({ record, meta, reload }) {
           <TaskTable
             tasks={record.tasks}
             actions={(t) => (
-              <Select
-                label={`Status for “${t.description}”`}
-                hideLabel
-                value={t.status}
-                onChange={(e) => setTaskStatus(t, e.target.value)}
-                className="w-40"
-                options={[{ value: 'open', label: 'Open' }, { value: 'in_progress', label: 'In progress' }, { value: 'resolved', label: 'Resolved' }]}
-              />
+              <div className="flex items-center gap-2">
+                <TaskTimerButton task={t} />
+                <Select
+                  label={`Status for “${t.description}”`}
+                  hideLabel
+                  value={t.status}
+                  onChange={(e) => setTaskStatus(t, e.target.value)}
+                  className="w-40"
+                  options={[{ value: 'open', label: 'Open' }, { value: 'in_progress', label: 'In progress' }, { value: 'resolved', label: 'Resolved' }]}
+                />
+              </div>
             )}
           />
           <form onSubmit={addTask} className="mt-4 rounded-lg border border-dashed border-ink-300 bg-ink-50/60 p-3 sm:p-4">

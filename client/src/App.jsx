@@ -22,6 +22,7 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const ReportPage = lazy(() => import('./pages/ReportPage'));
 const PrintReport = lazy(() => import('./pages/PrintReport'));
 const LivePage = lazy(() => import('./pages/LivePage'));
+const MyWorkPage = lazy(() => import('./pages/MyWorkPage'));
 
 // Only lets a user into the dashboard for the role in their JWT.
 export function RequireRole({ role }) {
@@ -64,6 +65,7 @@ export default function App() {
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/shifts" element={<MyShiftsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/work" element={<MyWorkPage />} />
         <Route path="/reports/:id" element={<ReportPage />} />
         <Route path="/outgoing" element={<RequireRole role="outgoing_staff" />}>
           <Route index element={<OutgoingPage view="current" />} />

@@ -1,5 +1,5 @@
 import {
-  Activity, AlertTriangle, CalendarClock, CalendarDays, CircleUser, ClipboardList, FileCog, FileText, History, Inbox, LayoutDashboard, ListChecks, MessagesSquare, Search, UserPlus,
+  Activity, AlertTriangle, Timer, CalendarClock, CalendarDays, CircleUser, ClipboardList, FileCog, FileText, History, Inbox, LayoutDashboard, ListChecks, MessagesSquare, Search, UserPlus,
   Users,
 } from 'lucide-react';
 
@@ -7,11 +7,13 @@ import {
 const MESSAGES = { to: '/messages', label: 'Messages', icon: MessagesSquare, badge: 'messages' };
 const MY_SHIFTS = { to: '/shifts', label: 'My shifts', icon: CalendarClock };
 const REPORTS = { to: '/reports', label: 'Reports', icon: FileText };
+const MY_WORK = { to: '/work', label: 'My work', icon: Timer };
 
 export const NAV = {
   outgoing_staff: [
     { to: '/outgoing', end: true, label: 'Current handover', icon: ClipboardList },
     { to: '/outgoing/history', label: 'My handovers', icon: History },
+    MY_WORK,
     REPORTS,
     MY_SHIFTS,
     MESSAGES,
@@ -19,6 +21,7 @@ export const NAV = {
   incoming_staff: [
     { to: '/incoming', end: true, label: 'Awaiting action', icon: Inbox },
     { to: '/incoming/history', label: 'All handovers', icon: History },
+    MY_WORK,
     REPORTS,
     MY_SHIFTS,
     MESSAGES,

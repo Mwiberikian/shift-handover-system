@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  ChevronDown, ClipboardList, Handshake, Keyboard, LifeBuoy, Mail, Phone, ShieldCheck, UserCog,
+  ChevronDown, ClipboardList, Handshake, Keyboard, LifeBuoy, Mail, Phone, ShieldCheck, Timer, UserCog,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import PublicHeader from '../components/shell/PublicHeader';
 import { Callout, Card } from '../components/ui';
 import { ROLE_LABEL, cx } from '../lib/format';
 import { SUPPORT, telHref } from '../lib/support';
+import { SessionNotice } from '../components/work/SessionControls';
 
 // Role guides describe what the app actually does; keep them in step with the UI.
 const ROLE_GUIDES = [
@@ -166,6 +167,7 @@ export default function Help() {
               {ROLE_LABEL[g.role]}
             </a>
           ))}
+          <a href="#work-sessions" className="inline-flex min-h-11 items-center rounded-full border border-ink-200 bg-surface px-3.5 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">Work sessions</a>
           <a href="#faq" className="inline-flex min-h-11 items-center rounded-full border border-ink-200 bg-surface px-3.5 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">General questions</a>
           <a href="#keyboard" className="inline-flex min-h-11 items-center rounded-full border border-ink-200 bg-surface px-3.5 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">Keyboard</a>
           <a href="#contact" className="inline-flex min-h-11 items-center rounded-full border border-ink-200 bg-surface px-3.5 text-meta font-medium text-ink-700 hover:border-ink-300 hover:text-fg">Contact</a>
@@ -179,6 +181,17 @@ export default function Help() {
 
         <div className="mt-6 space-y-6">
           {guides.map((g) => <RoleGuide key={g.role} guide={g} mine={g.role === myRole} />)}
+
+          <Card id="work-sessions" className="scroll-mt-32" title="Work sessions and task timers" subtitle="Outgoing and incoming staff" icon={Timer}>
+            <SessionNotice />
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-ink-800">
+              <li>Choose <strong>Start shift</strong> in the header when you begin work, and <strong>End shift</strong> when you finish. You can only start while you are on the roster for the shift that is on now.</li>
+              <li>While the app is open and on screen it tells the server once a minute that you are still working. If it is closed or hidden for 10 minutes, your session ends at the last time it was open. Any session still open 30 minutes after your shift ends is closed.</li>
+              <li>On your draft handover, <strong>Timer</strong> next to a task times your work on it. Starting another task's timer stops the first; ending your shift or submitting the handover stops it too.</li>
+              <li>What is stored: when each session started and ended (and why it ended), the time of the last heartbeat, and when each task timer started and stopped. Nothing else: no screen, keystroke, location or camera data. These records cannot be changed or deleted and are kept indefinitely.</li>
+              <li>Your supervisor sees, for the shift that is on now, whether you are working, idle (no heartbeat for 2 minutes) or finished, your session and task times, and your task and incident counts. <strong>My work</strong> shows your own history.</li>
+            </ul>
+          </Card>
 
           <Card id="faq" className="scroll-mt-32" title="General questions" icon={LifeBuoy}>
             <Faq items={GENERAL_FAQ} />

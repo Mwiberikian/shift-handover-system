@@ -18,6 +18,8 @@ import { useUnreadPolling } from '../lib/unread';
 import { cx } from '../lib/format';
 import { ConfirmDialog } from './ui';
 import Brand from './shell/Brand';
+import { HeaderSessionControl } from './work/SessionControls';
+import { WORKER_ROLES, WorkSessionProvider } from '../lib/workSession';
 
 function UserBlock({ profile, role, dark = true }) {
   const name = profile?.full_name ?? '…';
@@ -44,9 +46,11 @@ export default function Layout() {
   useUnreadPolling(claims?.user_id);
   if (!claims) return <Navigate to="/login" replace />;
   const items = NAV[claims.role] ?? [];
+  const worker = WORKER_ROLES.includes(claims.role);
   const photo = pagePhotoFor(claims.role, pathname);
 
   return (
+    <WorkSessionProvider enabled={worker}>
     <div className="min-h-screen">
       <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:inline-flex focus:min-h-11 focus:items-center">
         Skip to content
@@ -64,7 +68,9 @@ export default function Layout() {
           >
             <Menu aria-hidden className="size-5" />
           </button>
-          <Link to="/" aria-label="Shift Handover home" className="inline-flex min-h-11 min-w-11 items-center rounded-md">
+          {/* Below 400 px a worker's header has no room for both the logo and the
+              session control; Home stays in the drawer. */}
+          <Link to="/" aria-label="Shift Handover home" className={cx('min-h-11 min-w-11 items-center rounded-md', worker ? 'hidden min-[400px]:inline-flex' : 'inline-flex')}>
             <Brand showName={false} className="lg:hidden" />
             <Brand className="hidden lg:flex" />
           </Link>
@@ -75,6 +81,7 @@ export default function Layout() {
           <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2 lg:gap-3">
             <ThemeToggle className="hidden sm:grid" />
             <div className="hidden sm:block"><HelpMenu /></div>
+            <HeaderSessionControl />
             <NotificationsMenu />
             <span aria-hidden className="hidden h-6 w-px bg-white/15 lg:block" />
             <UserMenu>
@@ -161,5 +168,6 @@ export default function Layout() {
 
       <TabBar role={claims.role} onLogout={() => setConfirmLogout(true)} />
     </div>
+    </WorkSessionProvider>
   );
 }
