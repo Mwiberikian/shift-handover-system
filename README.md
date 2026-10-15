@@ -25,20 +25,33 @@ npm install
 npm run dev                          # UI on http://localhost:5173
 ```
 
-Seeded logins (password `Password123!`):
+Seeded logins (57 synthetic accounts, all with password `Password123!`):
 
-| Department | Outgoing | Incoming | Supervisor |
+| Department | Outgoing (6) | Incoming (6) | Supervisors (2) |
 |---|---|---|---|
-| Ground Operations (`ground_ops`) | KQ1001 | KQ1002 | KQ1003 |
-| Aircraft Maintenance (`maint`) | KQ2001 | KQ2002 | KQ2003 |
-| Customer Service (`cust_svc`) | KQ3001 | KQ3002 | KQ3003 |
-| Flight Operations (`flight_ops`) | KQ4001 | KQ4002 | KQ4003 |
+| Ground Operations (`ground_ops`) | KQ1001, KQ1011–KQ1015 | KQ1002, KQ1021–KQ1025 | KQ1003, KQ1004 |
+| Aircraft Maintenance (`maint`) | KQ2001, KQ2011–KQ2015 | KQ2002, KQ2021–KQ2025 | KQ2003, KQ2004 |
+| Customer Service (`cust_svc`) | KQ3001, KQ3011–KQ3015 | KQ3002, KQ3021–KQ3025 | KQ3003, KQ3004 |
+| Flight Operations (`flight_ops`) | KQ4001, KQ4011–KQ4015 | KQ4002, KQ4021–KQ4025 | KQ4003, KQ4004 |
 | Admin | KQ9001 | | |
 
-The seed gives Ground Ops an acknowledged previous-shift record with an open
-task, so submitting the current Ground Ops handover demonstrates carry-forward.
-It also rosters each department's outgoing user on the current shift and its
-incoming user on the next one.
+The first account in each column (KQd001, KQd002, KQd003, KQ9001) is the
+original demo login and is unchanged. The seed wipes the database and rebuilds
+the same data set every time it runs:
+
+- Shifts for every department from 06:00 Nairobi time seven days ago to the
+  next shift, with three outgoing and three incoming staff on each. KQd001
+  works the current shift and KQd002 the next one.
+- For every past shift: an acknowledged handover record with two tasks, a work
+  session for each rostered worker, two task timers, and the outgoing author's
+  submitted shift report shared with the department's first supervisor (with
+  its notification).
+- Ground Ops' previous-shift record has an open task, so submitting the current
+  Ground Ops handover demonstrates carry-forward.
+- Two workers per department are on shift now (KQd011 and KQd023). Unless a
+  client sends heartbeats, the session job ends their sessions 10 minutes later.
+
+All seeded free text starts with `SYNTHETIC`.
 
 ## Features at a glance
 
