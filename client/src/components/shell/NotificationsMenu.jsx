@@ -28,11 +28,13 @@ const KIND = {
   reminder: { icon: Clock, chip: 'bg-status-amber-soft text-status-amber ring-status-amber-line' },
   message: { icon: MessagesSquare, chip: 'bg-status-blue-soft text-status-blue ring-status-blue-line' },
   handover: { icon: FileText, chip: 'bg-ink-100 text-ink-700 ring-ink-200' },
+  report: { icon: FileText, chip: 'bg-status-green-soft text-status-green ring-status-green-line' },
 };
 
 // Title, detail line and kind for one notification.
 function describe(n) {
   if (n.type === 'reminder') return { kind: 'reminder', title: n.title ?? 'Reminder', detail: n.body ?? '' };
+  if (n.type === 'report_shared') return { kind: 'report', title: n.title ?? 'A shift report was shared with you', detail: 'Open it to read the report.' };
   if (n.type === 'message') {
     return { kind: 'message', title: `Message from ${n.message_sender_name ?? 'a colleague'}`, detail: n.message_subject || 'Open Messages to read it.' };
   }
@@ -46,6 +48,7 @@ function describe(n) {
 // Where clicking a notification takes you.
 function targetFor(n, role) {
   if (n.type === 'message') return '/messages';
+  if (n.type === 'report_shared') return n.report_id ? `/reports/${n.report_id}` : '/reports?view=shared';
   if (n.type !== 'reminder') return null;
   if (n.reminder_type?.startsWith('handover_due')) return '/outgoing';
   if (n.reminder_type === 'ack_pending') return '/incoming';

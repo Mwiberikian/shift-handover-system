@@ -26,6 +26,10 @@ const MAPS = {
     escalated: ['red', 'Escalated', AlertTriangle],
     closed: ['green', 'Closed', Lock],
   },
+  report: {
+    draft: ['gray', 'Draft', FilePen],
+    submitted: ['blue', 'Submitted', Send],
+  },
   task: {
     open: ['gray', 'Open', Circle],
     in_progress: ['amber', 'In progress', CircleDot],

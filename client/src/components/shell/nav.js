@@ -6,17 +6,20 @@ import {
 // Sidebar links per role. Each role only ever sees its own entries.
 const MESSAGES = { to: '/messages', label: 'Messages', icon: MessagesSquare, badge: 'messages' };
 const MY_SHIFTS = { to: '/shifts', label: 'My shifts', icon: CalendarClock };
+const REPORTS = { to: '/reports', label: 'Reports', icon: FileText };
 
 export const NAV = {
   outgoing_staff: [
     { to: '/outgoing', end: true, label: 'Current handover', icon: ClipboardList },
     { to: '/outgoing/history', label: 'My handovers', icon: History },
+    REPORTS,
     MY_SHIFTS,
     MESSAGES,
   ],
   incoming_staff: [
     { to: '/incoming', end: true, label: 'Awaiting action', icon: Inbox },
     { to: '/incoming/history', label: 'All handovers', icon: History },
+    REPORTS,
     MY_SHIFTS,
     MESSAGES,
   ],
@@ -26,6 +29,7 @@ export const NAV = {
     { to: '/supervisor/escalated', label: 'Escalated', icon: AlertTriangle },
     { to: '/supervisor/search', label: 'Search', icon: Search },
     { to: '/supervisor/roster', label: 'Roster', icon: CalendarDays },
+    REPORTS,
     MY_SHIFTS,
     MESSAGES,
   ],
@@ -33,17 +37,18 @@ export const NAV = {
     { to: '/admin/users', label: 'Users', icon: Users },
     { to: '/admin/requests', label: 'Access requests', icon: UserPlus },
     { to: '/admin/templates', label: 'Templates', icon: FileCog },
+    REPORTS,
     MESSAGES,
   ],
 };
 
 // Bottom tab bar below md (Q4): the same routes as the sidebar, four per role.
 // 'me' opens the account sheet instead of a route. A tab marked `planned`
-// points at a screen that is not built yet (shift reports, the supervisor live
-// board) and stays hidden until its route exists; the sidebar and drawer still
-// reach every built screen.
+// points at a screen that is not built yet (the supervisor live board) and
+// stays hidden until its route exists; the sidebar and drawer still reach
+// every built screen. Admins reach Reports from the sidebar and the Me sheet.
 const TAB_MESSAGES = { key: 'messages', to: '/messages', label: 'Messages', icon: MessagesSquare, badge: 'messages' };
-const TAB_REPORTS = { key: 'reports', to: '/reports', label: 'Reports', icon: FileText, planned: true };
+const TAB_REPORTS = { key: 'reports', to: '/reports', label: 'Reports', icon: FileText };
 const TAB_ME = { key: 'me', label: 'Me', icon: CircleUser, me: true };
 
 export const TABS = {

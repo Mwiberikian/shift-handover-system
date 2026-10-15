@@ -34,9 +34,10 @@ describe('tabs per role', () => {
         if (!tab.me) expect(navPaths.has(tab.to)).toBe(true);
       }
     }
-    // Shift reports and the live board have no route yet (see REQUIREMENTS_STATUS).
-    expect(Object.values(TABS).flat().filter((t) => t.planned).map((t) => t.label).sort()).toEqual(['Live', 'Reports', 'Reports', 'Reports']);
-    expect(tabsFor('supervisor').map((t) => t.label)).toEqual(['Overview', 'Messages']);
+    // The live board has no route yet (see REQUIREMENTS_STATUS).
+    expect(Object.values(TABS).flat().filter((t) => t.planned).map((t) => t.label)).toEqual(['Live']);
+    expect(tabsFor('supervisor').map((t) => t.label)).toEqual(['Overview', 'Reports', 'Messages']);
+    expect(tabsFor('outgoing_staff').map((t) => t.label)).toEqual(['Handover', 'Reports', 'Messages', 'Me']);
   });
 
   test('Overview stays active on every supervisor screen except Live', () => {

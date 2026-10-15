@@ -18,6 +18,9 @@ const SupervisorPage = lazy(() => import('./pages/SupervisorPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const PrintRecord = lazy(() => import('./pages/PrintRecord'));
 const ChangePassword = lazy(() => import('./pages/ChangePassword'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const ReportPage = lazy(() => import('./pages/ReportPage'));
+const PrintReport = lazy(() => import('./pages/PrintReport'));
 
 // Only lets a user into the dashboard for the role in their JWT.
 export function RequireRole({ role }) {
@@ -55,9 +58,12 @@ export default function App() {
       <Route path="/change-password" element={claims ? <ChangePassword /> : <Navigate to="/login" replace />} />
       {/* Outside the app layout so it prints without navigation; the API applies the access rules. */}
       <Route path="/handovers/:id/print" element={claims ? <PrintRecord /> : <Navigate to="/login" replace />} />
+      <Route path="/reports/:id/print" element={claims ? <PrintReport /> : <Navigate to="/login" replace />} />
       <Route element={<Layout />}>
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/shifts" element={<MyShiftsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/reports/:id" element={<ReportPage />} />
         <Route path="/outgoing" element={<RequireRole role="outgoing_staff" />}>
           <Route index element={<OutgoingPage view="current" />} />
           <Route path="history" element={<OutgoingPage view="history" />} />
