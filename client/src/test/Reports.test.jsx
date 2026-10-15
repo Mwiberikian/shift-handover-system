@@ -61,6 +61,9 @@ describe('Reports page - staff', () => {
 
     expect(await screen.findByText(ROW.title)).toBeInTheDocument();
     expect(api.get).toHaveBeenCalledWith('/reports', { params: { scope: 'mine', page_size: 100 } });
+    // The title is the link; rows are not themselves controls (no nested controls).
+    expect(screen.getByRole('link', { name: ROW.title })).toHaveAttribute('href', `/reports/${ROW.report_id}`);
+    expect(screen.queryByRole('row', { name: /Open/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Download CSV' })).not.toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: 'Department' })).not.toBeInTheDocument();
 

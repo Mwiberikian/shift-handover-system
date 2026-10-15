@@ -1,6 +1,8 @@
 // R5 accessibility check: axe-core (WCAG 2.0/2.1/2.2 A and AA rules) on each
 // role's screens at the phone viewport (390 x 844), in light and dark themes,
-// plus the Me sheet opened from the tab bar.
+// plus the Me sheet opened from the tab bar and a worker's detail on the live
+// board. Needs the synthetic seed (npm run seed): the report screen opens the
+// newest report in the supervisor's department list.
 //
 //   BASE_URL=http://localhost:5301 API_URL=http://localhost:4300/api node e2e/axe-phone.mjs
 //
@@ -33,6 +35,19 @@ const SCREENS = [
   { name: 'admin-users', path: '/admin/users', account: 'KQ9001' },
   { name: 'admin-templates', path: '/admin/templates', account: 'KQ9001' },
   { name: 'admin-requests', path: '/admin/requests', account: 'KQ9001' },
+  { name: 'reports-staff', path: '/reports', account: 'KQ1001' },
+  { name: 'my-work', path: '/work', account: 'KQ1001' },
+  { name: 'reports-department', path: '/reports', account: 'KQ1003' },
+  {
+    name: 'report', account: 'KQ1003',
+    path: async (token) => {
+      const res = await fetch(`${API_URL}/reports?scope=department&page_size=1`, { headers: { authorization: `Bearer ${token}` } });
+      return `/reports/${(await res.json()).items[0].report_id}`;
+    },
+  },
+  { name: 'live-board', path: '/supervisor/live', account: 'KQ1003' },
+  { name: 'live-board-detail', path: '/supervisor/live', account: 'KQ1003', detail: true },
+  { name: 'live-board-admin', path: '/admin/live', account: 'KQ9001' },
 ];
 
 async function login(identifier) {
@@ -51,10 +66,17 @@ try {
       const ctx = await browser.newContext({
         viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: scheme,
       });
-      if (s.account) await ctx.addInitScript((t) => sessionStorage.setItem('shms_token', t), await login(s.account));
+      const token = s.account ? await login(s.account) : null;
+      if (token) await ctx.addInitScript((t) => sessionStorage.setItem('shms_token', t), token);
       const page = await ctx.newPage();
-      await page.goto(`${BASE_URL}${s.path}`, { waitUntil: 'networkidle' });
+      const path = typeof s.path === 'function' ? await s.path(token) : s.path;
+      await page.goto(`${BASE_URL}${path}`, { waitUntil: 'networkidle' });
       await page.waitForTimeout(800); // page fade-in animation
+      if (s.detail) {
+        await page.getByRole('button', { name: /Open details/ }).first().click(); // phone: rows are cards
+        await page.getByRole('dialog').getByRole('heading', { name: 'Timeline' }).waitFor();
+        await page.waitForTimeout(400); // drawer slide-in
+      }
       if (s.me) {
         await page.getByRole('button', { name: 'Me', exact: true }).click();
         await page.getByRole('dialog', { name: 'Me' }).getByRole('link', { name: 'Change password' }).waitFor();

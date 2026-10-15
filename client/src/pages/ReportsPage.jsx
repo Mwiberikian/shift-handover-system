@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Download, FilePlus2, FileText, Filter, Inbox,
 } from 'lucide-react';
@@ -50,8 +50,7 @@ function PdfButton({ report }) {
       size="sm"
       icon={Download}
       loading={busy}
-      onClick={(e) => { e.stopPropagation(); run(() => downloadReportPdf(report.report_id), 'PDF downloaded'); }}
-      onKeyDown={(e) => e.stopPropagation()}
+      onClick={() => run(() => downloadReportPdf(report.report_id), 'PDF downloaded')}
       aria-label={`Download "${report.title}" as PDF`}
     >
       PDF
@@ -138,7 +137,11 @@ export default function ReportsPage() {
       header: 'Report',
       render: (r) => (
         <div className="min-w-[12rem]">
-          <div className="font-medium text-fg">{r.title}</div>
+          {/* The title opens the report; rows are not clickable, so the PDF
+              button is never nested inside another control. */}
+          <Link to={`/reports/${r.report_id}`} className="inline-flex min-h-11 items-center font-medium text-accent-fg underline-offset-2 hover:underline">
+            {r.title}
+          </Link>
           <div className="text-meta text-ink-600">{shiftLabel(r)} · {formatEAT(r.shift_start, 'date')} · {r.department_name}</div>
         </div>
       ),
@@ -203,8 +206,6 @@ export default function ReportsPage() {
           columns={columns}
           rows={data?.items}
           rowKey={(r) => r.report_id}
-          onRowClick={(r) => navigate(`/reports/${r.report_id}`)}
-          rowLabel={(r) => `Open ${r.title}`}
           caption={VIEWS[view].label}
           empty={<EmptyState icon={view === 'shared' ? Inbox : FileText} title="No reports" message={VIEWS[view].empty} />}
         />
