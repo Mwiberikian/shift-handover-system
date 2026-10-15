@@ -497,6 +497,52 @@ page/width combinations pass, no horizontal scroll. The first run after Q4 faile
 320 px (346 px wide: the user cell's 12rem minimum inside the new card); fixed before Q4 was
 committed.
 
+## Part G — Parts L and M: shift reports, more workers, sessions and the live board (2026-10-15)
+
+### C11. Live board load (M7)
+
+`GET /api/supervisor/live` as supervisor KQ1003, autocannon 8.0.0 driven from a script that records
+every response time (autocannon's own summary has no p95), **30 connections, 60 s**, 10 s timeout.
+One API process on :4100 (`UV_THREADPOOL_SIZE` 12, morgan logging to a file, reminders off, the
+jobs tick on) against `shms_eval_scratch`, freshly seeded with the **57-user synthetic seed (M1)**
+just after 18:00 EAT, as the night shift began. The board it returns: Ground Operations, night shift, 6 rostered workers (2 with a
+seeded live session, 4 not started), about 2.75 KB of JSON. Also running, idle: Vite on :5174 and
+Docker (Postgres 15, Mailpit). Load generator on the same machine (see Test environment).
+
+| Run | Responses | Avg req/s | p50 | p90 | p95 | p99 | max | Errors / timeouts / non-2xx | Error rate |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 16,670 | 277.8 | 105.0 ms | 118.4 ms | 123.9 ms | 147.8 ms | 251.1 ms | 0 / 0 / 0 | 0 % |
+| 2 | 17,378 | 289.6 | 101.8 ms | 112.2 ms | 115.6 ms | 124.9 ms | 235.3 ms | 0 / 0 / 0 | 0 % |
+| 3 | 17,311 | 288.5 | 101.8 ms | 114.0 ms | 118.1 ms | 126.3 ms | 237.0 ms | 0 / 0 / 0 | 0 % |
+
+Each request runs seven queries (department, current shift, roster, then sessions, timers, task
+counts, records, activity and incidents for the whole roster at once) plus the authentication
+lookup. With 30 requests always in flight, the median is set by queueing (30 / 290 per second
+≈ 103 ms); one request at a time on the idle server took 13–17 ms end to end (curl, 10 requests).
+The board polls every
+5 s, so 290 requests a second is about 1,450 open boards. Not measured: a department with many
+more rostered workers, or boards polled together with other traffic.
+
+### C12. Sync between a desktop and a phone, with the live board (R4 rerun)
+
+`client/e2e/sync.mjs` as in C9 (Playwright 1.56.1, installed Edge, headless; desktop 1280 × 800,
+phone 390 × 844), now with step 3 built: the supervisor's live board is open on the desktop; a
+rostered worker who has not started (chosen from the board; KQ1024 in this run) taps **Start
+shift** on the phone and accepts the first-use notice; the clock starts when the start response
+reaches the phone and stops when the desktop row reads "Working". Dev client (Vite) on :5174
+against the API on :4100, `shms_eval_scratch` freshly seeded, right after C11. One run (step 1
+needs a fresh seed to run again).
+
+| Step | Time | Limit |
+|---|---|---|
+| 1a. Outgoing submits on desktop → bell badge on the incoming phone | 3,432 ms | 5,000 ms |
+| 1b. … → the record and its summary on the phone, no reload | 3,432 ms | 5,000 ms |
+| 2. Theme changed on desktop → dark on the phone after a reload (reload included) | 467 ms | — |
+| 3. Session started on the phone → "Working" on the supervisor's live board | 3,920 ms | 5,000 ms |
+
+All four pass. Steps 1 and 3 are bounded by the 5 s polls (the bell's unread count and the
+board), so each lands somewhere in 0–5 s depending on where in its cycle the change falls.
+
 ---
 
 ## Part D — Requirements status

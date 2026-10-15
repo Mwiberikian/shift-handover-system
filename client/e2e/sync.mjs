@@ -8,9 +8,9 @@
 // 1. The outgoing user (desktop) submits; the incoming user (phone) must see
 //    the bell badge and the record within 5 s, with no reload.
 // 2. A theme change on one device appears on the other after a reload.
-// 3. A work session started on the phone appears on the supervisor live
-//    board within 5 s. The live board is not built yet (Part M), so this step
-//    starts the session, confirms the API holds it, and reports BLOCKED.
+// 3. A rostered worker taps Start shift on the phone (accepting the first-use
+//    notice); the supervisor's live board (desktop) must show them Working
+//    within 5 s of the server accepting the start, with no reload.
 //
 // Env: BASE_URL, API_URL, PASSWORD (seed default), BROWSER_CHANNEL (default
 // msedge), REPORT (optional JSON path). Exit 1 if a step fails or is late.
@@ -123,26 +123,31 @@ try {
 
   // ---- 3. Session on the phone, supervisor live board ----------------------
   {
-    const out = await login(OUTGOING);
-    const phone = await (await contextFor(browser, PHONE, out.token)).newPage();
-    await phone.goto(`${BASE_URL}/outgoing`);
+    const sup = await login(SUPERVISOR);
+    // A worker on the shift that is on now who has not started (not the
+    // outgoing user of step 1, whose submitted handover is shown instead).
+    const board = await call('/supervisor/live', { token: sup.token });
+    const worker = board.workers.find((w) => w.state === 'not_started' && w.staff_number !== OUTGOING);
+    if (!worker) throw new Error('step 3: no rostered worker without a session on the current shift (run npm run seed)');
+    const w = await login(worker.staff_number);
+    const desk = await (await contextFor(browser, DESKTOP, sup.token)).newPage();
+    const phone = await (await contextFor(browser, PHONE, w.token)).newPage();
+    await desk.goto(`${BASE_URL}/supervisor/live`);
+    await desk.getByRole('row', { name: `${worker.full_name}, Not started. Open details` }).waitFor();
+    await phone.goto(`${BASE_URL}${worker.role === 'outgoing_staff' ? '/outgoing' : '/incoming'}`);
+    await phone.getByRole('button', { name: 'Start shift' }).first().click();
+    const started = phone.waitForResponse((r) => r.url().endsWith('/sessions/start') && r.request().method() === 'POST');
+    await phone.getByRole('dialog').getByRole('button', { name: 'Start shift' }).click();
+    const res = await started;
     const t0 = Date.now();
-    const started = await phone.evaluate(async ({ api, token }) => {
-      const r = await fetch(`${api}/sessions/start`, { method: 'POST', headers: { authorization: `Bearer ${token}` } });
-      return { status: r.status, body: await r.json() };
-    }, { api: API_URL, token: out.token });
-    const mine = await call('/sessions/mine', { token: out.token });
+    if (!res.ok()) throw new Error(`session start failed: HTTP ${res.status()}`);
+    await desk.getByRole('row', { name: `${worker.full_name}, Working. Open details` }).waitFor({ timeout: 15000 });
     const ms = Date.now() - t0;
-    const ok = [200, 201].includes(started.status) && mine.session?.session_id === started.body.session?.session_id;
     record({
-      step: '3. session started on phone appears on supervisor live board',
-      ms: null,
-      status: 'BLOCKED',
-      note: ok
-        ? `session started from the phone and held by the API in ${ms} ms; there is no live board screen or API to show it to a supervisor yet`
-        : `session start returned HTTP ${started.status}: ${JSON.stringify(started.body).slice(0, 160)}`,
+      step: '3. session started on phone appears on supervisor live board', ms, status: ms <= LIMIT_MS ? 'PASS' : 'LATE', note: worker.staff_number,
     });
-    await call('/sessions/end', { token: out.token, method: 'POST' }).catch(() => {});
+    await call('/sessions/end', { token: w.token, method: 'POST' }).catch(() => {});
+    await desk.context().close();
     await phone.context().close();
   }
 } finally {
@@ -151,5 +156,5 @@ try {
 
 if (process.env.REPORT) writeFileSync(process.env.REPORT, `${JSON.stringify({ base: BASE_URL, at: new Date().toISOString(), results }, null, 2)}\n`);
 const bad = results.filter((r) => r.status === 'FAIL' || r.status === 'LATE');
-console.log(bad.length ? `FAIL: ${bad.length} step(s)` : 'PASS (BLOCKED steps are reported, not failed)');
+console.log(bad.length ? `FAIL: ${bad.length} step(s)` : 'PASS');
 process.exit(bad.length ? 1 : 0);
