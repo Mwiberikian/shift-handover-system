@@ -34,9 +34,9 @@ describe('tabs per role', () => {
         if (!tab.me) expect(navPaths.has(tab.to)).toBe(true);
       }
     }
-    // The live board has no route yet (see REQUIREMENTS_STATUS).
-    expect(Object.values(TABS).flat().filter((t) => t.planned).map((t) => t.label)).toEqual(['Live']);
-    expect(tabsFor('supervisor').map((t) => t.label)).toEqual(['Overview', 'Reports', 'Messages']);
+    // Every planned screen now exists.
+    expect(Object.values(TABS).flat().filter((t) => t.planned)).toEqual([]);
+    expect(tabsFor('supervisor').map((t) => t.label)).toEqual(['Overview', 'Live', 'Reports', 'Messages']);
     expect(tabsFor('outgoing_staff').map((t) => t.label)).toEqual(['Handover', 'Reports', 'Messages', 'Me']);
   });
 

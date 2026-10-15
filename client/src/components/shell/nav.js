@@ -28,6 +28,7 @@ export const NAV = {
     { to: '/supervisor/queue', label: 'Review queue', icon: ListChecks },
     { to: '/supervisor/escalated', label: 'Escalated', icon: AlertTriangle },
     { to: '/supervisor/search', label: 'Search', icon: Search },
+    { to: '/supervisor/live', label: 'Live board', icon: Activity },
     { to: '/supervisor/roster', label: 'Roster', icon: CalendarDays },
     REPORTS,
     MY_SHIFTS,
@@ -37,6 +38,7 @@ export const NAV = {
     { to: '/admin/users', label: 'Users', icon: Users },
     { to: '/admin/requests', label: 'Access requests', icon: UserPlus },
     { to: '/admin/templates', label: 'Templates', icon: FileCog },
+    { to: '/admin/live', label: 'Live board', icon: Activity },
     REPORTS,
     MESSAGES,
   ],
@@ -44,9 +46,9 @@ export const NAV = {
 
 // Bottom tab bar below md (Q4): the same routes as the sidebar, four per role.
 // 'me' opens the account sheet instead of a route. A tab marked `planned`
-// points at a screen that is not built yet (the supervisor live board) and
-// stays hidden until its route exists; the sidebar and drawer still reach
-// every built screen. Admins reach Reports from the sidebar and the Me sheet.
+// points at a screen that is not built yet and stays hidden until its route
+// exists; the sidebar and drawer still reach every built screen. Admins reach
+// Reports and the live board from the sidebar and the Me sheet.
 const TAB_MESSAGES = { key: 'messages', to: '/messages', label: 'Messages', icon: MessagesSquare, badge: 'messages' };
 const TAB_REPORTS = { key: 'reports', to: '/reports', label: 'Reports', icon: FileText };
 const TAB_ME = { key: 'me', label: 'Me', icon: CircleUser, me: true };
@@ -58,7 +60,7 @@ export const TABS = {
     {
       key: 'overview', to: '/supervisor', label: 'Overview', icon: LayoutDashboard, match: (p) => p.startsWith('/supervisor') && !p.startsWith('/supervisor/live'),
     },
-    { key: 'live', to: '/supervisor/live', label: 'Live', icon: Activity, planned: true },
+    { key: 'live', to: '/supervisor/live', label: 'Live', icon: Activity },
     TAB_REPORTS,
     TAB_MESSAGES,
   ],

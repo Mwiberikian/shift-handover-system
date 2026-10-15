@@ -33,6 +33,7 @@ const sessions = require('./modules/sessions/sessions.routes');
 app.use('/api/sessions', sessions.sessions);
 app.use('/api/tasks', sessions.tasks);
 app.use('/api/reports', require('./modules/reports/reports.routes'));
+app.use('/api/supervisor', require('./modules/supervisor/live.routes'));
 app.use('/api/admin', require('./modules/admin/admin.routes'));
 // Public: unauthenticated, rate-limited request form (grants no access).
 app.use('/api/access-requests', require('./modules/accessRequests/accessRequests.routes'));
