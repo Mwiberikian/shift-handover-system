@@ -170,6 +170,7 @@ push on again.
 | `MESSAGE_RATE_LIMIT` | no | `30` | Messages per user per hour |
 | `MESSAGE_EMAIL_RATE_LIMIT` | no | `10` | Email/Both messages per user per hour |
 | `CALENDAR_FEED_RATE_LIMIT` | no | `60` | Calendar feed requests per IP per 15 minutes |
+| `REPORT_DOWNLOAD_RATE_LIMIT` | no | `20` | Shift report PDF and CSV downloads per user per hour |
 | `REMINDERS_ENABLED` | no | `true` | `false` turns shift reminders off |
 | `REMINDER_SHIFT_START_MINUTES` | no | `30` | Lead time before shift start |
 | `REMINDER_HANDOVER_DUE_FIRST_MINUTES` | no | `30` | First handover-due reminder before shift end |

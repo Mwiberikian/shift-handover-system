@@ -27,7 +27,7 @@ async function draft(who) {
 
 async function submitted(who, extra = {}) {
   const d = await draft(who);
-  await as(world, who).patch(`/api/reports/${d.report_id}`, { done_text: DONE, pending_text: PENDING, ...extra });
+  await as(world, who).patch(`/api/reports/${d.report_id}`, { done_text: DONE, pending_text: PENDING, nothing_pending: false, ...extra });
   const res = await as(world, who).post(`/api/reports/${d.report_id}/submit`);
   if (res.status !== 200) throw new Error(`submit: ${res.status} ${JSON.stringify(res.body)}`);
   return res.body;

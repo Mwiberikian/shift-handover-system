@@ -3,10 +3,13 @@
 // the service (see the rules at the top of reports.service.js).
 const express = require('express');
 const { body, param, query } = require('express-validator');
+const { rateLimit, MemoryStore } = require('express-rate-limit');
 const validate = require('../../middleware/validate');
 const { requireAuth } = require('../../middleware/auth');
 const { REPORT_TEXT, REPORT_TITLE_MAX } = require('../../config/constants');
+const AppError = require('../../utils/AppError');
 const service = require('./reports.service');
+const downloads = require('./reports.download');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -48,6 +51,42 @@ const shareBody = [
   body('email', 'email must be true or false').optional().isBoolean({ strict: true }),
 ];
 
+// Downloads (PDF and CSV together): 20 an hour per user by default. Refused
+// requests (4xx) do not count. The store is exported so tests can reset it.
+const downloadLimitStore = new MemoryStore();
+const downloadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: Number(process.env.REPORT_DOWNLOAD_RATE_LIMIT) || 20,
+  keyGenerator: (req) => req.user.user_id,
+  skipFailedRequests: true,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: downloadLimitStore,
+  handler: (req, res, next) => next(new AppError(429, 'You have downloaded too many reports. Please wait an hour before downloading more.')),
+});
+
+const send = (res, type, { body: content, file }) => {
+  res.set({
+    'Content-Type': type,
+    'Content-Disposition': `attachment; filename="${file}"`,
+    'Cache-Control': 'no-store',
+  });
+  res.send(content);
+};
+
+// CSV of submitted reports: supervisors (own department) and admins.
+router.get(
+  '/export',
+  query('format', 'format must be csv').equals('csv'),
+  query('from', 'from must be an ISO 8601 date or time').optional().isISO8601(),
+  query('to', 'to must be an ISO 8601 date or time').optional().isISO8601(),
+  query('department', 'department must be a department id or code').optional().isString().isLength({ min: 1, max: 40 }),
+  query('author', 'author must be a user id or staff number').optional().isString().isLength({ min: 1, max: 40 }),
+  validate,
+  downloadLimiter,
+  async (req, res) => send(res, 'text/csv; charset=utf-8', await downloads.csv(req.user, req.query)),
+);
+
 // Who the caller may share with (the recipient picker).
 router.get('/share-candidates', async (req, res) => res.json(await service.shareCandidates(req.user)));
 
@@ -65,5 +104,15 @@ router.patch('/:id', reportId, draftBody, validate, async (req, res) => res.json
 router.post('/:id/submit', reportId, validate, async (req, res) => res.json(await service.submit(req.user, req.params.id)));
 router.post('/:id/share', reportId, shareBody, validate, async (req, res) => res.json(await service.share(req.user, req.params.id, req.body)));
 
+// One report as a PDF: anyone who can see it.
+router.get(
+  '/:id/download',
+  reportId,
+  query('format', 'format must be pdf').equals('pdf'),
+  validate,
+  downloadLimiter,
+  async (req, res) => send(res, 'application/pdf', await downloads.pdf(req.user, req.params.id)),
+);
+
 module.exports = router;
-module.exports.listQuery = listQuery;
+module.exports.downloadLimitStore = downloadLimitStore;
