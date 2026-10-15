@@ -8,7 +8,7 @@
 // - title, body: optional display text (reminders set them; handover
 //   notifications are rendered from type and record by the client).
 // - ref: links to what the notification is about:
-//   { record_id, message_id, shift_id, reminder_type }.
+//   { record_id, message_id, shift_id, reminder_type, report_id }.
 // - at: sent_at (defaults to now(); the reminders job passes its clock).
 // - channels: 'in_app' is always delivered; other channels (e.g. 'email')
 //   are optional and registered with registerChannel(): 'email' (queued in
@@ -32,11 +32,11 @@ async function insertInApp(db, recipients, { type, title, body, ref, at }) {
   const rows = [];
   for (const recipientId of recipients) {
     const { rows: [row] } = await db.query(
-      `INSERT INTO notification (recipient_id, type, title, body, record_id, message_id, shift_id, reminder_type, sent_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, now()))
+      `INSERT INTO notification (recipient_id, type, title, body, record_id, message_id, shift_id, reminder_type, report_id, sent_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10, now()))
        RETURNING notification_id, recipient_id`,
       [recipientId, type, title, body, ref.record_id ?? null, ref.message_id ?? null, ref.shift_id ?? null,
-        ref.reminder_type ?? null, at],
+        ref.reminder_type ?? null, ref.report_id ?? null, at],
     );
     rows.push(row);
   }

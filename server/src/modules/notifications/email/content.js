@@ -14,11 +14,15 @@ const TYPE_TITLES = {
   handover_closed: 'A handover was closed',
   message: 'You have a new message',
   reminder: 'Shift Handover reminder',
+  report_shared: 'A shift report has been shared with you',
 };
 
 // Reminder titles are fixed phrases written by the reminders job ("Handover
 // due soon"); their bodies name people and shifts, so only the title is used.
-const titleFor = (n) => (n.type === 'reminder' && n.title) || TYPE_TITLES[n.type] || 'Shift Handover notification';
+// A shared report's title is "Shift report shared with you: <report title>";
+// the report's text is never in the notification, so never in the email.
+const OWN_TITLE = ['reminder', 'report_shared'];
+const titleFor = (n) => (OWN_TITLE.includes(n.type) && n.title) || TYPE_TITLES[n.type] || 'Shift Handover notification';
 
 function buildEmail(notification, { appUrl }) {
   const title = titleFor(notification);

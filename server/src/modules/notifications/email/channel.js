@@ -7,11 +7,12 @@ const { buildEmail } = require('./content');
 
 // Notification types that may be emailed, unless EMAIL_NOTIFICATION_TYPES
 // (comma-separated) says otherwise. Acknowledgements and approvals are
-// in-app only. 'message' is emailed only when the sender asked for it (the
-// messages service requests the channel only then).
+// in-app only. 'message' and 'report_shared' are emailed only when the sender
+// asked for it (the messages and reports services request the channel only
+// then).
 const DEFAULT_TYPES = [
   'handover_submitted', 'handover_queried', 'handover_clarified', 'handover_escalated', 'handover_resolved',
-  'reminder', 'message',
+  'reminder', 'message', 'report_shared',
 ];
 
 function eligibleTypes(env = process.env) {
