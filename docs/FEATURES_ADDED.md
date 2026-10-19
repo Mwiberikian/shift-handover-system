@@ -1,9 +1,210 @@
 # Features added: what they do and do not do
 
-Parts P, Q and R (hosting, installable app, sync and push) are described first,
-then Parts J and K. All data used to build and test them is synthetic (DR-11):
-the seed accounts (`@shms.example`), the test fixtures (`@test.example`) and
-every record, message, shift and push subscription are invented.
+Parts L and M (shift reports, work sessions, the live board) come first, then
+Parts P, Q and R (hosting, installable app, sync and push), then Parts J and K.
+All data used to build and test them is synthetic (DR-11): the seed accounts
+(`@shms.example`), the test fixtures (`@test.example`) and every record,
+report, session, message, shift and push subscription are invented.
+
+---
+
+# Parts L and M (2026-10-15)
+
+## L. Shift reports (FR-28 and FR-29, draft)
+
+**What it does**
+
+- **New report** (Reports page, outgoing and incoming staff) creates a draft for
+  the shift the author is working: the shift of their running work session, or
+  else the shift they are rostered on now. It is prefilled: tasks the author set
+  to resolved since the session (or shift) started go under "What was done";
+  open and in-progress tasks on that shift's handover records they hand over or
+  receive, or timed in the session, go under "What is pending" (in-progress ones
+  marked so); those tasks are linked. With nothing pending, "Nothing pending"
+  starts ticked. A second **New report** on the same shift reopens the same draft.
+- The author edits the title (up to 160 characters), what was done and what is
+  pending (each up to 5,000 characters), ticks "Nothing pending", and links
+  tasks from their own department. **Submit** needs a title, 10–5,000
+  characters of what was done, and 10–5,000 characters of what is pending unless
+  "Nothing pending" is ticked (counted after trimming); otherwise a 422 lists
+  what is missing and the page says so. After submission nothing can change:
+  the API refuses, and database triggers refuse even a direct SQL `UPDATE` or
+  `DELETE` of the report or its task links.
+- Who sees a report: a **draft** only its author (not supervisors or admins);
+  a **submitted** report its author, the people it was shared with, the
+  supervisors of the shift's department, and admins.
+- **Share** (author, a supervisor of the department, or an admin; submitted
+  reports only). Outgoing and incoming staff may share only with active
+  colleagues in their own department and active supervisors of any department;
+  supervisors and admins with any active user. Never with the author. The
+  dialog lists only the allowed people. Each new recipient gets a bell
+  notification that opens the report and, if the sharer ticks "Also send an
+  email alert", an email whose subject and first line are "Shift report shared
+  with you: (the title)" and a link to the app. A recipient's first opening is
+  recorded ("Read" with the time on the author's and supervisors' share list).
+- **Lists**: My reports, Shared with me, and for supervisors and admins
+  Department (submitted only; date range in EAT, author, and for admins
+  department). List rows never carry the report text. Page size at most 100.
+- **Download PDF** (anyone who can see the report): A4, generated with pdfkit:
+  system name, title, "DRAFT" if not submitted, author and staff number,
+  department, shift and its times in EAT, submission time, the author's total
+  session time on that shift, what was done, what is pending, linked tasks, and
+  on every page "Downloaded by (name) (staff number) on (time) EAT, Page n of
+  m". A print view (`/reports/:id/print`) prints from the browser.
+- **Download CSV** (supervisors for their department, admins for any):
+  submitted reports filtered by date range, department (id or code) and author
+  (id or staff number). UTF-8 with a BOM, RFC 4180 quoting and CRLF line ends,
+  times in EAT; any cell that starts with `=`, `+`, `-`, `@`, a tab or a
+  carriage return gets a leading `'` so a spreadsheet does not run it. More than
+  5,000 rows is refused with a 400 that says how many and asks for a narrower
+  filter.
+- 20 downloads (PDF and CSV together) per user per hour
+  (`REPORT_DOWNLOAD_RATE_LIMIT`); refused requests do not count.
+- **Audited**: create, update (lengths, never the text), submit, share
+  (recipients, email yes/no), every read, every download (format, access,
+  filters, row count; a CSV export as `report_export`).
+
+**What it does not do**
+
+- No editing, withdrawing or deleting after submission, and no un-sharing.
+- Recipients cannot pass a report on. Supervisors and admins cannot see or
+  share drafts.
+- Submitting a report notifies nobody; only sharing does. Push is not used for
+  shares.
+- The email never contains the report text, but it does contain the **title**,
+  which the author writes.
+- The PDF uses the standard Helvetica fonts, which cover Western European
+  characters; characters outside that set (for example many non-Latin scripts)
+  would not print correctly. Not tested with such text. One generated PDF was
+  opened and read back to check its layout (BUILD_REPORT Part G).
+- Downloads are counted in the API's memory: a restart resets the hourly count,
+  and with several API processes each counts separately.
+- No report templates per department, comments, attachments or approval step.
+
+## M. More workers, work sessions and the live board (FR-30 and FR-31, draft)
+
+### M1. Seed
+
+57 synthetic users: per department 2 supervisors, 6 outgoing and 6 incoming
+staff, plus the admin. The original 13 logins are unchanged. A week of shifts
+with three outgoing and three incoming staff rostered on each, and for every
+past shift a handover record, work sessions, task timers and a shared report.
+The seed wipes the database and rebuilds the same data each time
+(`seed.test.js` runs it twice and compares). See the README for the logins.
+
+### M2–M5. Work sessions and task timers
+
+**What it does**
+
+- **Start shift** (in the header) for outgoing and incoming staff who are on
+  the roster for the shift that is on now (otherwise a 409 says so). The first
+  time on a browser, a dialog shows the notice below and asks to confirm. One
+  session per user; a second start returns the running one.
+- While a session runs, the header shows its clock (a link to **My work**) and
+  **End shift**. Below 640 px End shift is on My work; below 400 px the logo
+  gives way to the session control.
+- The app sends a **heartbeat** every 60 s while it is open and on screen
+  (none while the tab is hidden). The server ends a session **10 minutes after
+  its last heartbeat** (at that heartbeat) or **30 minutes after its shift
+  ends**, whichever is earlier; the jobs tick checks every minute.
+- **Timers**: on their draft handover, outgoing staff start and stop a timer
+  per task. Starting another task's timer stops the first; ending the session
+  or submitting the handover stops it (at the submission time).
+- Every time comes from the database's clock. Answers carry `server_now`, and
+  the clocks on screen tick from it, so a wrong device clock does not change
+  them.
+- **My work** (`/work`): the running session and timer, End shift, and the
+  user's own history (each session's times, how it ended, time per task).
+- The notice, on first use, on My work and on Help: **"Your session and task
+  times are visible to your supervisor. Nothing else on your device is
+  tracked."**
+
+**What is stored, and for how long**
+
+| Where | What | Kept |
+|---|---|---|
+| `work_session` | user, shift, `started_at`, `ended_at`, `end_reason` (`manual`, `heartbeat` or `shift_end`), `last_heartbeat_at` (only the latest heartbeat, overwritten each minute; no history of heartbeats) | indefinitely |
+| `task_timer` | user, session, task, `started_at`, `stopped_at` | indefinitely |
+| `audit_log` | a `start` entry (shift, start time) and, for End shift, an `end` entry (end time, reason). Automatic ends, heartbeats and timers are not audited | indefinitely |
+
+Rows are append-only: database triggers allow only setting an end or stop time
+once and moving the heartbeat forwards, and refuse every other change and
+every delete. Nothing purges them, and users are deactivated, never deleted.
+A heartbeat request carries no data. The API's request log (`morgan` "dev"
+format, to the console) records each request's method, path, status and time,
+not the IP address. No screen, keystroke, location, camera, microphone or
+device information is collected.
+
+Who sees it: the worker (My work); supervisors of the worker's department and
+admins (the live board, below); and, as one figure, anyone who can see a
+worker's shift report (the PDF shows the author's session time on that shift)
+or a supervisor's CSV export (`session_minutes`).
+
+**What it does not do**
+
+- A worker cannot correct a forgotten End shift or edit any time; the
+  automatic ends close it.
+- A hidden tab or a locked phone sends no heartbeat, so the session ends 10
+  minutes later even if the person is still working; they start it again.
+- Incoming staff have sessions but no task timers (timers are on the
+  outgoing user's own draft handover).
+- No pause, breaks, overtime or payroll figures.
+
+### M4. Supervisor live board
+
+**What it does**
+
+- **Live board** (`/supervisor/live`; admins `/admin/live` with a department
+  switcher; "Live" tab on supervisors' phones). Everyone active on the roster
+  of the department's shift that is on now, each with:
+  - state, first match wins: **Handover submitted** (their handover for this
+    shift is past draft), **Working** (session running, heartbeat in the last
+    2 minutes), **Idle** (session running, no heartbeat for 2 minutes or more),
+    **Ended**, **Not started**;
+  - session time and the current task with its timer, ticking every second;
+  - open, in-progress and resolved tasks on this shift's handover records they
+    hand over or receive (their current status, not only tasks touched in the
+    session);
+  - incidents they reported on this shift's records, and last activity (latest
+    heartbeat or recorded action this shift);
+  - department totals, and a filter by state.
+- It refreshes every 5 s while the page is visible, pauses while hidden, and
+  refreshes at once on return.
+- Selecting a worker opens the detail: the tasks they timed on that shift with
+  time spent (still running marked), and a timeline of session starts and ends,
+  timer starts and stops, and their recorded actions (not reads).
+- Outgoing and incoming staff get 403. Supervisors are held to their own
+  department (403 otherwise).
+- Measured (BUILD_REPORT C11): 30 connections for 60 s against the 57-user seed,
+  p50 102–105 ms, p95 116–124 ms, p99 125–148 ms, no errors. A session started
+  on a phone showed as Working on the desktop board 3.9 s later (C12).
+
+**What it does not do**
+
+- Only the shift that is on now. No board for past shifts; the detail shows a
+  worker's current shift (or their latest session's shift).
+- No alerts when someone is idle; no export of the board.
+- It only reads. Stale sessions are ended by the jobs tick, so a worker can
+  show as Idle for up to about 8 more minutes before showing as Ended.
+
+## Tests for Parts L and M
+
+| File | Covers |
+|---|---|
+| `server/tests/report.schema.test.js` | Triggers: submitted reports, task links and shares |
+| `server/tests/report.api.test.js` | Prefill, one draft per shift, edits, 422, scopes, filters, paging, reads with `read_at`, sharing, candidates |
+| `server/tests/report.download.test.js` | PDF (A4, content, footer, page numbers, access, audit), CSV writer and export (BOM, CRLF, injection, filters, 403s, audit, 5,000 cap), rate limit |
+| `server/tests/report.access.test.js` | Access matrix (author, recipient, colleague, other supervisor, admin), drafts private, direct SQL refused after an API submit, share rules, share email without report text |
+| `server/tests/session.schema.test.js`, `session.api.test.js` | Session and timer rules one request at a time; fake-clock ends; durations |
+| `server/tests/live.board.test.js` | Board states, timers, counts, incidents, last activity, totals, admin switcher, detail and timeline |
+| `server/tests/live.sessions.test.js` | Board access by role; one session and one timer under racing requests; fake-clock ends seen on the board; timers stop on submit; exact durations; refused edits |
+| `server/tests/seed.test.js` | 57 users, roster, sample data, `SYNTHETIC` labels, idempotent |
+| `client/src/test/Reports.test.jsx` | Lists, New report, filters (EAT), PDF and CSV, editor and 422, read view, Share dialog limits and email choice |
+| `client/src/test/LiveBoard.test.jsx` | Board rows, ticking timers, totals, filter, admin switcher, detail drawer |
+| `client/src/test/LiveTicks.test.jsx` | Tick maths with a skewed browser clock; polling every 5 s, paused while hidden |
+| `client/src/test/WorkSession.test.jsx` | Notice on first use, Start/End shift, header clock, heartbeat only while visible, task timers, My work, Help |
+| `client/e2e/sync.mjs` | Step 3: Start shift on a phone reaches the supervisor's board |
+| `client/e2e/axe-phone.mjs` | Now 22 screens (Reports, a report, live board and its detail, My work) |
 
 ---
 
@@ -60,9 +261,11 @@ every record, message, shift and push subscription are invented.
 - "Install app" appears in the account menu when the browser fires
   `beforeinstallprompt`. On iPhone and iPad (no such event) the same item shows
   "In Safari, tap Share, then Add to Home Screen."
-- Below 768 px a bottom tab bar: Outgoing Handover / Messages / Me; Incoming
-  Inbox / Messages / Me; Supervisor Overview / Messages; Admin Users /
-  Templates / Requests / Me. "Me" opens a sheet with the account rows (email
+- Below 768 px a bottom tab bar: Outgoing Handover / Reports / Messages / Me;
+  Incoming Inbox / Reports / Messages / Me; Supervisor Overview / Live /
+  Reports / Messages; Admin Users / Templates / Requests / Me (Reports and Live
+  since Parts L and M; until then they were hidden because their screens did
+  not exist). "Me" opens a sheet with the account rows (email
   alerts, push, calendar, install, theme, password), the role's other screens
   (My handovers, My shifts, …), Help and Log out. The routes, components,
   tokens and copy are the desktop ones; the header and its drawer stay.
@@ -73,11 +276,8 @@ every record, message, shift and push subscription are invented.
 
 **What it does not do**
 
-- **No Reports or Live tabs.** The brief's Reports (all roles) and Live
-  (supervisor) tabs point at screens that do not exist yet (shift reports,
-  the live board). They are defined in `client/src/components/shell/nav.js`
-  as `planned` and stay hidden until their routes exist, so the supervisor
-  bar has two tabs and Outgoing and Incoming have three.
+- Admins have no Reports or Live tab (their four tabs are as the brief set
+  them); they reach both from the sidebar and the Me sheet.
 - No offline data and no offline queue (Section 1.5.1): nothing typed offline
   is kept for later.
 - Not tested on a real phone. Installability was checked in headless Edge
@@ -120,7 +320,8 @@ every record, message, shift and push subscription are invented.
 
 - No websockets or server push for screens: still polling plus these
   triggers.
-- No live board is refetched, because none exists yet.
+- (Since Part M the live board refetches on return too, through the same
+  polling hook.)
 - A draft being edited keeps its unsaved text when the record refetches.
 
 ## R3. Push notifications (FR-34, draft)
@@ -177,7 +378,7 @@ every record, message, shift and push subscription are invented.
 | `client/src/test/RefreshOnReturn.test.jsx`, `RefreshScreens.test.jsx` | Return triggers, 5 s polling, indicator, inbox refetch |
 | `client/src/test/PushSwitch.test.jsx`, `PushSwitchOff.test.jsx` | Permission only on click, subscribe/unsubscribe, hidden when off, service worker shows the title and opens the link |
 | `client/e2e/sync.mjs` | R4: two contexts (1280 and 390 px), timings |
-| `client/e2e/axe-phone.mjs` | R5: axe at 390 px, 15 screens, both themes |
+| `client/e2e/axe-phone.mjs` | R5: axe at 390 px, 15 screens, both themes (22 since Part M) |
 
 ---
 
@@ -197,8 +398,9 @@ message and shift are invented.
 
 - Sends a short email alert, through SMTP (`nodemailer`), for these
   notification types: handover submitted, query raised, query answered,
-  escalated, escalation resolved, shift reminders, and messages whose sender
-  chose Email or Both. The list can be changed with `EMAIL_NOTIFICATION_TYPES`.
+  escalated, escalation resolved, shift reminders, messages whose sender
+  chose Email or Both, and (since Part L) shift reports shared with the email
+  box ticked. The list can be changed with `EMAIL_NOTIFICATION_TYPES`.
 - Every notification first goes in-app. `notify()`
   (`server/src/modules/notifications/notify.js`) is the only code that writes
   notification rows; email is a channel behind it.
@@ -350,6 +552,7 @@ message and shift are invented.
 | `EMAIL_NOTIFICATION_TYPES` | see section 1 | Types that may be emailed |
 | `MESSAGE_EMAIL_RATE_LIMIT` | `10` | Email/Both sends per user per hour |
 | `CALENDAR_FEED_RATE_LIMIT` | `60` | Feed requests per IP per 15 minutes |
+| `REPORT_DOWNLOAD_RATE_LIMIT` | `20` | Report PDF and CSV downloads per user per hour (Part L) |
 
 ## Tests
 

@@ -1,13 +1,14 @@
 # Build Report — Shift Handover Management System
 
-Date: 2026-10-13, updated 2026-10-14 (Parts H–K, then P–R). Baseline commit: `52273b2`.
+Date: 2026-10-13, updated 2026-10-14 (Parts H–K, then P–R) and 2026-10-15 (Parts L and M). Baseline commit: `52273b2`.
 All figures below were measured on the machine described in
 [Test environment](#test-environment); none were tuned to meet a target.
 
 **All data behind every result in this report is synthetic (DR-11).** The seed
-(`server/src/db/seeds/seed.js`, 13 invented users at `@shms.example`, records
-prefixed `SYNTHETIC:`), the test fixtures (`@test.example`), the 30,000 load-test
-drafts and every message, shift and email are invented. No Kenya Airways data,
+(`server/src/db/seeds/seed.js`, 13 invented users at `@shms.example` until Part M,
+57 since, every free-text value prefixed `SYNTHETIC`), the test fixtures
+(`@test.example`), the 30,000 load-test drafts and every message, shift, email,
+report and work session are invented. No Kenya Airways data,
 staff or passenger information was used.
 
 ---
@@ -421,14 +422,15 @@ Notes:
   (it was part of the load behind the client timeouts above). The inbox test now has its own
   file with real timers (`RefreshScreens.test.jsx`). The cause inside the combination was not
   pinned down; in the browser runs (C9) the inbox refetched normally with no runaway rendering.
-- Not built: the Reports and Live tabs (no screens yet), so R4 step 3 is BLOCKED (C9).
+- Not built at the time: the Reports and Live tabs (no screens yet), so R4 step 3 was BLOCKED (C9).
+  Both were built in Parts L and M, and step 3 passes (C12).
 
 ### C8. Server test coverage at the end of Part R
 
-368 tests in 42 suites, all passing, at `c2a28e4`. `jest --runInBand --coverage --collectCoverageFrom='src/**/*.js'
---collectCoverageFrom='!src/modules/reports/**'` (the untracked, unfinished reports service is excluded; it is
-not in any commit): **93.47 % statements, 83.54 % branches, 96.21 % functions, 96.02 % lines**
-(1,675 / 1,792 statements). At `f810696` it was 93.31 % statements (C1 update).
+368 tests in 42 suites, all passing, at `c2a28e4`. `jest --runInBand --coverage --collectCoverageFrom='src/**/*.js'`
+over the code committed at `c2a28e4`: **93.47 % statements, 83.54 % branches, 96.21 % functions, 96.02 % lines**
+(1,675 / 1,792 statements). At `f810696` it was 93.31 % statements (C1 update). For the code after Parts L and M
+see C13.
 
 ### C9. Sync between a desktop and a phone (R4)
 
@@ -499,6 +501,58 @@ committed.
 
 ## Part G — Parts L and M: shift reports, more workers, sessions and the live board (2026-10-15)
 
+One commit per numbered item, authored by Mwiberikian, no co-author or
+generated-by lines. All server and client tests passed after every step. Item
+0 was found finished but uncommitted in the working tree after the machine shut
+down; it was reviewed, tested and committed as it was, with the NFR-18 row of
+REQUIREMENTS_STATUS corrected to match it. L1, M2 and M3 were committed before
+this pass (`234a208`, `085c40f`, `8a1f574`).
+
+| # | Commit | Change | Server | Client |
+|---|---|---|---|---|
+| — | `74eec71` | Starting point (after Parts P–R) | 368 | 131 |
+| 0 | `726515f` | `engines` `>=22` in both packages and lockfiles; CI on Node 22 and 24; `node-version.test.js`; why 18 and 20 were dropped (NFR-18 note) | 373 | 131 |
+| L2 | `656162c` | Report API: prefilled drafts, author-only edits, 422 with missing fields, scoped list with filters, audited reads, sharing through `notify()`; the untracked service was kept with fixes (below) | 391 | 131 |
+| L3 | `f5b8103` | PDF (pdfkit 0.20.2) and CSV downloads, audited, 20 an hour | 403 | 131 |
+| L4 | `d723982` | Reports page, report editor and read view, Share dialog, print view; Reports in the nav and tab bars | 403 | 142 |
+| L5 | `2a0efb1` | Access matrix, immutability after an API submit (direct SQL too), share rules, share email | 418 | 142 |
+| M1 | `9b8950f` | 57-user seed with a week of rostered shifts, records, sessions, timers, shared reports and notifications; idempotent; README logins | 424 | 142 |
+| M4 | `de6fa3e` | Live board API and page | 430 | 147 |
+| M5 | `24bf4f6` | Start/End shift, header clock, task timers, My work, heartbeat, the notice (first use and Help) | 430 | 156 |
+| M6 | `8dbd013` | Board access, racing requests, fake-clock ends, timers on submit, durations, refused edits; tick maths and polling pause | 443 | 164 |
+| M7 | `3465870` | Live board load (C11); sync check step 3 built (C12) | 443 | 164 |
+| — | `3a7ebd1` | Fix: report titles are links, not clickable rows (axe found nested controls in the phone cards); axe covers the new screens | 443 | 164 |
+| I | this commit | README, FEATURES_ADDED, REQUIREMENTS_STATUS (draft FR-28..FR-31), TRACEABILITY, this report | 443 | 164 |
+
+Notes:
+- **The untracked `server/src/modules/reports/reports.service.js`** (left from the earlier session) was
+  sound in its design and was kept: the access model (drafts private; submitted reports for author,
+  recipients, the department's supervisors and admins), the prefill, the list scopes, update, submit and
+  share. It did not run: it imported `utils/eat` and `REPORT_TEXT`, neither of which existed. Changed:
+  added `server/src/utils/eat.js` (the server's EAT formatter, same output as the client's) and the
+  constants; submit now trims the text in JavaScript and stores that, because Postgres `btrim()` strips
+  only spaces, so a text padded with newlines could pass the length check and then fail the database
+  constraint as a 500; the paged list got an outer `ORDER BY` (order inside a subquery is not
+  guaranteed). New around it: the routes and validation, `report_id` on notifications through
+  `notify()`, `report_shared` in the email types and titles, and all the download code.
+- M1: the seed first wrote its sample notifications with a direct `INSERT`. `notify.service.test.js`
+  ("no other source file inserts into notification", IR-05) failed on it; the seed now calls `notify()`.
+- M5: the touch check failed at 320 px for outgoing and incoming staff (the new Start shift control
+  pushed the account menu off-screen). Fixed before M5 was committed: below 400 px a worker's header
+  shows the session control instead of the logo (Home stays in the drawer). A separate check of the
+  worker header at 320, 340, 360, 375, 390, 400, 414, 430, 480 and 640 px, with and without a running
+  session, found no control off-screen or under 44 px and no sideways scroll.
+- M5: "End shift" first had two labels (a visible one and a screen-reader copy), so its accessible name
+  was "End shift End shift"; the client test found it and it was fixed in the same commit.
+- After M7, axe on the new screens found `nested-interactive` (serious) on Reports at 390 px: each
+  report card was a button with the PDF button inside it. Fixed in `3a7ebd1`.
+- A PDF generated by the scratch instance (a seeded Ground Operations report, downloaded as supervisor
+  KQ1003) was opened and read back: one A4 page, all sections in order, times in EAT, the footer
+  "Downloaded by … on 2026-10-15 18:16 EAT  Page 1 of 1", 2.3 KB.
+- Not done: no email was sent through a real provider (shares were tested with a stubbed transport);
+  push is not used for report shares; the PDF's standard fonts were not tried with non-Latin text;
+  the live board was not tested with a department of many more rostered workers.
+
 ### C11. Live board load (M7)
 
 `GET /api/supervisor/live` as supervisor KQ1003, autocannon 8.0.0 driven from a script that records
@@ -542,6 +596,25 @@ needs a fresh seed to run again).
 
 All four pass. Steps 1 and 3 are bounded by the 5 s polls (the bell's unread count and the
 board), so each lands somewhere in 0–5 s depending on where in its cycle the change falls.
+
+### C13. Server test coverage after Parts L and M
+
+443 tests in 49 suites, all passing. `jest --runInBand --coverage --collectCoverageFrom='src/**/*.js'`
+over all of `server/src`, the reports and live board modules included:
+**94.54 % statements, 84.95 % branches, 96.51 % functions, 96.66 % lines** (2,303 / 2,436 statements).
+At C8 (`c2a28e4`) it was 93.47 %.
+
+### C14. Accessibility and touch targets after Parts L and M
+
+- **axe-core 4.11.0** at 390 × 844, light and dark (`client/e2e/axe-phone.mjs`, now 22 screens: the
+  15 of C10 plus Reports for staff and for a supervisor, one submitted report, My work, the live
+  board, the live board with a worker's detail open, and the admin live board), against the dev
+  client on :5174 and the API on :4100 with the 57-user seed: **44 / 44 combinations, 0
+  violations** after `3a7ebd1` (4 failed before it, all `nested-interactive` on the two Reports lists).
+- **Touch targets** (`client/e2e/touch-targets.mjs`, same instance): **15 / 15** page/width
+  combinations pass, no horizontal scroll, after M5's header fix and again after `3a7ebd1`. The
+  admin users table's buttons are still reached by scrolling it sideways at 768 px (57 controls,
+  listed, not failed); at 320 px it is shown as cards (Q4) and needs no scrolling.
 
 ---
 

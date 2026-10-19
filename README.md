@@ -4,7 +4,8 @@ Final-year project prototype: digital shift handovers with acknowledgement,
 supervisor review and a tamper-proof audit trail. **All seeded data is synthetic.**
 
 Stack: React 18 (Vite, Tailwind CSS v4) · Node.js/Express · PostgreSQL 15 · JWT ·
-node-pg-migrate · node-cron.
+node-pg-migrate · node-cron. Needs **Node.js 22 or later** (both `package.json`
+files say so; CI runs Node 22 and 24).
 
 ## Run locally
 
@@ -73,6 +74,25 @@ All seeded free text starts with `SYNTHETIC`.
   record view has a **Print / export** button that opens a print-friendly page.
 - Light and dark themes (follows the OS until the user picks one), a help
   centre at `/help`, and a support contact bar driven by `client/.env`.
+- **Shift reports** (`/reports`): a worker's own account of a shift, prefilled
+  from their work session (tasks resolved as done, open and in-progress tasks as
+  pending), submitted once and then unchangeable. Shared with colleagues in the
+  department or supervisors (supervisors and admins: anyone active), with an
+  optional email alert that carries the title and a link only. Downloaded as a
+  PDF, or by supervisors and admins as CSV (formula cells neutralised, 5,000-row
+  cap, 20 downloads an hour). Every create, change, submit, share, read and
+  download is audited.
+- **Work sessions and task timers** (`/work`, header clock): Start shift and End
+  shift, a timer per task on the draft handover, a heartbeat every 60 s while
+  the app is on screen. Workers are told, on first use and in Help: "Your session
+  and task times are visible to your supervisor. Nothing else on your device is
+  tracked."
+- **Supervisor live board** (`/supervisor/live`, `/admin/live`): who is rostered
+  on the shift that is on now, working, idle, not started, ended or handover
+  submitted, with session and task timers, task and incident counts, last
+  activity and a per-worker timeline; polls every 5 s.
+
+What each of these does and does not do: [docs/FEATURES_ADDED.md](docs/FEATURES_ADDED.md).
 
 ## Environment variables
 
@@ -301,6 +321,13 @@ end in `_test`.
 | `handover.export.test.js` | Export holds tasks, incidents, acknowledgement, reviews and only this record's audit entries; same access as `GET /:id` |
 | `notifications.unread-count.test.js` | Unread count is per user, drops on read, and `latest_id` changes when a new notification arrives |
 | `admin.templates.test.js` | Template versioning keeps history |
+| `report.schema.test.js` | Report triggers: submitted reports frozen, links frozen, shares append-only except `read_at` |
+| `report.api.test.js` | Prefilled drafts, author-only edits, 422 with missing fields, list scopes and filters, audited reads, sharing |
+| `report.download.test.js` | PDF content and footer, CSV (BOM, RFC 4180, formula neutralising), 5,000-row cap, download audit, 20-an-hour limit |
+| `report.access.test.js` | Access matrix, immutability after an API submit (direct SQL too), share rules, share email without report text |
+| `session.schema.test.js`, `session.api.test.js` | One session and one running timer per user, heartbeat, automatic ends with a fake clock, durations |
+| `live.board.test.js`, `live.sessions.test.js` | Live board states, timers, counts, detail and timeline; access; racing requests; refused edits |
+| `seed.test.js` | 57 users, a week of rostered shifts, sample sessions and reports, all `SYNTHETIC`; idempotent |
 
 Client tests (Vitest + React Testing Library, jsdom; the API module is mocked):
 
@@ -316,6 +343,9 @@ cd client && npm test
 | `PrintRecord.test.jsx` | Print view renders each export section; shows the API error on 403 |
 | `usePolling.test.jsx` | 5 s polling, paused while the tab is hidden |
 | `format.test.js` | Times print as `YYYY-MM-DD HH:mm EAT` under three process time zones; `datetime-local` input is read as EAT |
+| `Reports.test.jsx` | Reports lists and filters, New report, PDF and CSV downloads, editor with 422, read view, Share dialog |
+| `LiveBoard.test.jsx`, `LiveTicks.test.jsx` | Live board rows, totals, filter, admin switcher, detail; tick maths; polling paused while hidden |
+| `WorkSession.test.jsx` | First-use notice, Start/End shift, header clock, 60 s heartbeat only while visible, task timers, My work, Help |
 
 Touch targets and horizontal scroll (IR-01), Playwright in the installed
 Microsoft Edge, against a running client and API with the seed data:
@@ -333,6 +363,12 @@ scroll. Links inside running text are listed but not failed (WCAG 2.5.5
 exempts inline links). `BROWSER_CHANNEL=chromium` uses Playwright's own
 Chromium instead of Edge.
 
+Two more checks against a running, freshly seeded instance (same variables):
+`npm run check:axe` (axe-core, WCAG A/AA, 22 screens at 390 px in both themes)
+and `npm run check:sync` (desktop and phone contexts: a submit reaching the
+phone, a theme change, and a session started on the phone reaching the
+supervisor's live board, each timed).
+
 ## Integrity model
 
 - Every state change and its `audit_log` row commit in the same transaction.
@@ -340,6 +376,10 @@ Chromium instead of Edge.
   allow only legal status transitions, freeze tasks/incidents after submit, and
   make `audit_log`, `handover_template`, `message`, `message_read` and
   `reminder_log` append-only.
+- A submitted shift report cannot change or be deleted, nor can its task
+  links; `report_share` rows are append-only except `read_at`, set once.
+- `work_session` and `task_timer` are append-only: only the end time (and end
+  reason) and the stop time can be set, once; the heartbeat only moves forwards.
 - All foreign keys are `ON DELETE RESTRICT`. Users are deactivated, never deleted.
 
 ## API overview
@@ -362,3 +402,7 @@ Chromium instead of Edge.
 | `GET /api/directory`, `GET /api/directory/departments` | any |
 | `GET /api/shifts/mine` | any |
 | `GET /api/shifts`, `GET /api/shifts/:id/assignments`, `PUT /api/shifts/:id/assignments` | supervisor (own department), admin |
+| `POST /api/reports`, `GET /api/reports[?scope=mine\|shared\|department]`, `GET /api/reports/share-candidates`, `GET /api/reports/:id`, `PATCH /:id`, `POST /:id/submit`, `POST /:id/share`, `GET /:id/download?format=pdf` | any (rules in FEATURES_ADDED) |
+| `GET /api/reports/export?format=csv` | supervisor (own department), admin |
+| `POST /api/sessions/start`, `/heartbeat`, `/end`, `GET /api/sessions/mine`, `POST /api/tasks/:id/timer/start`, `/stop` | any rostered user (timers: own draft tasks) |
+| `GET /api/supervisor/live[?department_id]`, `GET /api/supervisor/live/:userId` | supervisor (own department), admin |
