@@ -1,5 +1,8 @@
 // Shift reminders, driven by runReminderCheck(now) with an injected clock, plus
 // the roster (shift assignment) API that feeds them.
+// The end-of-shift digest (Part S) is another reminder type with its own tests
+// (assistant.digest.test.js); these tests check the other reminders on their own.
+process.env.ASSISTANT_ENABLED = 'false';
 const request = require('supertest');
 const {
   pool, app, buildWorld, as,

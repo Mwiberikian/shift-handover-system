@@ -52,7 +52,7 @@ function targetFor(n, role) {
   if (n.type !== 'reminder') return null;
   if (n.reminder_type?.startsWith('handover_due')) return '/outgoing';
   if (n.reminder_type === 'ack_pending') return '/incoming';
-  if (n.reminder_type?.startsWith('supervisor_')) return '/supervisor';
+  if (n.reminder_type?.startsWith('supervisor_') || n.reminder_type === 'shift_digest') return '/supervisor';
   return ROLE_HOME[role];
 }
 

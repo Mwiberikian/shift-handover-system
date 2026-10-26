@@ -178,6 +178,8 @@ push on again.
 | `REMINDER_ACK_PENDING_MINUTES` | no | `15` | After the incoming shift starts |
 | `REMINDER_UNACK_ALERT_MINUTES` | no | `120` | Supervisor alert after the incoming shift starts |
 | `REMINDER_LOOKBACK_MINUTES` | no | `60` | Reminders later than this are skipped, not sent |
+| `REMINDER_DIGEST_MINUTES` | no | `15` | End-of-shift digest to supervisors, after the shift ends |
+| `ASSISTANT_ENABLED` | no | `true` | `false` turns off the handover assistant (quality checks, suggestions, ranking, smart search, digest); the rest of SHMS is unaffected |
 | `EMAIL_ENABLED` | no | `false` | `true` sends email notifications through SMTP |
 | `SMTP_HOST` | with email | `localhost` | SMTP server |
 | `SMTP_PORT` | with email | `1025` | SMTP port |

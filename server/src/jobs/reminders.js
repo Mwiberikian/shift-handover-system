@@ -15,6 +15,8 @@ const { processOutbox } = require('../modules/notifications/email/outbox');
 const { runSessionCheck } = require('./sessions');
 const { UNACK_ALERT_HOURS } = require('../config/constants');
 const { trackAfterCommit } = require('../db/tx');
+const { digestInput } = require('../modules/assistant/assistant.service');
+const { buildDigest } = require('../modules/assistant/digest');
 
 const minutes = (name, fallback) => {
   const v = Number(process.env[name]);
@@ -28,6 +30,7 @@ function reminderConfig() {
     handoverDueFinal: minutes('REMINDER_HANDOVER_DUE_FINAL_MINUTES', 10), // before shift end
     ackPending: minutes('REMINDER_ACK_PENDING_MINUTES', 15), // after incoming shift start
     unackAlert: minutes('REMINDER_UNACK_ALERT_MINUTES', UNACK_ALERT_HOURS * 60), // after incoming shift start
+    digest: minutes('REMINDER_DIGEST_MINUTES', 15), // after shift end
     lookback: minutes('REMINDER_LOOKBACK_MINUTES', 60),
   };
 }
@@ -173,6 +176,30 @@ const RULES = [
       title: 'Shift ended without a handover',
       body: `${s.department_name}: the ${shiftName(s).toLowerCase()} ended at ${hhmm(s.end_time)} with no handover submitted.`,
     }));
+  },
+
+  // 5. Supervisors: end-of-shift digest (Part S), built from counts and a
+  //    template, sent a few minutes after the shift ends.
+  async (db, now, c) => {
+    if (process.env.ASSISTANT_ENABLED === 'false') return [];
+    const { rows } = await db.query(
+      `SELECT sup.user_id, ${SHIFT_COLUMNS}
+         FROM shift s
+         JOIN department d ON d.department_id = s.department_id
+         JOIN app_user sup ON sup.department_id = s.department_id AND sup.role = 'supervisor' AND sup.is_active
+        WHERE ${DUE_WINDOW('s.end_time', '+')}`,
+      [now, c.digest, c.lookback],
+    );
+    const built = new Map();
+    const out = [];
+    for (const s of rows) {
+      if (!built.has(s.shift_id)) built.set(s.shift_id, buildDigest(await digestInput(db, s.shift_id)));
+      out.push({
+        type: 'shift_digest', refId: s.shift_id, userId: s.user_id, shiftId: s.shift_id,
+        title: 'Shift digest', body: built.get(s.shift_id).headline,
+      });
+    }
+    return out;
   },
 ];
 

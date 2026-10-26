@@ -21,6 +21,9 @@ import ShiftBanner from '../components/shell/ShiftBanner';
 import { TaskTimerButton } from '../components/work/SessionControls';
 import { useWorkSession } from '../lib/workSession';
 import { useRefresh } from '../lib/refresh';
+import DraftAssistant from '../components/assistant/DraftAssistant';
+import SeverityHint from '../components/assistant/SeverityHint';
+import { useAssistantEnabled } from '../components/assistant/useAssistant';
 
 // Requirement list for the department template, evaluated against what the
 // user currently sees (including unsaved edits).
@@ -112,6 +115,8 @@ export function DraftEditor({ record, meta, reload }) {
   const [submitRun, submitting] = useAction();
   const [statusRun] = useAction();
   const { refresh: refreshSession } = useWorkSession();
+  const assistantOn = useAssistantEnabled();
+  const assistantVersion = [record.summary_notes, record.tasks.length, record.incidents.length].join('|');
 
   const fields = Object.fromEntries(meta.template.field_definition.fields.map((f) => [f.key, f]));
   const req = requirementsFor(meta.template, record, notes, incoming);
@@ -220,6 +225,8 @@ export function DraftEditor({ record, meta, reload }) {
           </div>
         </Card>
 
+        {assistantOn && <DraftAssistant record={record} version={assistantVersion} reload={reload} />}
+
         <Card
           title={fields.tasks?.label ?? 'Tasks'}
           subtitle={`${record.tasks.length} task${record.tasks.length === 1 ? '' : 's'}`}
@@ -274,6 +281,15 @@ export function DraftEditor({ record, meta, reload }) {
               <Input label="Occurred at (EAT)" hint="East Africa Time, whatever your device's time zone" type="datetime-local" value={incident.occurred_at} max={nowEATLocal()} onChange={(e) => setIncident({ ...incident, occurred_at: e.target.value })} required />
             </div>
             <Textarea label="Description" rows={2} placeholder="What happened, and any follow-up (optional)" value={incident.description} onChange={(e) => setIncident({ ...incident, description: e.target.value })} />
+            {assistantOn && (
+              <SeverityHint
+                title={incident.title}
+                description={incident.description}
+                current={incident.severity}
+                recordId={record.record_id}
+                onUse={(severity) => setIncident((i) => ({ ...i, severity }))}
+              />
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <SegmentedPicker label="Severity" value={incident.severity} onChange={(severity) => setIncident({ ...incident, severity })} options={SEVERITY_OPTIONS} />
               <Button type="submit" icon={Plus} loading={addingIncident}>Log incident</Button>

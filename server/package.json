@@ -13,7 +13,8 @@
     "seed": "node src/db/seeds/seed.js",
     "test": "jest --runInBand",
     "demo:reminders": "node src/db/seeds/demo-reminders.js",
-    "vapid": "node scripts/vapid.js"
+    "vapid": "node scripts/vapid.js",
+    "assistant:eval": "node scripts/assistant-eval.js"
   },
   "keywords": [],
   "author": "",

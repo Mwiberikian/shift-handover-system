@@ -13,6 +13,8 @@ import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 import { useRefresh } from '../lib/refresh';
+import { AttentionList, DigestCard, MeaningSearch, RecurringClusters } from '../components/assistant/OversightPanels';
+import { useAssistantEnabled } from '../components/assistant/useAssistant';
 
 const TITLES = {
   overview: ['Overview', 'Handover status across your departments.'],
@@ -341,6 +343,7 @@ export default function SupervisorPage({ view }) {
   const [selected, setSelected] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [scope, setScope] = useState('current');
+  const assistantOn = useAssistantEnabled();
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -414,8 +417,16 @@ export default function SupervisorPage({ view }) {
       />
 
       {view === 'overview' && (dash ? <Overview data={dash} onOpen={open} scope={scope} onScope={setScope} /> : <div className="space-y-6"><SkeletonStats count={7} /><Card flush><SkeletonTable rows={3} /></Card></div>)}
+      {view === 'overview' && assistantOn && (
+        <div className="mt-6 space-y-6">
+          <DigestCard />
+          <AttentionList onOpen={open} />
+          <RecurringClusters />
+        </div>
+      )}
       {view === 'queue' && tableFor(queue, Inbox, ['Review queue is clear', 'Acknowledged handovers will appear here for your review.'])}
       {view === 'escalated' && tableFor(escalated, CircleCheckBig, ['No escalations', 'Nothing is currently escalated.'])}
+      {view === 'search' && assistantOn && <div className="mb-6"><MeaningSearch onOpen={open} /></div>}
       {view === 'search' && <Search onOpen={open} selectedId={selected?.record_id} columns={columns} rowClassName={rowClassName} />}
 
       <Drawer
