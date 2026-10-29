@@ -59,8 +59,8 @@ export default function Login() {
       footer={<p className="text-ink-700">Need an account? <CardLink to="/request-access">Request access</CardLink></p>}
     >
       <div>
-        <h1 className="text-lg font-semibold text-fg">Sign in</h1>
-        <p className="mt-0.5 text-ink-700">Use your staff number or work email.</p>
+        <h1 className="text-headline text-fg">Welcome back</h1>
+        <p className="mt-2 text-ink-700">Log in with your staff number or work email.</p>
       </div>
 
       {error && <Callout tone="danger" title="Sign-in failed">{error}</Callout>}
@@ -92,17 +92,17 @@ export default function Login() {
           onClick={() => setShowPassword((s) => !s)}
           aria-label={showPassword ? 'Hide password' : 'Show password'}
           aria-pressed={showPassword}
-          className="absolute top-[26px] right-0 grid size-11 place-items-center rounded-lg text-ink-500 hover:bg-ink-100 hover:text-ink-800"
+          className="absolute top-[26px] right-0 grid size-11 place-items-center rounded-lg text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-800"
         >
           {showPassword ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
         </button>
       </div>
 
-      <Button type="submit" variant="primary" size="lg" icon={LogIn} loading={busy} className="w-full">
-        {busy ? 'Signing in…' : 'Sign in'}
+      <Button type="submit" variant="primary" size="lg" shape="pill" icon={LogIn} loading={busy} className="w-full">
+        {busy ? 'Logging in…' : 'Log in'}
       </Button>
 
-      <GoogleButton onCredential={google} />
+      <GoogleButton onCredential={google} dividerLabel="or continue with" shape="pill" />
     </AuthShell>
   );
 }

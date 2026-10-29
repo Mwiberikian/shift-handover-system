@@ -25,8 +25,9 @@ export function useGoogleClientId() {
 
 // Google's own "Continue with Google" button (Google Identity Services).
 // Renders nothing unless Google sign-in is configured. `onCredential` gets the
-// ID token, which must be verified by the server.
-export default function GoogleButton({ onCredential, text = 'continue_with', divider = true }) {
+// ID token, which must be verified by the server. `shape` is Google's own
+// option ('rectangular' or 'pill'); `dividerLabel` is the text in the rule above.
+export default function GoogleButton({ onCredential, text = 'continue_with', divider = true, dividerLabel = 'or', shape = 'rectangular' }) {
   const clientId = useGoogleClientId();
   const { theme } = useTheme();
   const box = useRef(null);
@@ -44,7 +45,7 @@ export default function GoogleButton({ onCredential, text = 'continue_with', div
     <div className="space-y-4">
       {divider && (
         <div className="flex items-center gap-3 text-meta text-ink-600" aria-hidden>
-          <span className="h-px flex-1 bg-ink-900/10" /> or <span className="h-px flex-1 bg-ink-900/10" />
+          <span className="h-px flex-1 bg-ink-900/10" /> {dividerLabel} <span className="h-px flex-1 bg-ink-900/10" />
         </div>
       )}
       <div ref={box} className="flex min-h-10 justify-center">
@@ -57,7 +58,7 @@ export default function GoogleButton({ onCredential, text = 'continue_with', div
             text={text}
             theme={theme === 'dark' ? 'filled_black' : 'outline'}
             size="large"
-            shape="rectangular"
+            shape={shape}
             logo_alignment="center"
             width={width}
           />

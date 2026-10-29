@@ -2,8 +2,14 @@ import { Moon, Sun } from 'lucide-react';
 import { useThemeSwitch } from '../../lib/preferences';
 import { cx } from '../../lib/format';
 
-// Sun/moon switch for the dark header bars (app, landing, help, sign-in).
-export default function ThemeToggle({ className }) {
+const TONES = {
+  dark: 'text-white/80 hover:bg-white/10 hover:text-white',
+  light: 'text-ink-700 hover:bg-ink-100 hover:text-fg',
+};
+
+// Sun/moon switch. `tone="dark"` for the dark header bars (app, landing,
+// help); `tone="light"` on a plain surface (sign-in pages).
+export default function ThemeToggle({ tone = 'dark', className }) {
   const { theme, toggle } = useThemeSwitch();
   const dark = theme === 'dark';
   return (
@@ -13,7 +19,7 @@ export default function ThemeToggle({ className }) {
       aria-pressed={dark}
       aria-label="Dark theme"
       title={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-      className={cx('grid size-11 shrink-0 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white', className)}
+      className={cx('grid size-11 shrink-0 place-items-center rounded-lg transition-colors', TONES[tone], className)}
     >
       {dark ? <Sun aria-hidden className="size-[18px]" /> : <Moon aria-hidden className="size-[18px]" />}
     </button>

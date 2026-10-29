@@ -19,16 +19,23 @@ const SIZES = {
   icon: 'size-11 justify-center',
 };
 
+// `pill` is fully rounded and dips slightly when pressed (sign-in pages).
+const SHAPES = {
+  rounded: 'rounded-lg transition-colors',
+  pill: 'rounded-full transition-[color,background-color,border-color,transform] active:scale-[0.98] disabled:active:scale-100',
+};
+
 // Class string for anything that should look like a Button (e.g. a Link).
-export const buttonClass = ({ variant = 'secondary', size = 'md', className } = {}) => cx(
-  'inline-flex shrink-0 items-center justify-center rounded-lg font-medium whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed',
+export const buttonClass = ({ variant = 'secondary', size = 'md', shape = 'rounded', className } = {}) => cx(
+  'inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap duration-150 disabled:cursor-not-allowed',
+  SHAPES[shape],
   VARIANTS[variant],
   SIZES[size],
   className,
 );
 
 const Button = forwardRef(function Button(
-  { variant = 'secondary', size = 'md', loading = false, icon: Icon, className, children, disabled, type = 'button', ...props },
+  { variant = 'secondary', size = 'md', shape, loading = false, icon: Icon, className, children, disabled, type = 'button', ...props },
   ref,
 ) {
   const iconSize = size === 'sm' ? 'size-3.5' : 'size-4';
@@ -38,7 +45,7 @@ const Button = forwardRef(function Button(
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={buttonClass({ variant, size, className })}
+      className={buttonClass({ variant, size, shape, className })}
       {...props}
     >
       {loading

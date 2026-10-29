@@ -42,8 +42,8 @@ export default function ChangePassword() {
   return (
     <AuthShell as="form" onSubmit={submit}>
       <div>
-        <h1 className="flex items-center gap-2 text-lg font-semibold text-fg"><KeyRound aria-hidden className="size-5" />Choose a new password</h1>
-        <p className="mt-0.5 text-ink-700">
+        <h1 className="flex items-center gap-2 text-headline text-fg"><KeyRound aria-hidden className="size-5" />Choose a new password</h1>
+        <p className="mt-2 text-ink-700">
           {forced
             ? 'You signed in with a temporary password. Choose your own before you continue.'
             : 'Enter your current password and a new one.'}
