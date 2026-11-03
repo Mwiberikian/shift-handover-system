@@ -74,7 +74,7 @@ export default function RequestAccess() {
 
   if (sent) {
     return (
-      <AuthShell wide>
+      <AuthShell wide photo="signup">
         <div role="status" className="flex flex-col items-center gap-3 py-2 text-center">
           <span className="grid size-12 place-items-center rounded-full bg-status-green-soft text-status-green ring-1 ring-status-green-line ring-inset">
             <CheckCircle2 aria-hidden className="size-6" />
@@ -94,6 +94,7 @@ export default function RequestAccess() {
     <AuthShell
       as="form"
       wide
+      photo="signup"
       onSubmit={submit}
       noValidate
       footer={<p className="text-ink-700">Already have an account? <CardLink to="/login">Sign in</CardLink></p>}

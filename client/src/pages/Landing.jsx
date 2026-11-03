@@ -3,13 +3,19 @@ import {
 } from 'lucide-react';
 import Brand from '../components/shell/Brand';
 import PublicHeader from '../components/shell/PublicHeader';
-import { buttonClass } from '../components/ui';
+import { Reveal, buttonClass } from '../components/ui';
 import EntryButton from '../components/shell/EntryButton';
 import { useAuth } from '../auth/AuthContext';
+import { useParallax } from '../lib/useReveal';
 import aircraftUrl from '../assets/images/aircraft-gate.webp';
 import towerUrl from '../assets/images/control-tower.webp';
 import boardUrl from '../assets/images/departure-board.webp';
 import terminalUrl from '../assets/images/terminal.webp';
+
+// Hero entrance on load, one line after another. motion-safe only: with
+// reduced motion nothing waits on an animation delay.
+const ENTER = 'motion-safe:animate-rise-in';
+const enterDelay = (ms) => ({ animationDelay: `${ms}ms` });
 
 // The four capabilities the system actually implements; copy describes real behaviour.
 const FEATURES = [
@@ -44,6 +50,7 @@ const STEPS = [
 
 export default function Landing() {
   const { claims } = useAuth();
+  const heroPhoto = useParallax({ max: 40 });
   return (
     <div className="min-h-screen bg-surface text-fg">
       <a href="#main" className="sr-only z-[60] rounded-md bg-surface px-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:inline-flex focus:min-h-11 focus:items-center">
@@ -51,7 +58,7 @@ export default function Landing() {
       </a>
 
       {/* Fixed chrome: the hero photo, then page content, scroll beneath it. */}
-      <PublicHeader>
+      <PublicHeader condense>
         <a href="#features" className="hidden min-h-11 items-center rounded-md px-2 text-sm font-medium text-white/80 transition-colors hover:text-white lg:inline-flex">Features</a>
         <a href="#how-it-works" className="hidden min-h-11 items-center rounded-md px-2 text-sm font-medium text-white/80 transition-colors hover:text-white lg:inline-flex">How it works</a>
       </PublicHeader>
@@ -59,22 +66,24 @@ export default function Landing() {
       <main id="main">
         {/* Hero */}
         <section className="relative isolate flex min-h-[92vh] items-center overflow-hidden bg-brand-black pt-27">
-          <img src={aircraftUrl} alt="" aria-hidden className="absolute inset-0 -z-10 size-full object-cover" />
+          {/* 40 px taller than the hero and starting 40 px above it, so the parallax
+              (md and up, at most 40 px) never shows an edge. */}
+          <img ref={heroPhoto} src={aircraftUrl} alt="" aria-hidden className="absolute inset-x-0 -top-10 -z-10 h-[calc(100%+2.5rem)] w-full object-cover will-change-transform" />
           <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-black/80 via-brand-black/40 to-brand-black/10" />
           <div className="mx-auto w-full max-w-screen-xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="glass-light max-w-2xl animate-page-in rounded-2xl p-6 shadow-pop sm:p-10">
-              <p className="flex items-center gap-2 text-meta font-semibold tracking-widest text-accent-fg uppercase">
+            <div className={`glass-light max-w-2xl rounded-2xl p-6 shadow-pop sm:p-10 ${ENTER}`}>
+              <p className={`flex items-center gap-2 text-meta font-semibold tracking-widest text-accent-fg uppercase ${ENTER}`} style={enterDelay(120)}>
                 <span aria-hidden className="h-0.5 w-6 bg-brand-red" /> Airline operations
               </p>
-              <h1 className="mt-4 text-3xl leading-tight font-bold tracking-tight text-balance text-fg sm:text-5xl sm:leading-[1.1]">
+              <h1 className={`mt-4 text-3xl leading-tight font-bold tracking-tight text-balance text-fg sm:text-5xl sm:leading-[1.1] ${ENTER}`} style={enterDelay(200)}>
                 Every shift handover documented, acknowledged and accountable.
               </h1>
-              <p className="mt-5 text-base leading-relaxed text-ink-700 sm:text-lg">
+              <p className={`mt-5 text-base leading-relaxed text-ink-700 sm:text-lg ${ENTER}`} style={enterDelay(280)}>
                 Shift Handover replaces verbal and paper handovers with a structured digital record. The outgoing shift
                 completes a department checklist, the incoming shift formally accepts it, and supervisors see every open
                 handover as it happens.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className={`mt-8 flex flex-col gap-3 sm:flex-row ${ENTER}`} style={enterDelay(360)}>
                 <EntryButton size="lg" />
                 <a href="#features" className={buttonClass({ variant: 'secondary', size: 'lg' })}>
                   See what it does <ArrowRight aria-hidden className="size-4" />
@@ -87,20 +96,23 @@ export default function Landing() {
         {/* Features */}
         <section id="features" aria-labelledby="features-title" className="scroll-mt-28 bg-ink-50 py-20 sm:py-24">
           <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl">
+            <Reveal className="max-w-2xl">
               <p className="text-meta font-semibold tracking-widest text-accent-fg uppercase">Capabilities</p>
               <h2 id="features-title" className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Built around the moment responsibility changes hands</h2>
               <p className="mt-3 text-ink-600 sm:text-base">Four things every handover gets, whichever department it comes from.</p>
-            </div>
+            </Reveal>
             <ul className="mt-12 grid gap-5 sm:grid-cols-2">
-              {FEATURES.map(({ icon: Icon, title, body }) => (
-                <li key={title} className="group rounded-xl border border-ink-200 bg-surface p-6 shadow-card transition-shadow hover:shadow-pop">
-                  <span className="grid size-11 place-items-center rounded-lg bg-status-red-soft text-accent-fg ring-1 ring-status-red-line ring-inset">
-                    <Icon aria-hidden className="size-5" />
-                  </span>
-                  <h3 className="mt-5 text-section">{title}</h3>
-                  <p className="mt-2 leading-relaxed text-ink-600">{body}</p>
-                </li>
+              {FEATURES.map(({ icon: Icon, title, body }, i) => (
+                <Reveal as="li" key={title} delay={i * 100} className="group rounded-xl border border-ink-200 bg-surface shadow-card">
+                  {/* Hover shadow on an inner box: the reveal owns the li's transition. */}
+                  <div className="h-full rounded-xl p-6 transition-shadow hover:shadow-pop">
+                    <span className="grid size-11 place-items-center rounded-lg bg-status-red-soft text-accent-fg ring-1 ring-status-red-line ring-inset">
+                      <Icon aria-hidden className="size-5" />
+                    </span>
+                    <h3 className="mt-5 text-section">{title}</h3>
+                    <p className="mt-2 leading-relaxed text-ink-600">{body}</p>
+                  </div>
+                </Reveal>
               ))}
             </ul>
           </div>
@@ -109,7 +121,7 @@ export default function Landing() {
         {/* How it works, beside the control tower photo */}
         <section id="how-it-works" aria-labelledby="how-title" className="scroll-mt-28 bg-surface py-20 sm:py-24">
           <div className="mx-auto grid max-w-screen-xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-            <div className="relative order-last lg:order-first">
+            <Reveal direction="left" className="relative order-last lg:order-first">
               <img src={towerUrl} alt="Airport control tower against a cloudy sky" loading="lazy" className="aspect-[4/5] w-full rounded-2xl object-cover shadow-pop sm:aspect-[4/3] lg:aspect-[4/5]" />
               <img
                 src={boardUrl}
@@ -117,13 +129,15 @@ export default function Landing() {
                 loading="lazy"
                 className="absolute -right-3 -bottom-6 hidden w-2/5 rounded-xl border-4 border-surface object-cover shadow-pop sm:block lg:-right-8"
               />
-            </div>
+            </Reveal>
             <div>
-              <p className="text-meta font-semibold tracking-widest text-accent-fg uppercase">How it works</p>
-              <h2 id="how-title" className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">One record, from the outgoing shift to supervisor sign-off</h2>
+              <Reveal>
+                <p className="text-meta font-semibold tracking-widest text-accent-fg uppercase">How it works</p>
+                <h2 id="how-title" className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">One record, from the outgoing shift to supervisor sign-off</h2>
+              </Reveal>
               <ol className="mt-8 space-y-6">
                 {STEPS.map(({ icon: Icon, title, body }, i) => (
-                  <li key={title} className="flex gap-4">
+                  <Reveal as="li" key={title} delay={i * 100} className="flex gap-4">
                     <span className="grid size-10 shrink-0 place-items-center rounded-full bg-fg text-surface">
                       <Icon aria-hidden className="size-[18px]" />
                     </span>
@@ -133,7 +147,7 @@ export default function Landing() {
                       </h3>
                       <p className="mt-1 leading-relaxed text-ink-600">{body}</p>
                     </div>
-                  </li>
+                  </Reveal>
                 ))}
               </ol>
             </div>
@@ -145,15 +159,15 @@ export default function Landing() {
           <img src={terminalUrl} alt="" aria-hidden loading="lazy" className="absolute inset-0 -z-10 size-full object-cover opacity-35" />
           <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-1 bg-brand-red" />
           <div className="mx-auto flex max-w-screen-xl flex-col items-start gap-8 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            <div className="max-w-2xl">
+            <Reveal className="max-w-2xl">
               <h2 id="cta-title" className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Starting or finishing a shift?</h2>
               <p className="mt-3 text-white/85 sm:text-base">
                 {claims
                   ? 'Open your dashboard to prepare, acknowledge or review handovers for your department.'
                   : 'Log in with your staff number or work email to prepare, acknowledge or review handovers for your department.'}
               </p>
-            </div>
-            <EntryButton size="lg" />
+            </Reveal>
+            <Reveal delay={120}><EntryButton size="lg" /></Reveal>
           </div>
         </section>
       </main>

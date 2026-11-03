@@ -39,9 +39,10 @@ export const workbox = {
   // Not the page photos, and never data. Section 1.5.1: no offline data.
   globPatterns: ['**/*.{html,js,css,woff2}', 'icons/*.{png,svg}', 'manifest.webmanifest'],
   globIgnores: ['**/assets/images/**', '**/*.webp'],
-  // Deep links (/supervisor/queue) open the shell; the API is never a page.
+  // Deep links (/supervisor/queue) open the shell; the API is never a page,
+  // and neither is a static file under /images (the photo credits link).
   navigateFallback: '/index.html',
-  navigateFallbackDenylist: [/^\/api\//],
+  navigateFallbackDenylist: [/^\/api\//, /^\/images\//],
   cleanupOutdatedCaches: true,
   // Push and notification-click handlers (R3), kept in public/push-sw.js.
   importScripts: ['push-sw.js'],

@@ -1,0 +1,17 @@
+Photo credits - sign-in pages (public/images)
+==============================================
+
+Shown behind the brand gradient on the sign-in and request-access pages
+(client/src/components/shell/AuthShell.jsx). The resized copies
+(*-800 and *-1600, WebP and JPG) are made from the originals by
+`npm run photos` (client/scripts/optimize-auth-photos.mjs).
+
+login.jpg  (portrait; a hand on a computer mouse beside a laptop keyboard)
+  Photographer: [TO FILL IN]
+  Source URL:   [TO FILL IN]
+  Licence:      [TO FILL IN]
+
+signup.jpg (landscape; hands typing on a laptop, notebook and mug behind)
+  Photographer: [TO FILL IN]
+  Source URL:   [TO FILL IN]
+  Licence:      [TO FILL IN]

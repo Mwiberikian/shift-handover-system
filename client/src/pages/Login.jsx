@@ -55,6 +55,7 @@ export default function Login() {
   return (
     <AuthShell
       as="form"
+      photo="login"
       onSubmit={submit}
       footer={<p className="text-ink-700">Need an account? <CardLink to="/request-access">Request access</CardLink></p>}
     >
