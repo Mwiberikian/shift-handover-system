@@ -264,6 +264,11 @@ describe('search by meaning', () => {
 
 describe('digest', () => {
   test('summarises the latest ended shift of the department', async () => {
+    // buildWorld() creates an empty 'previous' shift that ended when the current
+    // shift window began, which can be later than the 2 h used below (for two
+    // hours after each shift change). Remove it so the test does not depend on
+    // the time of day.
+    await pool.query('DELETE FROM shift WHERE department_id = $1 AND end_time <= now()', [world.depts.dept_a.department_id]);
     await makeRecord(world, { endedHoursAgo: 40, status: 'closed' });
     await makeRecord(world, { endedHoursAgo: 2, status: 'submitted', incidents: [{ title: 'Fuel spill at stand 2', severity: 'critical' }], tasks: [{ description: 'Clean fuel spill at stand 2 and inspect hose', priority: 'high' }] });
     const res = await as(world, 'supA').get('/api/assistant/digest');
