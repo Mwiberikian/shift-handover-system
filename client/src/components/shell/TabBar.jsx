@@ -7,13 +7,14 @@ import { useUnreadMessages } from '../../lib/unread';
 import { NAV, isTabActive, tabsFor } from './nav';
 import { AccountItems, AccountSummary, ThemeSwitchRow } from './UserMenu';
 import CalendarFeedDialog from './CalendarFeedDialog';
+import PasskeysDialog from './PasskeysDialog';
 
 const ROW = 'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-body text-ink-800 hover:bg-ink-100 hover:text-fg';
 
 // Phone account sheet behind the Me tab: the account menu's rows, the screens
 // that have no tab of their own, theme and log out.
 function MeSheet({
-  open, onClose, role, onLogout, onCalendar,
+  open, onClose, role, onLogout, onCalendar, onPasskeys,
 }) {
   const { pathname } = useLocation();
   const tabPaths = new Set(tabsFor(role).map((t) => t.to));
@@ -47,7 +48,7 @@ function MeSheet({
               </nav>
             )}
             <div className="py-1.5">
-              <AccountItems onCalendar={() => { onClose(); onCalendar(); }}>
+              <AccountItems onCalendar={() => { onClose(); onCalendar(); }} onPasskeys={() => { onClose(); onPasskeys(); }}>
                 <ThemeSwitchRow />
               </AccountItems>
               <Link to="/" className={ROW}><Home aria-hidden className="size-4 text-ink-500" /> Home</Link>
@@ -72,6 +73,7 @@ export default function TabBar({ role, onLogout }) {
   const unread = useUnreadMessages();
   const [meOpen, setMeOpen] = useState(false);
   const [feedOpen, setFeedOpen] = useState(false);
+  const [passkeysOpen, setPasskeysOpen] = useState(false);
   const tabs = tabsFor(role);
 
   useEffect(() => {
@@ -128,8 +130,9 @@ export default function TabBar({ role, onLogout }) {
           );
         })}
       </nav>
-      <MeSheet open={meOpen} onClose={() => setMeOpen(false)} role={role} onLogout={onLogout} onCalendar={() => setFeedOpen(true)} />
+      <MeSheet open={meOpen} onClose={() => setMeOpen(false)} role={role} onLogout={onLogout} onCalendar={() => setFeedOpen(true)} onPasskeys={() => setPasskeysOpen(true)} />
       <CalendarFeedDialog open={feedOpen} onClose={() => setFeedOpen(false)} />
+      <PasskeysDialog open={passkeysOpen} onClose={() => setPasskeysOpen(false)} />
     </>
   );
 }

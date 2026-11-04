@@ -181,5 +181,5 @@ async function changePassword(userId, currentPassword, newPassword) {
 }
 
 module.exports = {
-  login, googleConfig, googleProfile, googleSignIn, changePassword,
+  login, googleConfig, googleProfile, googleSignIn, changePassword, issueSession, PROFILE_SELECT,
 };

@@ -15,6 +15,15 @@ describe('service worker caching rules', () => {
     expect(isNetworkOnly(req('http://localhost:4000/api/notifications/unread-count'))).toBe(true);
   });
 
+  test('passkey requests are NetworkOnly and never served the app shell', () => {
+    for (const path of ['config', 'login/options', 'login/verify', 'register/options', 'register/verify']) {
+      expect(isNetworkOnly(req(`https://api.shms.example/api/auth/passkeys/${path}`))).toBe(true);
+    }
+    expect(workbox.navigateFallbackDenylist.some((re) => re.test('/api/auth/passkeys/login/verify'))).toBe(true);
+    // Only GETs are routed; the POSTs go straight to the network.
+    expect(workbox.runtimeCaching.every((route) => route.method === 'GET')).toBe(true);
+  });
+
   test('any request with Authorization is NetworkOnly', () => {
     expect(isNetworkOnly(req('https://shms.example/anything', { Authorization: 'Bearer x' }))).toBe(true);
   });

@@ -150,5 +150,7 @@ router.post(
   },
 );
 
+router.use('/passkeys', require('./passkeys.routes'));
+
 module.exports = router;
 module.exports.passwordChangeStore = passwordChangeStore;

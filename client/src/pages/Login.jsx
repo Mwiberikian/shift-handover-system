@@ -6,6 +6,8 @@ import { ROLE_HOME, useAuth } from '../auth/AuthContext';
 import { Button, Callout, Input } from '../components/ui';
 import AuthShell, { CardLink } from '../components/shell/AuthShell';
 import GoogleButton from '../components/shell/GoogleButton';
+import PasskeyButton from '../components/shell/PasskeyButton';
+import { markPasswordLogin } from '../lib/passkeys';
 import { toast } from '../lib/toast';
 
 export default function Login() {
@@ -24,6 +26,7 @@ export default function Login() {
     setError('');
     try {
       const claims = await login(identifier.trim(), password);
+      markPasswordLogin();
       navigate(claims.pwd_change ? '/change-password' : ROLE_HOME[claims.role], { replace: true });
     } catch (err) {
       setError(err.response?.status === 401 ? 'The staff number/email or password is incorrect.' : errorMessage(err));
@@ -51,6 +54,8 @@ export default function Login() {
       }
     }
   };
+
+  const passkey = (claims) => navigate(claims.pwd_change ? '/change-password' : ROLE_HOME[claims.role], { replace: true });
 
   return (
     <AuthShell
@@ -104,6 +109,8 @@ export default function Login() {
       </Button>
 
       <GoogleButton onCredential={google} dividerLabel="or continue with" shape="pill" />
+
+      <PasskeyButton onSignedIn={passkey} />
     </AuthShell>
   );
 }

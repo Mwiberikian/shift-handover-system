@@ -151,6 +151,19 @@ It is sent after the change commits. A device the push service reports gone
 Keep the key pair: a new one drops every subscription, and users must turn
 push on again.
 
+## 5. Passkeys (optional)
+
+Passkeys (WebAuthn) are an additional way to sign in to an existing account.
+Password and Google sign-in do not change. They are **off** until
+`WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN` and `WEBAUTHN_RP_NAME` are all set on the
+API. If any is missing or they don't match each other, the passkey endpoints
+answer 404 and the client hides the passkey buttons.
+
+The RP ID and origin describe the **website**, not the API, even though the API
+is on another host. Fingerprint, face and PIN stay on the device: the server
+keeps only a public key. An administrator can clear a user's passkeys when a
+device is lost with `DELETE /api/admin/users/:id/passkeys`.
+
 ## Environment variables
 
 ### API (`server`, runtime)
@@ -166,6 +179,10 @@ push on again.
 | `TRUST_PROXY` | no | `1` in production, else off | Proxies in front of the API (a hop count, or `false`) |
 | `UV_THREADPOOL_SIZE` | no | min(12, CPUs) | libuv threads (bcrypt hashing) |
 | `GOOGLE_CLIENT_ID` | no | unset (off) | Sign in with Google. Add the client's origin as an authorised JavaScript origin in Google Cloud Console |
+| `WEBAUTHN_RP_ID` | with passkeys | unset (off) | The website's hostname, no scheme or port, e.g. `my-site.netlify.app`. Changing it makes every existing passkey stop working |
+| `WEBAUTHN_ORIGIN` | with passkeys | unset (off) | The website's full `https` origin. `http://localhost` works only when `NODE_ENV` is not `production` |
+| `WEBAUTHN_RP_NAME` | with passkeys | unset (off) | Name shown in the device's passkey prompt: `Shift Handover Management System` |
+| `PASSKEY_RATE_LIMIT` | no | `30` | Passkey requests per 15 minutes: per IP for sign-in, per user otherwise |
 | `ACCESS_REQUEST_RATE_LIMIT` | no | `5` | Public access requests per IP per hour |
 | `MESSAGE_RATE_LIMIT` | no | `30` | Messages per user per hour |
 | `MESSAGE_EMAIL_RATE_LIMIT` | no | `10` | Email/Both messages per user per hour |
@@ -255,6 +272,9 @@ old alerts and reminders, so check the count before relying on the result.
 - [ ] Optional: push keys from `npm run vapid` and `PUSH_ENABLED=true`; on a
       phone, "Push notifications on this device" turns on and a submitted
       handover arrives as a notification.
+- [ ] Optional: `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN` and `WEBAUTHN_RP_NAME` set
+      for the website's address; add a passkey from the account menu, log out,
+      and sign in with it.
 - [ ] Installable app: over HTTPS the browser offers to install it, and
       `/sw.js` is served with `Cache-Control: no-cache`.
 - [ ] Checks, from `client/` with `BASE_URL` and `API_URL` set, against a

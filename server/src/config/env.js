@@ -45,4 +45,24 @@ function productionConfigErrors(env = process.env) {
   return errors;
 }
 
-module.exports = { clientOrigins, trustProxy, productionConfigErrors };
+// Passkeys: { rpID, origin, rpName }, or null when off. All three variables are
+// needed. The origin must be https, or http://localhost outside production, and
+// its host must be the RP ID or a subdomain of it. Anything else leaves
+// passkeys off, because the browser would refuse every ceremony anyway.
+function webauthnConfig(env = process.env) {
+  const rpID = env.WEBAUTHN_RP_ID?.trim();
+  const rawOrigin = env.WEBAUTHN_ORIGIN?.trim();
+  const rpName = env.WEBAUTHN_RP_NAME?.trim();
+  if (!rpID || !rawOrigin || !rpName) return null;
+
+  let url;
+  try { url = new URL(rawOrigin); } catch { return null; }
+  const localDev = url.protocol === 'http:' && url.hostname === 'localhost' && env.NODE_ENV !== 'production';
+  if (url.protocol !== 'https:' && !localDev) return null;
+  if (url.hostname !== rpID && !url.hostname.endsWith(`.${rpID}`)) return null;
+  return { rpID, origin: url.origin, rpName };
+}
+
+module.exports = {
+  clientOrigins, trustProxy, productionConfigErrors, webauthnConfig,
+};

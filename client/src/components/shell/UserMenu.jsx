@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import {
-  BellRing, CalendarSync, ChevronDown, Download, KeyRound, Mail, Moon,
+  BellRing, CalendarSync, ChevronDown, Download, FingerprintPattern, KeyRound, Mail, Moon,
 } from 'lucide-react';
 import api from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { ROLE_LABEL, cx, initials } from '../../lib/format';
 import { toast, toastError } from '../../lib/toast';
 import CalendarFeedDialog from './CalendarFeedDialog';
+import PasskeysDialog from './PasskeysDialog';
 import { promptInstall, useInstallMode } from '../../pwa/install';
+import { usePasskeysAvailable } from '../../lib/passkeys';
 import { useThemeSwitch } from '../../lib/preferences';
 import {
   currentSubscription, disablePush, enablePush, pushConfig, pushSupported,
@@ -164,8 +166,9 @@ export function AccountSummary() {
 }
 
 // The account rows, shared by this menu and the phone's Me sheet. The caller
-// owns the calendar dialog, so it outlives the menu that opened it.
-export function AccountItems({ onCalendar, children }) {
+// owns the calendar and passkey dialogs, so they outlive the menu that opened them.
+export function AccountItems({ onCalendar, onPasskeys, children }) {
+  const passkeys = usePasskeysAvailable();
   return (
     <>
       <EmailAlertsSwitch />
@@ -173,6 +176,11 @@ export function AccountItems({ onCalendar, children }) {
       <button type="button" onClick={onCalendar} className={ROW}>
         <CalendarSync aria-hidden className="size-4 text-ink-500" /> Calendar subscription
       </button>
+      {passkeys && (
+        <button type="button" onClick={onPasskeys} className={ROW}>
+          <FingerprintPattern aria-hidden className="size-4 text-ink-500" /> Passkeys
+        </button>
+      )}
       <InstallAppItem />
       {children}
       <Link to="/change-password" className={ROW}>
@@ -187,6 +195,7 @@ export function AccountItems({ onCalendar, children }) {
 export default function UserMenu({ children }) {
   const { claims, profile } = useAuth();
   const [feedOpen, setFeedOpen] = useState(false);
+  const [passkeysOpen, setPasskeysOpen] = useState(false);
   const name = profile?.full_name ?? '…';
   return (
     <>
@@ -213,11 +222,12 @@ export default function UserMenu({ children }) {
       >
         <AccountSummary />
         <div className="pt-1.5">
-          <AccountItems onCalendar={() => setFeedOpen(true)}>{children}</AccountItems>
+          <AccountItems onCalendar={() => setFeedOpen(true)} onPasskeys={() => setPasskeysOpen(true)}>{children}</AccountItems>
         </div>
       </PopoverPanel>
     </Popover>
     <CalendarFeedDialog open={feedOpen} onClose={() => setFeedOpen(false)} />
+    <PasskeysDialog open={passkeysOpen} onClose={() => setPasskeysOpen(false)} />
     </>
   );
 }

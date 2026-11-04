@@ -4,6 +4,7 @@ const validate = require('../../middleware/validate');
 const { requireAuth, requireRole } = require('../../middleware/auth');
 const service = require('./admin.service');
 const accessRequests = require('../accessRequests/accessRequests.service');
+const passkeys = require('../auth/passkeys.service');
 
 const router = express.Router();
 router.use(requireAuth, requireRole('admin'));
@@ -54,6 +55,9 @@ router.patch(
 
 // Soft delete: deactivates the account (history is never removed).
 router.delete('/users/:id', userId, validate, async (req, res) => res.json(await service.deactivateUser(req.user, req.params.id)));
+
+// Clears a user's passkeys, for example when a device is lost.
+router.delete('/users/:id/passkeys', userId, validate, async (req, res) => res.json(await passkeys.clearForUser(req.user.user_id, req.params.id)));
 
 // ---- Departments & templates ----------------------------------------------
 

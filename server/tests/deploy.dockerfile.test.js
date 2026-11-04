@@ -6,7 +6,7 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const dockerfile = fs.readFileSync(path.join(root, 'Dockerfile'), 'utf8');
 const instructions = dockerfile
-  .replace(/\\r?\n/g, ' ')
+  .replace(/\\\r?\n/g, ' ')
   .split(/\r?\n/)
   .map((l) => l.trim())
   .filter((l) => l && !l.startsWith('#'));

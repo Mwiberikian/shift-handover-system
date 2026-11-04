@@ -13,6 +13,7 @@ import UserMenu, { ThemeSwitchRow } from './shell/UserMenu';
 import TabBar from './shell/TabBar';
 import UtilityBar from './shell/UtilityBar';
 import SyncStatus from './shell/SyncStatus';
+import PasskeyPrompt from './shell/PasskeyPrompt';
 import { pagePhotoFor } from './shell/pagePhotos';
 import { useUnreadPolling } from '../lib/unread';
 import { cx } from '../lib/format';
@@ -160,6 +161,7 @@ export default function Layout() {
         className={cx('safe-x min-h-screen pt-(--chrome-top) pb-[calc(var(--tabbar-h,0px)+var(--safe-bottom))] md:pl-16 lg:pl-60', photo && 'page-photo')}
         style={photo ? { '--page-photo': `url(${photo})` } : undefined}
       >
+        <PasskeyPrompt />
         {/* Keyed on the route so each screen fades in on navigation. */}
         <div key={pathname} className="mx-auto max-w-screen-2xl animate-page-in px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
