@@ -26,10 +26,12 @@ if (configErrors.length) {
 
 const app = require('./app');
 const { startJobs } = require('./jobs/reminders');
+const { smtpStartupLine } = require('./modules/notifications/email/mailer');
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT} (UV_THREADPOOL_SIZE=${process.env.UV_THREADPOOL_SIZE})`);
+  console.log(smtpStartupLine());
 });
 
 // The jobs tick runs every minute: work sessions (always: ends silent and

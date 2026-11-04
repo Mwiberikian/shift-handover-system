@@ -156,6 +156,19 @@ test('a refusal at send time (email switched off meanwhile) fails at once withou
   expect(await notification(row.notification_id)).toMatchObject({ email_status: 'failed' });
 });
 
+test('a failure logs the SMTP host, port and error code, never the password', async () => {
+  Object.assign(process.env, { SMTP_HOST: 'smtp.example.org', SMTP_PORT: '587', SMTP_USER: 'mailer', SMTP_PASS: 'hunter2' });
+  setTransport({
+    sendMail: async () => { throw Object.assign(new Error('connect ETIMEDOUT 192.0.2.1:587'), { code: 'ETIMEDOUT' }); },
+  });
+  await queue();
+  await run();
+  expect(logger.warn).toHaveBeenCalledTimes(1);
+  const line = logger.warn.mock.calls[0][0];
+  expect(line).toContain('smtp=smtp.example.org:587 code=ETIMEDOUT');
+  expect(line).not.toContain('hunter2');
+});
+
 test('two overlapping runs send each email once', async () => {
   await queue();
   await notify({ userIds: [world.users.supA.user_id], type: 'handover_submitted' }, { channels: ['email'] });

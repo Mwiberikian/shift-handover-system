@@ -5,6 +5,7 @@
 // EMAIL_ALLOWED_DOMAINS unless EMAIL_ALLOW_EXTERNAL=true. The development
 // default is the Mailpit container from docker-compose.yml (SMTP on 1025, web
 // UI on 8025), which catches every message and delivers none.
+const net = require('net');
 const nodemailer = require('nodemailer');
 
 const flag = (v) => String(v ?? '').trim().toLowerCase() === 'true';
@@ -25,18 +26,51 @@ function emailConfig(env = process.env) {
   };
 }
 
-// nodemailer SMTP options. Credentials are sent only when a user is set.
+// Opens the SMTP socket for nodemailer, in options.family. nodemailer 9 has no
+// `family` option of its own: it resolves A and AAAA itself and may dial either,
+// which fails with ENETUNREACH on a host with no IPv6 route (Render). It keeps
+// the configured hostname for TLS (SNI and certificate checks) on this socket.
+function connectWithFamily(options, callback) {
+  const socket = net.connect({ host: options.host, port: options.port, family: options.family });
+  let timer = null;
+  const finish = (err) => {
+    clearTimeout(timer);
+    socket.removeListener('connect', finish);
+    socket.removeListener('error', finish);
+    if (err) {
+      socket.destroy();
+      callback(err);
+    } else {
+      callback(null, { connection: socket });
+    }
+  };
+  timer = setTimeout(() => {
+    const err = new Error(`connect ETIMEDOUT ${options.host}:${options.port}`);
+    err.code = 'ETIMEDOUT';
+    finish(err);
+  }, options.connectionTimeout);
+  socket.once('connect', finish);
+  socket.once('error', finish);
+}
+
+// nodemailer SMTP options. Credentials are sent only when a user is set. IPv4
+// only, and a bad network fails within seconds instead of hanging the jobs tick.
 function transportOptions(cfg = emailConfig()) {
   return {
     host: cfg.host,
     port: cfg.port,
     secure: cfg.secure,
     ...(cfg.user && { auth: { user: cfg.user, pass: cfg.pass } }),
+    family: 4,
+    getSocket: connectWithFamily,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
-    socketTimeout: 20000,
+    socketTimeout: 15000,
   };
 }
+
+// The start-up line: whether SMTP_HOST is set, never its value or credentials.
+const smtpStartupLine = (env = process.env) => `SMTP configured: host set ${env.SMTP_HOST ? 'yes' : 'no'}.`;
 
 const domainOf = (address) => {
   const m = /^[^\s@<>]+@([^\s@<>]+)$/.exec(String(address || '').trim());
@@ -85,5 +119,5 @@ async function sendEmail({ to, subject, text }, cfg = emailConfig()) {
 }
 
 module.exports = {
-  emailConfig, transportOptions, refusalReason, sendEmail, setTransport, getTransport, EmailRefused,
+  emailConfig, transportOptions, connectWithFamily, smtpStartupLine, refusalReason, sendEmail, setTransport, getTransport, EmailRefused,
 };

@@ -21,6 +21,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY migrations ./migrations
 COPY src ./src
+COPY scripts/retry-failed-emails.js ./scripts/retry-failed-emails.js
 
 # The node image's unprivileged user. Nothing in /app is writable by it.
 USER node

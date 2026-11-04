@@ -197,6 +197,29 @@ push on again.
 | `VAPID_PRIVATE_KEY` | with push | | From `npm run vapid` (secret). Changing the pair drops every subscription |
 | `VAPID_SUBJECT` | with push | | Contact for push services, e.g. `mailto:ops@example.com` |
 
+#### Email over SMTP
+
+To send email, set `EMAIL_ENABLED=true`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`,
+`SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, `APP_URL` and `EMAIL_ALLOWED_DOMAINS`
+(or `EMAIL_ALLOW_EXTERNAL=true`). For example, port `587` with
+`SMTP_SECURE=false` (STARTTLS), or port `465` with `SMTP_SECURE=true`.
+
+The API connects over IPv4 only, with timeouts of 10 to 15 seconds. At start-up
+the log shows `SMTP configured: host set yes` or `no`. Each failed attempt logs
+`smtp=<host>:<port> code=<error code>`, never the credentials.
+
+If Render's SMTP ports are blocked (ETIMEDOUT), use an HTTPS email provider instead.
+
+Once the cause is fixed, put emails that ended `failed` back in the queue from
+the `server` directory, with the API's `DATABASE_URL` set:
+
+```
+node scripts/retry-failed-emails.js
+```
+
+It prints how many were reset, and the next jobs tick sends them. That includes
+old alerts and reminders, so check the count before relying on the result.
+
 ### Client (`client`, build time)
 
 | Variable | Required | Purpose |

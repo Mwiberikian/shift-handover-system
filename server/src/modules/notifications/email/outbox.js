@@ -100,6 +100,7 @@ async function processOutbox({ now = new Date(), limit = 20 } = {}) {
         onFinalFailure: async (client, r) => { for (const hook of finalFailureHooks) await hook(client, r); },
       });
       logger.warn(`[email] ${final ? 'FAILED' : 'retry'} outbox=${row.id} notification=${row.notification_id} attempt=${attempt}`
+        + ` smtp=${cfg.host}:${cfg.port} code=${err.code || 'none'}`
         + `${final ? '' : ` next=${retryAt.toISOString()}`}: ${error}`);
       results.push({ id: row.id, status: final ? 'failed' : 'pending', attempts: attempt, error });
     }
