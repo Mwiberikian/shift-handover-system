@@ -185,6 +185,30 @@ router.post(
   async (req, res) => res.json(await workflow.resolve(req.user, req.params.id, req.body)),
 );
 
+// ---- Phase 2: automatic release, with holds --------------------------------
+// Supervisor (own department) or admin actions on a HELD report. Available
+// whatever AUTO_APPROVAL_ENABLED says: approving is the safe path out of a
+// hold, so it can never be switched off.
+const release = require('./release.service');
+
+router.post(
+  '/:id/approve',
+  requireRole('supervisor', 'admin'),
+  recordId,
+  optionalComments,
+  validate,
+  async (req, res) => res.json(await release.approve(req.user, req.params.id, req.body)),
+);
+
+router.post(
+  '/:id/send-back',
+  requireRole('supervisor', 'admin'),
+  recordId,
+  requiredComments('the reason for sending back'),
+  validate,
+  async (req, res) => res.json(await release.sendBack(req.user, req.params.id, req.body)),
+);
+
 // DR-12: rejected writes (400 validation, 422 incomplete submit) are audited.
 router.use(logRejectedWrite);
 

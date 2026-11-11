@@ -65,7 +65,8 @@ async function getById(user, recordId) {
       `SELECT a.action, a.new_value->>'comments' AS comments, a.logged_at, u.full_name AS by_name
          FROM audit_log a LEFT JOIN app_user u ON u.user_id = a.user_id
         WHERE a.entity_type = 'handover_record' AND a.entity_id = $1
-          AND a.action IN ('query', 'clarify', 'acknowledge', 'open_review', 'review', 'resolve')
+          AND a.action IN ('query', 'clarify', 'acknowledge', 'open_review', 'review', 'resolve',
+                           'auto_release', 'hold', 'approve_release')
         ORDER BY a.logged_at, a.log_id`,
       [recordId],
     ),

@@ -25,6 +25,7 @@ export function AttentionList({ onOpen }) {
             <li key={i.record_id}>
               <button type="button" onClick={() => onOpen(i.record_id)} className="flex min-h-11 w-full flex-col gap-1 px-4 py-3 text-left hover:bg-ink-50 sm:px-5">
                 <span className="flex flex-wrap items-center gap-2">
+                  {i.release_state === 'held' && <Badge tone="amber">Held for approval</Badge>}
                   <Badge tone={LEVEL_TONE[i.level] ?? 'gray'}>{i.level} · {i.score}</Badge>
                   <span className="font-medium text-fg">{i.department_name} · {shiftLabel(i)}</span>
                   <span className="text-meta text-ink-600">{formatEAT(i.shift_start, 'date')} · {i.outgoing_name}</span>

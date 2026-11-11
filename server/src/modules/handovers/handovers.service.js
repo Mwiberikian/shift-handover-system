@@ -388,13 +388,20 @@ async function submit(user, recordId) {
       },
     });
 
-    // 4. Notify incoming staff + department supervisors.
-    const notified = await notifyRecord(
-      client,
-      [submitted.incoming_user_id, ...(await departmentSupervisorIds(client, record.department_id))],
-      recordId,
-      'handover_submitted',
-    );
+    // 4. Phase 2: evaluate for automatic release (held on any failure).
+    // Required lazily: release.service requires this module back.
+    const { applyReleaseOnSubmit } = require('./release.service'); // eslint-disable-line global-require
+    const release = await applyReleaseOnSubmit(client, user, submitted);
+
+    // 5. Notify. The incoming person always receives the report at once, held
+    // or not (a hold never blocks the next shift). Supervisors get a
+    // 'handover_held' alert instead of the plain submission notice when the
+    // report needs their approval — one notification each, never both.
+    const supervisorIds = await departmentSupervisorIds(client, record.department_id);
+    const notified = [
+      ...await notifyRecord(client, [submitted.incoming_user_id], recordId, 'handover_submitted'),
+      ...await notifyRecord(client, supervisorIds, recordId, release.hold ? 'handover_held' : 'handover_submitted'),
+    ];
 
     return { ...(await fetchDetail(client, recordId)), carried_forward: carry.tasks.length, notified };
   });

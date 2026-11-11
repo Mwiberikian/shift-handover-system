@@ -88,6 +88,8 @@ describe('POST /api/handovers/:id/submit — success', () => {
       { entity_type: 'handover_record', action: 'create' },
       { entity_type: 'task', action: 'create' },
       { entity_type: 'handover_record', action: 'submit' },
+      // Phase 2: every automatic release decision is audited too.
+      { entity_type: 'handover_record', action: 'auto_release' },
     ]);
   });
 });

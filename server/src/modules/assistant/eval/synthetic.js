@@ -167,6 +167,143 @@ function ownHistory(seed = 51) {
   });
 }
 
+// ---------------------------------------------------------- release / holds
+// Phase 2 hazard set. The TRUE label (needs hold / safe to release) comes
+// from these lists, written as an operations vocabulary independent of the
+// HOLD keyword rules in ../constants.js — including paraphrases and reworded
+// events that a keyword matcher may miss (that is the point of the test).
+// A hazard event is one a supervisor must see before the report is stamped
+// "checks passed"; a safe event is routine shift traffic.
+
+// Events that genuinely need a hold. `sev` is the severity used when the
+// event is recorded as an incident (null: appears only as text).
+const HAZARD_EVENTS = [
+  // injuries and medical events, varied phrasing
+  'A loader injured his hand between the cart and the belt',
+  'Staff member hurt while opening the cargo door, taken for treatment',
+  'Ramp agent cut badly on a broken pallet edge, bleeding controlled',
+  'One of the cleaners fainted in the cabin and needed an ambulance',
+  'A staff member twisted an ankle on the stairs at gate 4',
+  'Marshaller struck on the shoulder by a swinging hold door',
+  'Technician burned his forearm on the APU exhaust',
+  // fire, smoke, explosion
+  'Smoke was seen coming from the belt loader engine bay',
+  'Small fire in a waste bin by the crew room, put out with an extinguisher',
+  'Smell of burning from the GPU cable drum at stand 6',
+  'Sparks observed from the floodlight junction box',
+  'The toaster in the crew room caught fire briefly during the night',
+  // spills, leaks, substances
+  'Fuel spill under the bowser at stand 2, area closed off',
+  'Hydraulic fluid leaking from the tug steering ram',
+  'Strong smell of kerosene around the parked aircraft',
+  'De-icing fluid spilt across the walkway by the equipment store',
+  'A drum of degreaser tipped over in the cargo shed',
+  'Unknown chemical odour in the baggage hall, area ventilated',
+  // ground events / near misses
+  'Baggage cart clipped the wingtip of the parked aircraft',
+  'Catering truck reversed into the jet bridge support leg',
+  'Tow tractor collided with a stand light pole',
+  'Near miss between the fuel bowser and a pushback in progress',
+  'A container fell from the loader during offload, nobody underneath',
+  'FOD found on the taxiway shoulder near stand 3',
+  'Loose metal debris collected from the apron before departure',
+  'Pushback stopped because a van crossed the stand without clearance',
+  // electrical
+  'Ground staff member got an electric shock from the 400Hz connector',
+  'Exposed wiring found on the passenger stairs handrail light',
+  'GPU cable insulation worn through to the conductor',
+  // general unsafe conditions and safety wording
+  'Unsafe stacking of containers noticed in the cargo shed',
+  'Gate area evacuated for twenty minutes after a suspicious bag report',
+  'Emergency stop used on the baggage belt after a jacket was drawn in',
+  'Floor by the fuel hydrant pit is slippery and has no cone around it',
+  'Handrail on the maintenance platform is loose and gives way when leaned on',
+  'Safety barrier around the open pit was found knocked over',
+  'High wind warning ignored and the stairs were left unsecured against the fuselage',
+];
+// Hazards whose wording is deliberately bland: only the recorded incident
+// severity says how serious they were (tests hold rule (a) on its own).
+const BLAND_SERIOUS = [
+  'Problem with the aircraft at stand 1 during turnaround',
+  'Event involving the fuel bowser this morning, details with the duty manager',
+  'Issue at gate 5 during boarding, report form completed',
+  'Occurrence on the apron overnight, engineering attended',
+];
+// Routine events that are safe to release.
+const SAFE_EVENTS = [
+  'Catering truck arrived late to gate 6, boarding delayed ten minutes',
+  'Printer in the operations office is out of toner again',
+  'Two wheelchairs requested for the afternoon arrival',
+  'Stand allocation changed twice because of the late inbound',
+  'Crew bus air conditioning still weak, garage booked for Tuesday',
+  'Spare radio batteries collected from stores',
+  'Gate 2 display showing the wrong flight number, IT informed',
+  'Lost property handed in: one grey suitcase from the forward hold',
+  'New roster published for next week, team briefed',
+  'Baggage figures for the shift entered into the daily log',
+  'Visitor passes for the auditors arranged for tomorrow',
+  'Cleaning of the crew room moved to the quiet period after midnight',
+  'Toilets at gate 4 out of order, passengers directed to gate 5',
+  'Extra trolleys positioned at arrivals for the delayed wide-body',
+  'Uniform order forms distributed to the team',
+  'Coffee machine descaled and back in service',
+  'Stationery order placed for the operations desk',
+  'Both inbound flights on time, turnarounds completed as planned',
+];
+// Safe to release, but worded so a conservative matcher will likely hold them
+// (negations and benign uses of safety vocabulary). Their TRUE label is safe:
+// each false hold here is the accepted price of never missing a real hazard.
+const SAFE_TRICKY = [
+  'Quiet shift, no injuries and no incidents to report',
+  'All safety checks completed on schedule, nothing found',
+  'Routine fire alarm test carried out at 10:00 as planned',
+  'No spills during refuelling, bowser log signed off',
+  'Monthly evacuation drill scheduled for next Thursday',
+  'Firefighting equipment inspection passed, tags renewed',
+];
+
+const SEV_MIX = ['low', 'low', 'low', 'medium', 'medium', 'medium', 'medium', 'high', 'high', 'critical'];
+const ROUTINE_SUMMARY = ['Steady shift, all departures away on time.', 'Normal operations through the night, see tasks for follow-ups.', 'Busy afternoon but nothing outstanding beyond the items below.'];
+const ROUTINE_TASKS = ['Confirm the catering schedule for the first wave', 'Return the spare headsets to stores', 'Brief the incoming team on the stand changes'];
+
+// At least 200 cases: { summary, tasks, incidents, truth_hold, event }.
+// The event text lands in the summary, a task or an incident, as it would in
+// a real handover; the rest of the record is routine filler.
+function hazardCases(seed = 61, count = 240) {
+  const r = rng(seed);
+  const cases = [];
+  const place = (text, { asIncident, sev }) => {
+    const summary = `${pick(r, ROUTINE_SUMMARY)}`;
+    const tasks = [{ description: pick(r, ROUTINE_TASKS) }];
+    const incidents = [];
+    if (asIncident) {
+      incidents.push({ title: text.slice(0, 120), description: text, severity: sev });
+      return { summary, tasks, incidents };
+    }
+    if (r() < 0.5) return { summary: `${summary} ${text}.`, tasks, incidents };
+    return { summary, tasks: [...tasks, { description: text }], incidents };
+  };
+  for (let i = 0; i < count; i += 1) {
+    const kind = r();
+    if (kind < 0.42) { // worded hazard; severity varies, so wording must carry it
+      const text = pick(r, HAZARD_EVENTS);
+      const asIncident = r() < 0.55;
+      cases.push({ ...place(text, { asIncident, sev: pick(r, SEV_MIX) }), truth_hold: true, event: text });
+    } else if (kind < 0.5) { // bland wording, serious severity: rule (a) territory
+      const text = pick(r, BLAND_SERIOUS);
+      cases.push({ ...place(text, { asIncident: true, sev: r() < 0.5 ? 'high' : 'critical' }), truth_hold: true, event: text });
+    } else if (kind < 0.93) { // routine, safe
+      const text = pick(r, SAFE_EVENTS);
+      const asIncident = r() < 0.25; // routine faults do get logged as low/medium incidents
+      cases.push({ ...place(text, { asIncident, sev: r() < 0.7 ? 'low' : 'medium' }), truth_hold: false, event: text });
+    } else { // safe but hold-bait (negations, benign safety vocabulary)
+      const text = pick(r, SAFE_TRICKY);
+      cases.push({ ...place(text, { asIncident: false }), truth_hold: false, event: text });
+    }
+  }
+  return cases;
+}
+
 module.exports = {
-  ownHistory, rng, severityCorpus, FAMILIES, history, drafts, qualityCases,
+  ownHistory, rng, severityCorpus, FAMILIES, history, drafts, qualityCases, hazardCases,
 };

@@ -12,6 +12,8 @@ const TYPE_TITLES = {
   handover_escalated: 'A handover was escalated',
   handover_resolved: 'An escalated handover was resolved',
   handover_closed: 'A handover was closed',
+  handover_held: 'A handover is held for your approval',
+  handover_approved: 'A held handover was approved',
   message: 'You have a new message',
   reminder: 'Shift Handover reminder',
   report_shared: 'A shift report has been shared with you',

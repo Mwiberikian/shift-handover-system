@@ -19,6 +19,13 @@ function buildDigest(d) {
   if (c.no_handover) lines.push('No handover was submitted for this shift.');
   else lines.push(`${plural(c.submitted || 0, 'handover')} submitted: ${c.acknowledged || 0} acknowledged, ${c.unacknowledged || 0} waiting for acknowledgement, ${c.closed || 0} closed.`);
   if (c.escalated) lines.push(`${plural(c.escalated, 'record')} escalated and not yet resolved.`);
+  // Phase 2: automatic release decisions (only mentioned once any exist, so
+  // shifts recorded before the feature read as before).
+  if (c.auto_released || c.held || c.approved) {
+    const parts = [`${c.auto_released || 0} released automatically`, `${c.held || 0} held for approval`];
+    if (c.approved) parts.push(`${c.approved} approved by a supervisor`);
+    lines.push(`${parts.join(', ')}.`);
+  }
   const serious = (inc.critical || 0) + (inc.high || 0);
   lines.push(serious
     ? `${plural(inc.critical || 0, 'critical incident')} and ${plural(inc.high || 0, 'high-severity incident')} reported.`

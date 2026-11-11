@@ -12,6 +12,7 @@ const { buildEmail } = require('./content');
 // then).
 const DEFAULT_TYPES = [
   'handover_submitted', 'handover_queried', 'handover_clarified', 'handover_escalated', 'handover_resolved',
+  'handover_held', // Phase 2: a held report needs a supervisor at once
   'reminder', 'message', 'report_shared',
 ];
 

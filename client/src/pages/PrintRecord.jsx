@@ -14,6 +14,14 @@ const ACTION_LABEL = {
   create: 'Created', update: 'Updated', submit: 'Submitted', carry_forward: 'Carried forward',
   acknowledge: 'Acknowledged', query: 'Query raised', clarify: 'Clarified', open_review: 'Review opened',
   review: 'Reviewed', resolve: 'Escalation resolved',
+  auto_release: 'Released automatically', hold: 'Held for approval', approve_release: 'Approved and released',
+};
+
+// Phase 2: the release decision in words, for the header and print-out.
+const RELEASE_LABEL = {
+  auto_released: 'Released automatically: checks passed',
+  held: 'Held for approval',
+  approved: 'Approved by a supervisor',
 };
 
 function Section({ title, children }) {
@@ -87,10 +95,17 @@ export default function PrintRecord() {
                   ['Record', r.record_id], ['Status', r.status.replace('_', ' ')], ['Template', r.template ? `v${r.template.version}` : '—'],
                   ['Outgoing', r.outgoing_name ?? '—'], ['Incoming', r.incoming_name ?? '—'], ['Submitted', formatEAT(r.submitted_at)],
                   ['Shift ends', formatEAT(r.shift_end)], ['Closed', formatEAT(r.closed_at)], ['Exported', formatEAT(data.exported_at)],
+                  ...(r.release_state ? [['Release', `${RELEASE_LABEL[r.release_state] ?? r.release_state}${r.released_at ? ` · ${formatEAT(r.released_at)}` : ''}`]] : []),
                 ].map(([k, v]) => (
                   <div key={k} className="min-w-0"><dt className="inline font-semibold">{k}: </dt><dd className="inline break-all">{v}</dd></div>
                 ))}
               </dl>
+              {r.release_state === 'held' && (r.release_reasons?.length ?? 0) > 0 && (
+                <p className="mt-2 text-sm">
+                  <span className="font-semibold">Held because: </span>
+                  {r.release_reasons.map((x) => x.text).join('; ')}
+                </p>
+              )}
             </header>
 
             <Section title="Summary">

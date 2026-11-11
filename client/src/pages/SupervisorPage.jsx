@@ -4,7 +4,8 @@ import {
   Search as SearchIcon, Send, ShieldAlert, ShieldCheck,
 } from 'lucide-react';
 import api from '../api';
-import { HandoverDetail, RECORD_COLUMNS, RecordTable } from '../components/Handover';
+import { HandoverDetail, HeldChip, RECORD_COLUMNS, RecordTable } from '../components/Handover';
+import HoldActions from '../components/HoldActions';
 import {
   Badge, Button, Callout, Card, ConfirmDialog, Drawer, EmptyState, Input, PageHeader, SegmentedPicker, Select, SkeletonStats,
   SkeletonTable, StatusBadge, Table, Textarea, optionsFor,
@@ -387,6 +388,7 @@ export default function SupervisorPage({ view }) {
     render: (r) => (
       <span className="inline-flex items-center gap-1.5">
         <StatusBadge value={r.status} />
+        {r.release_state === 'held' && <HeldChip />}
         {overdueIds.has(r.record_id) && (
           <span title={`Unacknowledged more than ${dash.threshold_hours} h after shift start`} className="inline-flex items-center gap-0.5 text-meta font-semibold text-status-red">
             <AlertTriangle aria-hidden className="size-3.5" />Overdue
@@ -433,8 +435,13 @@ export default function SupervisorPage({ view }) {
         open={!!selected}
         onClose={() => setSelected(null)}
         title="Handover record"
-        footer={selected && REVIEWABLE.includes(selected.status)
-          ? <ReviewActions record={selected} onDone={(id) => { load(); open(id); }} />
+        footer={selected && (selected.release_state === 'held' || REVIEWABLE.includes(selected.status))
+          ? (
+            <div className="space-y-4">
+              <HoldActions record={selected} onDone={(id) => { load(); open(id); }} />
+              {REVIEWABLE.includes(selected.status) && <ReviewActions record={selected} onDone={(id) => { load(); open(id); }} />}
+            </div>
+          )
           : null}
       >
         {selected && (

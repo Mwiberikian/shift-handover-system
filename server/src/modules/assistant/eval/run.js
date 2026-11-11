@@ -3,6 +3,7 @@
 // (checks them against the criteria written down in ../constants.js).
 const syn = require('./synthetic');
 const { checkHandover } = require('../quality');
+const { evaluateRelease } = require('../release');
 const { findRecurring } = require('../recurring');
 const severity = require('../severity');
 const { rankDocuments } = require('../search');
@@ -108,9 +109,34 @@ function suggest(seed) {
   };
 }
 
+// Phase 2: hold/release decisions against the independent hazard set. A miss
+// (a real hazard released) is the dangerous error, so misses are listed by
+// name in the output, not just counted.
+function release(seed) {
+  const cases = syn.hazardCases(seed);
+  let tp = 0; let fp = 0; let fn = 0; let tn = 0;
+  const misses = []; const falseHolds = [];
+  cases.forEach((c) => {
+    const { hold } = evaluateRelease({ summary: c.summary, tasks: c.tasks, incidents: c.incidents });
+    if (c.truth_hold && hold) tp += 1;
+    else if (c.truth_hold && !hold) { fn += 1; if (misses.length < 20) misses.push(c.event); }
+    else if (!c.truth_hold && hold) { fp += 1; if (falseHolds.length < 20) falseHolds.push(c.event); }
+    else tn += 1;
+  });
+  return {
+    cases: cases.length,
+    truth_holds: tp + fn,
+    tp, fp, fn, tn,
+    recall: round(ratio(tp, tp + fn)),
+    precision: round(ratio(tp, tp + fp)),
+    missed_hazards: [...new Set(misses)],
+    false_holds: [...new Set(falseHolds)],
+  };
+}
+
 function runEvaluation(seed = 1) {
   return {
-    seed, quality: quality(seed + 40), recurring: recurring(seed + 20), severity: sev(seed + 10), search: search(seed + 20), suggest: suggest(seed + 20),
+    seed, quality: quality(seed + 40), recurring: recurring(seed + 20), severity: sev(seed + 10), search: search(seed + 20), suggest: suggest(seed + 20), release: release(seed + 60),
   };
 }
 

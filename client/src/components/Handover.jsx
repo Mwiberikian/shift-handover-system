@@ -7,6 +7,16 @@ import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import {
   ButtonLink, Callout, EmptyState, StatusBadge, Table,
 } from './ui';
+import ReleaseBanner from './ReleaseBanner';
+
+// Phase 2: small "Held" marker next to a status badge in tables.
+export function HeldChip() {
+  return (
+    <span title="Held for supervisor approval" className="inline-flex items-center gap-0.5 text-meta font-semibold text-status-amber">
+      <ShieldAlert aria-hidden className="size-3.5" />Held
+    </span>
+  );
+}
 
 export { formatEAT };
 export { StatusBadge };
@@ -32,7 +42,16 @@ export const RECORD_COLUMNS = [
   { key: 'department_code', header: 'Dept', hideBelow: 'md', render: (r) => <span className="font-mono text-meta text-ink-700 uppercase">{r.department_code}</span> },
   { key: 'outgoing_name', header: 'Outgoing', hideBelow: 'lg', render: (r) => r.outgoing_name ?? '—' },
   { key: 'incoming_name', header: 'Incoming', hideBelow: 'sm', render: (r) => r.incoming_name ?? <span className="text-ink-500">Unassigned</span> },
-  { key: 'status', header: 'Status', render: (r) => <StatusBadge value={r.status} /> },
+  {
+    key: 'status',
+    header: 'Status',
+    render: (r) => (
+      <span className="inline-flex items-center gap-1.5">
+        <StatusBadge value={r.status} />
+        {r.release_state === 'held' && <HeldChip />}
+      </span>
+    ),
+  },
   { key: 'submitted_at', header: 'Submitted', hideBelow: 'md', render: (r) => <span className="text-ink-700 whitespace-nowrap">{formatEAT(r.submitted_at)}</span> },
 ];
 
@@ -116,6 +135,12 @@ const THREAD = {
   open_review: ['Review opened', Eye, 'text-status-amber bg-status-amber-soft'],
   review: ['Supervisor review', ShieldCheck, 'text-ink-700 bg-ink-100'],
   resolve: ['Escalation resolved', ShieldAlert, 'text-status-green bg-status-green-soft'],
+  // Phase 2 release decisions. The actor shown for the automatic ones is the
+  // submitting user (who triggered the evaluation); the decision was the
+  // assistant's, as the label says.
+  auto_release: ['Released automatically: checks passed', ShieldCheck, 'text-status-green bg-status-green-soft'],
+  hold: ['Held for approval', ShieldAlert, 'text-status-amber bg-status-amber-soft'],
+  approve_release: ['Approved and released', ShieldCheck, 'text-status-green bg-status-green-soft'],
 };
 
 export function Timeline({ items }) {
@@ -182,6 +207,8 @@ export function HandoverDetail({ record, headerActions }) {
           {headerActions}
         </div>
       </div>
+
+      <ReleaseBanner record={record} />
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg bg-ink-50 px-4 py-3 sm:grid-cols-4">
         <Meta label="Outgoing">{record.outgoing_name ?? '—'}</Meta>

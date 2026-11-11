@@ -158,7 +158,7 @@ async function recurringForDepartments(user, query) {
 async function attention(user, query) {
   const dept = scopeDepartment(user, query.department_id);
   const { rows: records } = await pool.query(
-    `SELECT r.record_id, r.status, r.summary_notes, r.submitted_at, r.department_id, d.name AS department_name,
+    `SELECT r.record_id, r.status, r.release_state, r.summary_notes, r.submitted_at, r.department_id, d.name AS department_name,
             s.shift_type, s.start_time AS shift_start, s.end_time AS shift_end, o.full_name AS outgoing_name
        FROM handover_record r
        JOIN shift s ON s.shift_id = r.shift_id
@@ -199,11 +199,16 @@ async function attention(user, query) {
       shift_type: r.shift_type,
       shift_start: r.shift_start,
       status: r.status,
+      release_state: r.release_state,
       outgoing_name: r.outgoing_name,
       ...s,
       flags: q.flags.slice(0, 3).map((f) => ({ code: f.code, level: f.level, message: f.message })),
     };
-  }).filter((i) => i.score > 0).sort((a, b) => b.score - a.score || new Date(b.shift_start) - new Date(a.shift_start));
+    // Phase 2: held reports come first, whatever their score (and are always
+    // listed, so a held report with no other risk signals is still visible).
+  }).filter((i) => i.score > 0 || i.release_state === 'held')
+    .sort((a, b) => (b.release_state === 'held') - (a.release_state === 'held')
+      || b.score - a.score || new Date(b.shift_start) - new Date(a.shift_start));
   return { items: items.slice(0, Math.min(Number(query.limit) || RANKING.maxItems, RANKING.maxItems)) };
 }
 
@@ -307,7 +312,7 @@ async function digestInput(db, shiftId) {
   );
   if (!shift) throw new AppError(404, 'Shift not found');
   const { rows: records } = await db.query(
-    `SELECT record_id, status, summary_notes, submitted_at, department_id FROM handover_record WHERE shift_id = $1 AND status <> 'draft'`,
+    `SELECT record_id, status, release_state, summary_notes, submitted_at, department_id FROM handover_record WHERE shift_id = $1 AND status <> 'draft'`,
     [shiftId],
   );
   const ids = records.map((r) => r.record_id);
@@ -327,6 +332,10 @@ async function digestInput(db, shiftId) {
     closed: records.filter((r) => r.status === 'closed').length,
     escalated: records.filter((r) => r.status === 'escalated').length,
     no_handover: records.length === 0,
+    // Phase 2: automatic release decisions for this shift.
+    auto_released: records.filter((r) => r.release_state === 'auto_released').length,
+    held: records.filter((r) => r.release_state === 'held').length,
+    approved: records.filter((r) => r.release_state === 'approved').length,
   };
   // Ranking for this shift's records only.
   const items = records.filter((r) => r.status !== 'closed').map((r) => {
