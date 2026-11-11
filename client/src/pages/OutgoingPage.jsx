@@ -18,6 +18,8 @@ import { TASK_DESCRIPTION } from '../lib/limits';
 import { toast, toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 import ShiftBanner from '../components/shell/ShiftBanner';
+import RoleChangeNote from '../components/RoleChangeNote';
+import WhoOnShift from '../components/WhoOnShift';
 import { TaskTimerButton } from '../components/work/SessionControls';
 import { useWorkSession } from '../lib/workSession';
 import { useRefresh } from '../lib/refresh';
@@ -498,7 +500,9 @@ export default function OutgoingPage({ view }) {
         title={view === 'history' ? 'My handovers' : 'Current handover'}
         subtitle={view === 'history' ? 'Every handover you have prepared, newest first.' : 'Prepare and submit the handover for your current shift.'}
       />
+      <RoleChangeNote />
       <ShiftBanner role="outgoing_staff" />
+      <WhoOnShift />
       {!meta ? (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-6"><SkeletonCard lines={5} /><SkeletonCard lines={3} /></div>

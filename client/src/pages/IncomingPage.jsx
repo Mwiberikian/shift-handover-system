@@ -12,6 +12,8 @@ import { cx, formatEAT, fmtRelative, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
 import useAction from '../lib/useAction';
 import ShiftBanner from '../components/shell/ShiftBanner';
+import RoleChangeNote from '../components/RoleChangeNote';
+import WhoOnShift from '../components/WhoOnShift';
 import { useRefresh } from '../lib/refresh';
 
 // Acknowledge (primary, confirmed) and Raise query (secondary) for a submitted record.
@@ -232,7 +234,9 @@ export default function IncomingPage({ view }) {
         title={view === 'pending' ? 'Awaiting action' : 'All handovers'}
         subtitle={view === 'pending' ? 'Handovers assigned to you that still need your acknowledgement.' : 'Every handover that has been assigned to you.'}
       />
+      <RoleChangeNote />
       <ShiftBanner role="incoming_staff" />
+      <WhoOnShift />
       {view === 'pending'
         ? <PendingView records={records} loading={loading} reloadList={loadList} />
         : <AllView records={records} loading={loading} reloadList={loadList} />}

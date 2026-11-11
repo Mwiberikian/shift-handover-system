@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { CalendarDays, Save, UserCog, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  CalendarDays, ChevronLeft, ChevronRight, Save, UserCog, Users,
+} from 'lucide-react';
 import api from '../api';
 import {
   Badge, Button, Card, Checkbox, EmptyState, Modal, PageHeader, SkeletonTable, Table,
@@ -74,12 +76,39 @@ function AssignDialog({ shift, onClose, onSaved }) {
   );
 }
 
+// Phase 1 roster visibility: the page lists shifts by day, a week at a time.
+// Monday 00:00 Nairobi time (EAT is UTC+3, no daylight saving) of the week
+// `offset` weeks away from the one containing `d`.
+export function weekStartEAT(d = new Date(), offset = 0) {
+  const eat = new Date(d.getTime() + 3 * 3600e3);
+  const day = (eat.getUTCDay() + 6) % 7; // Monday = 0
+  return new Date(Date.UTC(eat.getUTCFullYear(), eat.getUTCMonth(), eat.getUTCDate() - day + offset * 7) - 3 * 3600e3);
+}
+
+const DAY_MS = 24 * 3600e3;
+
 export default function RosterPage() {
   const [shifts, setShifts] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const weekStart = useMemo(() => weekStartEAT(new Date(), weekOffset), [weekOffset]);
+  const weekEnd = useMemo(() => new Date(weekStart.getTime() + 7 * DAY_MS), [weekStart]);
 
-  const load = useCallback(() => api.get('/shifts').then((r) => setShifts(r.data)).catch((err) => { toastError(err); setShifts([]); }), []);
-  useEffect(() => { load(); }, [load]);
+  const load = useCallback(() => api.get('/shifts', { params: { from: weekStart.toISOString(), to: weekEnd.toISOString() } })
+    .then((r) => setShifts(r.data))
+    .catch((err) => { toastError(err); setShifts([]); }), [weekStart, weekEnd]);
+  useEffect(() => { setShifts(null); load(); }, [load]);
+
+  // Shifts grouped by the EAT day they start on, in week order.
+  const days = useMemo(() => {
+    const by = new Map();
+    for (const s of shifts ?? []) {
+      const key = `${fmtWeekdayEAT(s.start_time)} ${formatEAT(s.start_time, 'date')}`;
+      if (!by.has(key)) by.set(key, []);
+      by.get(key).push(s);
+    }
+    return [...by.entries()];
+  }, [shifts]);
 
   const now = Date.now();
   const columns = [
@@ -132,24 +161,45 @@ export default function RosterPage() {
     },
   ];
 
+  const weekLabel = weekOffset === 0 ? 'This week'
+    : `Week of ${formatEAT(weekStart, 'date')}`;
   return (
     <>
       <PageHeader
         title="Roster"
-        subtitle="Who works each upcoming shift. Times are Nairobi time (EAT)."
+        subtitle={`Shifts by day, ${formatEAT(weekStart, 'date')} – ${formatEAT(new Date(weekEnd.getTime() - DAY_MS), 'date')}. Times are Nairobi time (EAT).`}
         actions={<Next30DaysButton scope="department" label="Download roster .ics (30 days)" />}
       />
-      <Card flush>
-        {shifts === null ? <SkeletonTable rows={4} /> : (
-          <Table
-            columns={columns}
-            rows={shifts}
-            rowKey={(s) => s.shift_id}
-            caption="Upcoming shifts and assigned staff"
-            empty={<EmptyState icon={CalendarDays} title="No upcoming shifts" message="Shifts for the next seven days will appear here." />}
-          />
-        )}
-      </Card>
+      <nav aria-label="Week" className="mb-4 flex flex-wrap items-center gap-2">
+        <Button size="sm" icon={ChevronLeft} onClick={() => setWeekOffset((w) => w - 1)} aria-label="Previous week">Previous</Button>
+        <Button size="sm" onClick={() => setWeekOffset(0)} disabled={weekOffset === 0}>This week</Button>
+        <Button size="sm" onClick={() => setWeekOffset((w) => w + 1)} aria-label="Next week">
+          Next
+          <ChevronRight aria-hidden className="size-3.5" />
+        </Button>
+        <span className="text-meta text-ink-600" aria-live="polite">{weekLabel}</span>
+      </nav>
+      {shifts === null ? <Card flush><SkeletonTable rows={4} /></Card> : days.length === 0 ? (
+        <Card flush>
+          <EmptyState icon={CalendarDays} title="No shifts this week" message="Use Previous and Next to look at other weeks." />
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {days.map(([day, rows]) => (
+            <section key={day} aria-label={day}>
+              <h2 className="mb-2 text-section text-fg">{day}</h2>
+              <Card flush>
+                <Table
+                  columns={columns}
+                  rows={rows}
+                  rowKey={(s) => s.shift_id}
+                  caption={`Shifts and assigned staff on ${day}`}
+                />
+              </Card>
+            </section>
+          ))}
+        </div>
+      )}
       <CalendarNote className="mt-3" />
       {editing && <AssignDialog shift={editing} onClose={() => setEditing(null)} onSaved={load} />}
     </>

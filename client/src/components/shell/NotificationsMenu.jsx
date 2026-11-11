@@ -22,6 +22,8 @@ const NOTIFICATION_LABEL = {
   handover_escalated: 'Handover escalated',
   handover_closed: 'Handover closed',
   handover_resolved: 'Escalation resolved',
+  handover_held: 'Handover held for your approval',
+  handover_approved: 'Held handover approved and released',
 };
 
 const KIND = {
@@ -34,6 +36,10 @@ const KIND = {
 // Title, detail line and kind for one notification.
 function describe(n) {
   if (n.type === 'reminder') return { kind: 'reminder', title: n.title ?? 'Reminder', detail: n.body ?? '' };
+  // Phase 1 supervisor controls: carries its own title and body.
+  if (n.type === 'session_control') {
+    return { kind: 'message', title: n.title ?? 'Update from your supervisor', detail: n.body ?? '' };
+  }
   if (n.type === 'report_shared') return { kind: 'report', title: n.title ?? 'A shift report was shared with you', detail: 'Open it to read the report.' };
   if (n.type === 'message') {
     return { kind: 'message', title: `Message from ${n.message_sender_name ?? 'a colleague'}`, detail: n.message_subject || 'Open Messages to read it.' };
@@ -48,6 +54,7 @@ function describe(n) {
 // Where clicking a notification takes you.
 function targetFor(n, role) {
   if (n.type === 'message') return '/messages';
+  if (n.type === 'session_control') return '/work';
   if (n.type === 'report_shared') return n.report_id ? `/reports/${n.report_id}` : '/reports?view=shared';
   if (n.type !== 'reminder') return null;
   if (n.reminder_type?.startsWith('handover_due')) return '/outgoing';

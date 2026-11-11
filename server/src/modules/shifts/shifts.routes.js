@@ -5,6 +5,7 @@ const calendarFeed = require('./calendarFeed');
 const { body, param, query } = require('express-validator');
 const validate = require('../../middleware/validate');
 const { requireAuth, requireRole } = require('../../middleware/auth');
+const { supervisorControlsEnabled } = require('../../config/flags');
 const service = require('./shifts.service');
 const ics = require('../../utils/ics');
 
@@ -35,6 +36,15 @@ router.use(requireAuth);
 
 // GET /api/shifts/mine — the caller's current and next rostered shift.
 router.get('/mine', async (req, res) => res.json(await service.mine(req.user)));
+
+// GET /api/shifts/department/current — "Who is on shift" (Phase 1): the
+// current and next shift of the caller's own department, with assignees'
+// names and staff numbers only. 404 while SUPERVISOR_CONTROLS_ENABLED=false.
+router.get(
+  '/department/current',
+  (req, res, next) => (supervisorControlsEnabled() ? next() : res.status(404).json({ error: 'Not found' })),
+  async (req, res) => res.json(await service.departmentOnShift(req.user)),
+);
 
 // GET /api/shifts/mine/upcoming?days=30 — the caller's rostered shifts that
 // have not ended, for the My shifts page.

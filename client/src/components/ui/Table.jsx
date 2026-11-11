@@ -23,6 +23,7 @@ export default function Table({
     }
   };
 
+  const actionColumns = columns.filter((c) => !c.header);
   if (phone) {
     return (
       <ul aria-label={caption} className="space-y-2">
@@ -56,11 +57,16 @@ export default function Table({
                     </div>
                   ))}
                 </dl>
-                {/* Columns without a header (row actions) go below, full width. */}
-                {columns.filter((c) => !c.header).map((c) => (
+                {/* Columns without a header (row actions) go below, full
+                    width - but outside a clickable card, so an interactive
+                    control is never nested inside the row's button. */}
+                {!onRowClick && actionColumns.map((c) => (
                   <div key={c.key} className="pt-2">{c.render ? c.render(row) : row[c.key]}</div>
                 ))}
               </div>
+              {onRowClick && actionColumns.map((c) => (
+                <div key={c.key} className="pt-1.5">{c.render ? c.render(row) : row[c.key]}</div>
+              ))}
             </li>
           );
         })}

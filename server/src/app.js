@@ -34,6 +34,8 @@ app.use('/api/sessions', sessions.sessions);
 app.use('/api/tasks', sessions.tasks);
 app.use('/api/reports', require('./modules/reports/reports.routes'));
 app.use('/api/supervisor', require('./modules/supervisor/live.routes'));
+// Phase 1 supervisor controls; 404 while SUPERVISOR_CONTROLS_ENABLED=false.
+app.use('/api/supervisor', require('./modules/supervisor/controls.routes'));
 app.use('/api/assistant', require('./modules/assistant/assistant.routes'));
 app.use('/api/admin', require('./modules/admin/admin.routes'));
 // Public: unauthenticated, rate-limited request form (grants no access).

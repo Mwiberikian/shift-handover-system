@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Activity, Clock, Timer } from 'lucide-react';
+import {
+  Activity, Clock, Play, Square, Timer,
+} from 'lucide-react';
 import api from '../api';
 import { useAuth } from '../auth/AuthContext';
 import {
-  Badge, Card, Drawer, EmptyState, PageHeader, SegmentedPicker, Select, SkeletonTable, StatusBadge, Table,
+  Badge, Button, Card, ConfirmDialog, Drawer, EmptyState, PageHeader, SegmentedPicker, Select, SkeletonTable, StatusBadge, Table,
 } from '../components/ui';
+import useAction from '../lib/useAction';
 import {
   cx, fmtDuration, fmtRelative, formatEAT, ROLE_LABEL, shiftLabel,
 } from '../lib/format';
@@ -34,7 +37,48 @@ export function sessionMs(session, offset, now) {
   return session.ended_at ? session.elapsed_ms : elapsedSince(session.started_at, offset, now);
 }
 
-function WorkerDetail({ userId, onClose }) {
+// Phase 1 supervisor controls: Start/End session per employee row, each
+// behind a confirmation dialog. Shown only while the board reports
+// controls_enabled (SUPERVISOR_CONTROLS_ENABLED on the server).
+function SessionActions({ worker, onDone }) {
+  const [confirming, setConfirming] = useState(null); // 'start' | 'end'
+  const [run, busy] = useAction();
+  const active = Boolean(worker.session && !worker.session.ended_at);
+
+  const act = async () => {
+    const verb = confirming;
+    const ok = await run(
+      () => api.post(`/supervisor/live/${worker.user_id}/session/${verb}`),
+      `Session ${verb === 'start' ? 'started' : 'ended'} for ${worker.full_name}`,
+    );
+    if (ok) { setConfirming(null); onDone(); }
+  };
+
+  const open = (verb) => (e) => { e.stopPropagation(); setConfirming(verb); };
+  return (
+    <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="presentation" className="flex justify-end">
+      {active ? (
+        <Button size="sm" icon={Square} onClick={open('end')} aria-label={`End session for ${worker.full_name}`}>End</Button>
+      ) : (
+        <Button size="sm" icon={Play} onClick={open('start')} aria-label={`Start session for ${worker.full_name}`}>Start</Button>
+      )}
+      <ConfirmDialog
+        open={Boolean(confirming)}
+        onClose={() => setConfirming(null)}
+        onConfirm={act}
+        loading={busy}
+        tone={confirming === 'end' ? 'danger' : 'primary'}
+        title={confirming === 'end' ? 'End this session?' : 'Start a session?'}
+        confirmLabel={confirming === 'end' ? 'End session' : 'Start session'}
+        message={confirming === 'end'
+          ? `End ${worker.full_name}'s running work session? Their task timers stop and they are notified.`
+          : `Start a work session for ${worker.full_name} on the current shift? They are notified in the app.`}
+      />
+    </div>
+  );
+}
+
+function WorkerDetail({ userId, onClose, controlsEnabled }) {
   const [data, setData] = useState(null);
   const now = useNow(1000, Boolean(userId));
   usePolling(useCallback(() => {
@@ -162,6 +206,15 @@ export default function LivePage() {
     {
       key: 'last', header: 'Last activity', hideBelow: 'lg', render: (w) => (w.last_activity_at ? fmtRelative(w.last_activity_at) : '—'),
     },
+    // Phase 1 supervisor controls, only while the server reports them
+    // enabled. The empty header marks an action column: on phones the Table
+    // renders it below the clickable card, never nested inside it.
+    ...(data?.controls_enabled ? [{
+      key: 'actions',
+      header: '',
+      className: 'text-right',
+      render: (w) => <SessionActions worker={w} onDone={load} />,
+    }] : []),
   ];
 
   const t = data?.totals;
@@ -226,7 +279,7 @@ export default function LivePage() {
         Idle means no heartbeat for {data?.idle_after_minutes ?? 2} minutes (the app sends one every minute while it is open).
         Only session and task times are tracked.
       </p>
-      <WorkerDetail userId={selected} onClose={() => setSelected(null)} />
+      <WorkerDetail userId={selected} onClose={() => setSelected(null)} controlsEnabled={Boolean(data?.controls_enabled)} />
     </>
   );
 }

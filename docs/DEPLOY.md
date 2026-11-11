@@ -197,6 +197,8 @@ device is lost with `DELETE /api/admin/users/:id/passkeys`.
 | `REMINDER_LOOKBACK_MINUTES` | no | `60` | Reminders later than this are skipped, not sent |
 | `REMINDER_DIGEST_MINUTES` | no | `15` | End-of-shift digest to supervisors, after the shift ends |
 | `ASSISTANT_ENABLED` | no | `true` | `false` turns off the handover assistant (quality checks, suggestions, ranking, smart search, digest); the rest of SHMS is unaffected |
+| `SUPERVISOR_CONTROLS_ENABLED` | no | `true` | `false` turns off the Phase 1 supervisor controls and roster visibility (supervisor start/end of an employee's session, the interim duty switch, the "Who is on shift" card): those routes answer 404 and the client hides the buttons and card; the rest of SHMS is unaffected |
+| `AUTO_APPROVAL_ENABLED` | no | `true` | `false` stops automatic release of submitted handover reports: every report is HELD for supervisor approval (the safe behaviour). Supervisors can always approve a held report, flag on or off |
 | `EMAIL_ENABLED` | no | `false` | `true` sends email notifications through SMTP |
 | `SMTP_HOST` | with email | `localhost` | SMTP server |
 | `SMTP_PORT` | with email | `1025` | SMTP port |

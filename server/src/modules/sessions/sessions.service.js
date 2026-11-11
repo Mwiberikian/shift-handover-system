@@ -15,6 +15,7 @@ const pool = require('../../config/db');
 const AppError = require('../../utils/AppError');
 const { withTransaction } = require('../../db/tx');
 const { writeAudit } = require('../../utils/audit');
+const { notify } = require('../notifications/notify');
 const { SESSION } = require('../../config/constants');
 
 const ms = (expr) => `(EXTRACT(EPOCH FROM (${expr})) * 1000)::bigint`;
@@ -132,7 +133,10 @@ async function currentAssignedShift(db, userId) {
 }
 
 // POST /api/sessions/start. Returns { created, ...state }.
-async function start(user) {
+// `actor` (Phase 1 supervisor controls) starts the session on `user`'s behalf:
+// the same rules apply, the audit entry names both, and the employee gets an
+// in-app notification in the same transaction.
+async function start(user, { actor = null } = {}) {
   return withTransaction(async (client) => {
     await expireStale(client, await serverNow(client), user.user_id);
     const existing = await activeSession(client, user.user_id, true);
@@ -140,7 +144,9 @@ async function start(user) {
 
     const shift = await currentAssignedShift(client, user.user_id);
     if (!shift) {
-      throw new AppError(409, 'You are not on the roster for a shift that is on now, so a session cannot start. Ask your supervisor to add you to the current shift.', { code: 'no_current_shift' });
+      throw new AppError(409, actor
+        ? 'This employee is not on the roster for a shift that is on now, so a session cannot start. Add them to the current shift first.'
+        : 'You are not on the roster for a shift that is on now, so a session cannot start. Ask your supervisor to add you to the current shift.', { code: 'no_current_shift' });
     }
     let session;
     try {
@@ -153,9 +159,22 @@ async function start(user) {
       throw err;
     }
     await writeAudit(client, {
-      userId: user.user_id, entityType: 'work_session', entityId: session.session_id, action: 'start',
-      newValue: { shift_id: shift.shift_id, started_at: session.started_at },
+      userId: (actor ?? user).user_id, entityType: 'work_session', entityId: session.session_id, action: 'start',
+      newValue: {
+        shift_id: shift.shift_id,
+        started_at: session.started_at,
+        ...(actor && { for_user_id: user.user_id, by_user_id: actor.user_id }),
+      },
     });
+    if (actor) {
+      await notify({
+        userIds: [user.user_id],
+        type: 'session_control',
+        title: 'Your supervisor started your session',
+        body: `${actor.full_name ?? 'Your supervisor'} started a work session for you on the current shift.`,
+        ref: { shift_id: shift.shift_id },
+      }, { db: client });
+    }
     return { created: true, ...(await state(client, user.user_id)) };
   });
 }
@@ -183,20 +202,36 @@ async function heartbeat(user) {
 }
 
 // POST /api/sessions/end
-async function end(user) {
+// `actor` (Phase 1 supervisor controls) ends `user`'s session on their
+// behalf: the existing 'manual' end reason, an audit entry naming both, and
+// an in-app notification to the employee in the same transaction.
+async function end(user, { actor = null } = {}) {
   return withTransaction(async (client) => {
     await expireStale(client, await serverNow(client), user.user_id);
     const session = await activeSession(client, user.user_id, true);
-    if (!session) throw new AppError(409, 'No session is running.', { code: 'no_active_session' });
+    if (!session) throw new AppError(409, actor ? 'No session is running for this employee.' : 'No session is running.', { code: 'no_active_session' });
     const { rows: [ended] } = await client.query(
       "UPDATE work_session SET ended_at = now(), end_reason = 'manual' WHERE session_id = $1 RETURNING *",
       [session.session_id],
     );
     await stopTimersOfEndedSessions(client);
     await writeAudit(client, {
-      userId: user.user_id, entityType: 'work_session', entityId: session.session_id, action: 'end',
-      newValue: { ended_at: ended.ended_at, end_reason: 'manual' },
+      userId: (actor ?? user).user_id, entityType: 'work_session', entityId: session.session_id, action: 'end',
+      newValue: {
+        ended_at: ended.ended_at,
+        end_reason: 'manual',
+        ...(actor && { for_user_id: user.user_id, by_user_id: actor.user_id }),
+      },
     });
+    if (actor) {
+      await notify({
+        userIds: [user.user_id],
+        type: 'session_control',
+        title: 'Your supervisor ended your session',
+        body: `${actor.full_name ?? 'Your supervisor'} ended your work session.`,
+        ref: { shift_id: session.shift_id },
+      }, { db: client });
+    }
     const { rows: [view] } = await client.query(`${SESSION_SELECT} WHERE ws.session_id = $1`, [session.session_id]);
     return { server_now: await serverNow(client), session: null, timer: null, ended: toInt(view) };
   });

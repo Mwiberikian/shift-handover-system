@@ -105,6 +105,30 @@ async function mine(user) {
   return { now: new Date().toISOString(), current, next };
 }
 
+// "Who is on shift" (Phase 1): the current and next shift of the caller's
+// own department, each with its active assignees' names and staff numbers
+// only — no roles, emails or ids, so any signed-in user may see it. A caller
+// without a department (admins) gets empty shifts.
+async function departmentOnShift(user) {
+  const now = new Date();
+  if (!user.department_id) return { now: now.toISOString(), current: null, next: null };
+  const { rows } = await pool.query(
+    `SELECT s.shift_id, s.shift_type, s.start_time, s.end_time, d.name AS department_name,
+            COALESCE((
+              SELECT json_agg(json_build_object('full_name', u.full_name, 'staff_number', u.staff_number) ORDER BY u.full_name)
+                FROM shift_assignment sa JOIN app_user u ON u.user_id = sa.user_id AND u.is_active
+               WHERE sa.shift_id = s.shift_id), '[]'::json) AS assignees
+       FROM shift s JOIN department d ON d.department_id = s.department_id
+      WHERE s.department_id = $1 AND s.end_time > now()
+      ORDER BY s.start_time
+      LIMIT 2`,
+    [user.department_id],
+  );
+  const current = rows.find((s) => new Date(s.start_time) <= now) ?? null;
+  const next = rows.find((s) => new Date(s.start_time) > now) ?? null;
+  return { now: now.toISOString(), current, next };
+}
+
 // ---- Calendar (Part K) ------------------------------------------------------
 // Shifts for calendar export carry only name, times and department.
 const CALENDAR_COLUMNS = 's.shift_id, s.shift_type, s.start_time, s.end_time, d.name AS department_name';
@@ -163,5 +187,5 @@ async function calendarShifts(user, { shift_id: shiftId, days = 30, scope = 'min
 }
 
 module.exports = {
-  list, getAssignments, setAssignments, mine, upcomingMine, calendarShifts,
+  list, getAssignments, setAssignments, mine, departmentOnShift, upcomingMine, calendarShifts,
 };

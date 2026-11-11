@@ -21,6 +21,7 @@
 const pool = require('../../config/db');
 const AppError = require('../../utils/AppError');
 const { SESSION } = require('../../config/constants');
+const { supervisorControlsEnabled } = require('../../config/flags');
 
 const ms = (expr) => `(EXTRACT(EPOCH FROM (${expr})) * 1000)::bigint`;
 const num = (v) => (v === null || v === undefined ? null : Number(v));
@@ -60,7 +61,13 @@ async function board(user, { department_id: departmentId } = {}) {
   const { rows: [{ now }] } = await pool.query('SELECT now()');
   const shift = await currentShift(pool, department.department_id);
   const base = {
-    server_now: now, department, departments, shift, idle_after_minutes: SESSION.idleAfterMinutes,
+    server_now: now,
+    department,
+    departments,
+    shift,
+    idle_after_minutes: SESSION.idleAfterMinutes,
+    // Phase 1: the client shows the Start/End session buttons only when true.
+    controls_enabled: supervisorControlsEnabled(),
   };
   if (!shift) return { ...base, workers: [], totals: totals([]) };
 
