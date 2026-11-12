@@ -14,7 +14,12 @@ router.get('/config', (req, res) => res.json({ enabled: service.enabled() }));
 
 router.use((req, res, next) => (service.enabled() ? next() : res.status(404).json({ error: 'Not found' })));
 
-const author = requireRole('outgoing_staff');
+// Phase 3: with roster duty on, any staff member can be the author of a
+// shift's handover, so both staff roles pass; the services still restrict
+// each person to their own records. Flag off: outgoing_staff only, as before.
+const { rosterDutyEnabled } = require('../../config/flags');
+const authorRoles = () => (rosterDutyEnabled() ? ['outgoing_staff', 'incoming_staff'] : ['outgoing_staff']);
+const author = (req, res, next) => requireRole(...authorRoles())(req, res, next);
 const overseer = requireRole('supervisor', 'admin');
 const recordId = param('id', 'id must be a UUID').isUUID();
 const deptQuery = query('department_id', 'department_id must be a UUID').optional().isUUID();
@@ -58,7 +63,7 @@ router.get('/severity/evaluation', overseer, deptQuery, validate, async (req, re
 // Anyone who uses the assistant may log what they did with it.
 router.post(
   '/events',
-  requireRole('outgoing_staff', 'supervisor', 'admin'),
+  (req, res, next) => requireRole(...authorRoles(), 'supervisor', 'admin')(req, res, next),
   body('kind').isIn(EVENT_KINDS),
   body('record_id').optional({ values: 'null' }).isUUID(),
   body('payload').optional({ values: 'null' }).isObject(),

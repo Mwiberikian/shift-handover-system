@@ -16,6 +16,7 @@ const { runSessionCheck } = require('./sessions');
 const { UNACK_ALERT_HOURS } = require('../config/constants');
 const { trackAfterCommit } = require('../db/tx');
 const { digestInput } = require('../modules/assistant/assistant.service');
+const { rosterDutyEnabled } = require('../config/flags');
 const { buildDigest } = require('../modules/assistant/digest');
 
 const minutes = (name, fallback) => {
@@ -102,12 +103,16 @@ const RULES = [
   // 2. Assigned outgoing staff: handover due (two lead times) while nothing
   //    has been submitted for the shift.
   ...[['handover_due_first', 'handoverDueFirst'], ['handover_due_final', 'handoverDueFinal']].map(([type, key]) => async (db, now, c) => {
+    // Phase 3: with roster duty on, everyone assigned to the shift is its
+    // outgoing person, whatever their fixed role; flag off, only
+    // outgoing_staff get handover-due reminders, exactly as before.
+    const roleFilter = rosterDutyEnabled() ? '' : "AND u.role = 'outgoing_staff'";
     const { rows } = await db.query(
       `SELECT sa.user_id, ${SHIFT_COLUMNS}
          FROM shift_assignment sa
          JOIN shift s USING (shift_id)
          JOIN department d ON d.department_id = s.department_id
-         JOIN app_user u ON u.user_id = sa.user_id AND u.is_active AND u.role = 'outgoing_staff'
+         JOIN app_user u ON u.user_id = sa.user_id AND u.is_active ${roleFilter}
         WHERE ${DUE_WINDOW('s.end_time', '-')} AND s.end_time > $1
           AND NOT EXISTS (SELECT 1 FROM handover_record r WHERE r.shift_id = s.shift_id AND r.status <> 'draft')`,
       [now, c[key], c.lookback],

@@ -18,6 +18,8 @@ const { assertDepartmentAccess } = require('../../middleware/auth');
 const {
   RECORD_SELECT, auditView, lockRecord, assertStatus, assertOutgoingOwner, fetchDetail, loadTemplate, notifyRecord,
 } = require('./handovers.service');
+const { canReceiveRecord, canViewByRoster } = require('./duty');
+const { rosterDutyEnabled } = require('../../config/flags');
 const { UNACK_ALERT_HOURS } = require('../../config/constants');
 
 // Who may read a single record.
@@ -31,9 +33,28 @@ function assertCanView(user, record) {
   }
 }
 
-function assertAssignedIncoming(user, record) {
+// Phase 3: the fixed-role rule above, widened by the roster when
+// ROSTER_DUTY_ENABLED (a person rostered on the record's shift or on the
+// department's next shift may read it). Flag off: identical to assertCanView.
+async function assertCanViewDb(db, user, record) {
+  try {
+    assertCanView(user, record);
+  } catch (err) {
+    if (err.status === 403 && await canViewByRoster(db, user, record)) return;
+    throw err;
+  }
+}
+
+// Who may acknowledge or query: the named incoming person (as today) or,
+// with roster duty on and a rostered next shift, anyone assigned to it.
+// With roster duty on, the record's author is refused outright, even when
+// they are also rostered on the next shift.
+async function assertCanReceive(db, user, record) {
   assertDepartmentAccess(user, record.department_id);
-  if (record.incoming_user_id !== user.user_id) {
+  if (rosterDutyEnabled() && record.outgoing_user_id === user.user_id) {
+    throw new AppError(403, 'You cannot acknowledge or query your own handover');
+  }
+  if (!(await canReceiveRecord(db, user, record))) {
     throw new AppError(403, 'This handover is not assigned to you');
   }
 }
@@ -49,7 +70,7 @@ async function setStatus(client, record, status, extraSql = '') {
 async function getById(user, recordId) {
   const { rows: [base] } = await pool.query('SELECT * FROM handover_record WHERE record_id = $1', [recordId]);
   if (!base) throw new AppError(404, 'Handover record not found');
-  assertCanView(user, base);
+  await assertCanViewDb(pool, user, base);
 
   const [detail, ack, reviews, thread, template] = await Promise.all([
     fetchDetail(pool, recordId),
@@ -108,7 +129,7 @@ async function exportRecord(user, recordId) {
 async function acknowledge(user, recordId, { comments }) {
   return withTransaction(async (client) => {
     const record = await lockRecord(client, recordId);
-    assertAssignedIncoming(user, record);
+    await assertCanReceive(client, user, record);
     assertStatus(record, 'submitted');
 
     const { rows: [prevAck] } = await client.query('SELECT * FROM acknowledgement WHERE record_id = $1', [recordId]);
@@ -140,7 +161,7 @@ async function acknowledge(user, recordId, { comments }) {
 async function raiseQuery(user, recordId, { comments }) {
   return withTransaction(async (client) => {
     const record = await lockRecord(client, recordId);
-    assertAssignedIncoming(user, record);
+    await assertCanReceive(client, user, record);
     assertStatus(record, 'submitted');
 
     const { rows: [prevAck] } = await client.query('SELECT * FROM acknowledgement WHERE record_id = $1', [recordId]);

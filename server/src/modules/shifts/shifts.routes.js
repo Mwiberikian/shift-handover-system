@@ -5,7 +5,7 @@ const calendarFeed = require('./calendarFeed');
 const { body, param, query } = require('express-validator');
 const validate = require('../../middleware/validate');
 const { requireAuth, requireRole } = require('../../middleware/auth');
-const { supervisorControlsEnabled } = require('../../config/flags');
+const { supervisorControlsEnabled, rosterDutyEnabled } = require('../../config/flags');
 const service = require('./shifts.service');
 const ics = require('../../utils/ics');
 
@@ -34,6 +34,11 @@ router.get('/calendar/:token.ics', feedLimiter, async (req, res) => {
 
 router.use(requireAuth);
 
+// GET /api/shifts/duty/config — whether duty is derived from the roster
+// (Phase 3, ROSTER_DUTY_ENABLED). Always answers, like /assistant/config, so
+// the client knows whether to show the duty chips and merged staff pages.
+router.get('/duty/config', (req, res) => res.json({ enabled: rosterDutyEnabled() }));
+
 // GET /api/shifts/mine — the caller's current and next rostered shift.
 router.get('/mine', async (req, res) => res.json(await service.mine(req.user)));
 
@@ -43,7 +48,13 @@ router.get('/mine', async (req, res) => res.json(await service.mine(req.user)));
 router.get(
   '/department/current',
   (req, res, next) => (supervisorControlsEnabled() ? next() : res.status(404).json({ error: 'Not found' })),
-  async (req, res) => res.json(await service.departmentOnShift(req.user)),
+  async (req, res) => {
+    const body = await service.departmentOnShift(req.user);
+    // Phase 3: with roster duty on, say so here, so the home-page card and
+    // the staff navigation learn it without an extra request. Flag off: the
+    // response is exactly main's.
+    res.json(rosterDutyEnabled() ? { ...body, roster_duty: true } : body);
+  },
 );
 
 // GET /api/shifts/mine/upcoming?days=30 — the caller's rostered shifts that

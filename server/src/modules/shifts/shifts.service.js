@@ -3,6 +3,7 @@ const AppError = require('../../utils/AppError');
 const { withTransaction } = require('../../db/tx');
 const { writeAudit } = require('../../utils/audit');
 const { assertDepartmentAccess } = require('../../middleware/auth');
+const { rosterDutyEnabled } = require('../../config/flags');
 
 const ASSIGNED = `COALESCE((
     SELECT json_agg(json_build_object('user_id', u.user_id, 'full_name', u.full_name, 'role', u.role) ORDER BY u.full_name)
@@ -48,6 +49,20 @@ const assignedTo = async (db, shiftId) => (await db.query(
   [shiftId],
 )).rows;
 
+// Phase 3 conflict warnings: other shifts that overlap `shift` in time, per
+// person already assigned to them. Advisory only — assigning someone to two
+// overlapping shifts is warned about, never refused (a supervisor may have a
+// reason), and nothing here changes what setAssignments accepts.
+const overlapsFor = async (db, shift) => (await db.query(
+  `SELECT sa.user_id, s2.shift_id, s2.shift_type, s2.start_time, s2.end_time, d.name AS department_name
+     FROM shift_assignment sa
+     JOIN shift s2 ON s2.shift_id = sa.shift_id
+     JOIN department d ON d.department_id = s2.department_id
+    WHERE s2.shift_id <> $1 AND s2.start_time < $3 AND s2.end_time > $2
+    ORDER BY s2.start_time`,
+  [shift.shift_id, shift.start_time, shift.end_time],
+)).rows;
+
 async function getAssignments(user, shiftId) {
   const shift = await findShift(pool, shiftId);
   assertDepartmentAccess(user, shift.department_id);
@@ -55,6 +70,8 @@ async function getAssignments(user, shiftId) {
     shift,
     assigned: await assignedTo(pool, shiftId),
     candidates: await candidatesFor(pool, shift.department_id),
+    // Phase 3 only: flag off, the response (and the queries) match main.
+    ...(rosterDutyEnabled() ? { conflicts: await overlapsFor(pool, shift) } : {}),
   };
 }
 
@@ -81,7 +98,12 @@ async function setAssignments(user, shiftId, userIds) {
       userId: user.user_id, entityType: 'shift', entityId: shiftId, action: 'update_assignments',
       previousValue: { user_ids: before.map((u) => u.user_id) }, newValue: { user_ids: after.map((u) => u.user_id) },
     });
-    return { shift, assigned: after };
+    // Phase 3: warn (never refuse) when someone saved here is also on an
+    // overlapping shift. Flag off: main's response exactly, no extra query.
+    if (!rosterDutyEnabled()) return { shift, assigned: after };
+    const savedIds = new Set(after.map((u) => u.user_id));
+    const warnings = (await overlapsFor(client, shift)).filter((c) => savedIds.has(c.user_id));
+    return { shift, assigned: after, warnings };
   });
 }
 

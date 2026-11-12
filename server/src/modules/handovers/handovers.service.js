@@ -6,6 +6,8 @@ const { assertDepartmentAccess } = require('../../middleware/auth');
 const { findMissingFields } = require('./template.validation');
 const { notify } = require('../notifications/notify');
 const { stopTimersForRecord } = require('../sessions/sessions.service');
+const { rosterDutyEnabled } = require('../../config/flags');
+const { isStaff, incomingRoster, canAuthorShift } = require('./duty');
 
 const RECORD_SELECT = `
   SELECT r.*, s.shift_type, s.start_time AS shift_start, s.end_time AS shift_end,
@@ -85,8 +87,25 @@ async function findCurrentShift(db, departmentId) {
   return shift || null;
 }
 
-async function assertValidIncoming(db, departmentId, incomingUserId) {
+// Who may be named as the receiver. With roster duty on and a rostered next
+// shift, the receiver must be on that roster (any staff role); otherwise
+// today's rule applies exactly (an active incoming_staff member of the
+// department). `shift` is the record's shift row (needed for the roster path);
+// `authorId` is the record's author, who (flag on) may never name themselves.
+async function assertValidIncoming(db, departmentId, incomingUserId, shift = null, authorId = null) {
   if (incomingUserId === null || incomingUserId === undefined) return;
+  if (rosterDutyEnabled() && authorId && incomingUserId === authorId) {
+    throw new AppError(400, 'You cannot name yourself as the incoming person for your own handover');
+  }
+  if (rosterDutyEnabled() && shift) {
+    const { ids } = await incomingRoster(db, shift);
+    if (ids.length) {
+      if (!ids.includes(incomingUserId)) {
+        throw new AppError(400, "incoming_user_id must be on the next shift's roster");
+      }
+      return;
+    }
+  }
   const { rows: [u] } = await db.query(
     `SELECT 1 FROM app_user WHERE user_id = $1 AND department_id = $2
         AND role = 'incoming_staff' AND is_active`,
@@ -151,11 +170,31 @@ async function list(user, query) {
     add('r.department_id = ?', query.department_id);
   }
 
-  switch (user.role) {
-    case 'outgoing_staff': add('r.outgoing_user_id = ?', user.user_id); break;
-    case 'incoming_staff': add('r.incoming_user_id = ?', user.user_id); break;
-    case 'supervisor': add('r.department_id = ?', user.department_id); break;
-    default: break; // admin: all departments
+  if (rosterDutyEnabled() && isStaff(user.role)) {
+    // Phase 3: a staff member sees what they authored or received (as today)
+    // plus the records of shifts they are rostered on (their outgoing duty)
+    // and of shifts whose next shift they are rostered on (their incoming
+    // duty). Includes today's scope, so nothing a person could see disappears.
+    // The roster-derived part is limited to the person's own department.
+    params.push(user.user_id);
+    const me = `$${params.length}`;
+    params.push(user.department_id);
+    const myDept = `$${params.length}`;
+    where.push(`(r.outgoing_user_id = ${me} OR r.incoming_user_id = ${me}
+      OR (r.department_id = ${myDept} AND (
+        EXISTS (SELECT 1 FROM shift_assignment sa WHERE sa.shift_id = r.shift_id AND sa.user_id = ${me})
+        OR EXISTS (SELECT 1 FROM shift_assignment sa2
+                    WHERE sa2.user_id = ${me}
+                      AND sa2.shift_id = (SELECT n.shift_id FROM shift n
+                                           WHERE n.department_id = r.department_id AND n.start_time >= s.end_time
+                                           ORDER BY n.start_time LIMIT 1)))))`);
+  } else {
+    switch (user.role) {
+      case 'outgoing_staff': add('r.outgoing_user_id = ?', user.user_id); break;
+      case 'incoming_staff': add('r.incoming_user_id = ?', user.user_id); break;
+      case 'supervisor': add('r.department_id = ?', user.department_id); break;
+      default: break; // admin: all departments
+    }
   }
   if (query.status) add('r.status = ?', query.status);
 
@@ -168,16 +207,49 @@ async function list(user, query) {
 }
 
 // Data the outgoing-staff form needs: current shift, template, who can receive.
+// With roster duty on and a rostered next shift, the receiver candidates are
+// that roster (any staff role) and a sole candidate is suggested; otherwise
+// the department's incoming_staff, exactly as before. The author is never
+// offered as their own receiver.
+const fixedRoleIncoming = (departmentId) => pool.query(
+  `SELECT user_id, staff_number, full_name FROM app_user
+    WHERE department_id = $1 AND role = 'incoming_staff' AND is_active ORDER BY full_name`,
+  [departmentId],
+);
+
 async function meta(user) {
-  const [shift, template, incoming] = await Promise.all([
+  if (!rosterDutyEnabled()) {
+    // Flag off: exactly main's three queries, in parallel.
+    const [shift, template, incoming] = await Promise.all([
+      findCurrentShift(pool, user.department_id),
+      loadTemplate(pool, user.department_id),
+      fixedRoleIncoming(user.department_id),
+    ]);
+    return { current_shift: shift, template, incoming_staff: incoming.rows };
+  }
+  const [shift, template] = await Promise.all([
     findCurrentShift(pool, user.department_id),
     loadTemplate(pool, user.department_id),
-    pool.query(
-      `SELECT user_id, staff_number, full_name FROM app_user
-        WHERE department_id = $1 AND role = 'incoming_staff' AND is_active ORDER BY full_name`,
-      [user.department_id],
-    ),
   ]);
+  if (shift) {
+    const { ids } = await incomingRoster(pool, shift);
+    if (ids.length) {
+      const others = ids.filter((id) => id !== user.user_id);
+      const { rows } = await pool.query(
+        `SELECT user_id, staff_number, full_name FROM app_user
+          WHERE user_id = ANY($1::uuid[]) AND is_active ORDER BY full_name`,
+        [others],
+      );
+      return {
+        current_shift: shift,
+        template,
+        incoming_staff: rows,
+        roster_based_incoming: true,
+        suggested_incoming_user_id: others.length === 1 ? others[0] : null,
+      };
+    }
+  }
+  const incoming = await fixedRoleIncoming(user.department_id);
   return { current_shift: shift, template, incoming_staff: incoming.rows };
 }
 
@@ -185,15 +257,33 @@ async function create(user, body) {
   return withTransaction(async (client) => {
     const shift = await findCurrentShift(client, user.department_id);
     if (!shift) throw new AppError(409, 'No shift is currently active for your department');
+
+    // Phase 3: with roster duty on and a rostered current shift, only the
+    // people assigned to it may author its handover; without a roster,
+    // today's rule (role outgoing_staff) applies exactly.
+    const duty = await canAuthorShift(client, user, shift);
+    if (!duty.ok) {
+      throw new AppError(403, duty.rostered === false
+        ? 'You are not on the roster for the current shift'
+        : 'Only outgoing staff may create a handover record');
+    }
     const template = await loadTemplate(client, user.department_id);
-    await assertValidIncoming(client, user.department_id, body.incoming_user_id);
+
+    // Preselect the incoming person from the next shift's roster when it
+    // names exactly one; with several, the author picks from that roster.
+    let incomingUserId = body.incoming_user_id || null;
+    if (!incomingUserId && rosterDutyEnabled()) {
+      const others = (await incomingRoster(client, shift)).ids.filter((id) => id !== user.user_id);
+      if (others.length === 1) [incomingUserId] = others;
+    }
+    await assertValidIncoming(client, user.department_id, incomingUserId, shift, user.user_id);
 
     let record;
     try {
       ({ rows: [record] } = await client.query(
         `INSERT INTO handover_record (shift_id, department_id, outgoing_user_id, incoming_user_id, summary_notes)
          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [shift.shift_id, user.department_id, user.user_id, body.incoming_user_id || null, body.summary_notes ?? null],
+        [shift.shift_id, user.department_id, user.user_id, incomingUserId, body.summary_notes ?? null],
       ));
     } catch (err) {
       if (err.constraint === 'handover_record_one_open_per_shift') {
@@ -219,7 +309,12 @@ async function update(user, recordId, body) {
     const next = { ...record };
     if ('summary_notes' in body) next.summary_notes = body.summary_notes;
     if ('incoming_user_id' in body) {
-      await assertValidIncoming(client, record.department_id, body.incoming_user_id);
+      if (rosterDutyEnabled()) {
+        const { rows: [shift] } = await client.query('SELECT * FROM shift WHERE shift_id = $1', [record.shift_id]);
+        await assertValidIncoming(client, record.department_id, body.incoming_user_id, shift, record.outgoing_user_id);
+      } else {
+        await assertValidIncoming(client, record.department_id, body.incoming_user_id); // exactly as on main
+      }
       next.incoming_user_id = body.incoming_user_id;
     }
 

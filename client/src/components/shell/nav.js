@@ -78,4 +78,18 @@ export const TABS = {
 // The tabs shown for a role: planned screens are left out.
 export const tabsFor = (role) => (TABS[role] ?? []).filter((t) => !t.planned);
 
+// Phase 3: with roster duty on, a staff member rotates between outgoing and
+// incoming duty without changing roles, so they get the other staff area's
+// handover links too (right after their own). Flag off (or any other role):
+// exactly NAV[role], as always.
+const STAFF_EXTRA = {
+  outgoing_staff: NAV.incoming_staff.slice(0, 2),
+  incoming_staff: NAV.outgoing_staff.slice(0, 2),
+};
+export const navFor = (role, rosterDuty = false) => {
+  const base = NAV[role] ?? [];
+  if (!rosterDuty || !STAFF_EXTRA[role]) return base;
+  return [...base.slice(0, 2), ...STAFF_EXTRA[role], ...base.slice(2)];
+};
+
 export const isTabActive = (tab, pathname) => (tab.match ? tab.match(pathname) : pathname === tab.to || pathname.startsWith(`${tab.to}/`));

@@ -199,6 +199,7 @@ device is lost with `DELETE /api/admin/users/:id/passkeys`.
 | `ASSISTANT_ENABLED` | no | `true` | `false` turns off the handover assistant (quality checks, suggestions, ranking, smart search, digest); the rest of SHMS is unaffected |
 | `SUPERVISOR_CONTROLS_ENABLED` | no | `true` | `false` turns off the Phase 1 supervisor controls and roster visibility (supervisor start/end of an employee's session, the interim duty switch, the "Who is on shift" card): those routes answer 404 and the client hides the buttons and card; the rest of SHMS is unaffected |
 | `AUTO_APPROVAL_ENABLED` | no | `true` | `false` stops automatic release of submitted handover reports: every report is HELD for supervisor approval (the safe behaviour). Supervisors can always approve a held report, flag on or off |
+| `ROSTER_DUTY_ENABLED` | no | `false` | `true` derives outgoing/incoming duty from the shift roster: the staff assigned to a shift author its handover, the staff assigned to the department's next shift acknowledge it, and a shift with no roster falls back to the fixed roles exactly. Off (the default), everything behaves as before |
 | `EMAIL_ENABLED` | no | `false` | `true` sends email notifications through SMTP |
 | `SMTP_HOST` | with email | `localhost` | SMTP server |
 | `SMTP_PORT` | with email | `1025` | SMTP port |

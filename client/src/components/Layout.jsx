@@ -4,7 +4,8 @@ import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
 import { Home, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { ROLE_LABEL, initials } from '../lib/format';
-import { NAV } from './shell/nav';
+import { navFor } from './shell/nav';
+import useRosterDuty from '../lib/useRosterDuty';
 import SidebarNav from './shell/Sidebar';
 import NotificationsMenu from './shell/NotificationsMenu';
 import ThemeToggle from './shell/ThemeToggle';
@@ -44,9 +45,10 @@ export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const { pathname } = useLocation();
+  const { enabled: rosterDuty } = useRosterDuty();
   useUnreadPolling(claims?.user_id);
   if (!claims) return <Navigate to="/login" replace />;
-  const items = NAV[claims.role] ?? [];
+  const items = navFor(claims.role, rosterDuty);
   const worker = WORKER_ROLES.includes(claims.role);
   const photo = pagePhotoFor(claims.role, pathname);
 

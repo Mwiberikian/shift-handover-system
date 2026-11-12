@@ -4,7 +4,8 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/re
 import { HelpCircle, Home, LogOut, X } from 'lucide-react';
 import { cx } from '../../lib/format';
 import { useUnreadMessages } from '../../lib/unread';
-import { NAV, isTabActive, tabsFor } from './nav';
+import { isTabActive, navFor, tabsFor } from './nav';
+import useRosterDuty from '../../lib/useRosterDuty';
 import { AccountItems, AccountSummary, ThemeSwitchRow } from './UserMenu';
 import CalendarFeedDialog from './CalendarFeedDialog';
 import PasskeysDialog from './PasskeysDialog';
@@ -17,8 +18,9 @@ function MeSheet({
   open, onClose, role, onLogout, onCalendar, onPasskeys,
 }) {
   const { pathname } = useLocation();
+  const { enabled: rosterDuty } = useRosterDuty();
   const tabPaths = new Set(tabsFor(role).map((t) => t.to));
-  const more = (NAV[role] ?? []).filter((item) => !tabPaths.has(item.to));
+  const more = navFor(role, rosterDuty).filter((item) => !tabPaths.has(item.to));
   // Navigating from the sheet closes it.
   useEffect(() => { onClose(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 

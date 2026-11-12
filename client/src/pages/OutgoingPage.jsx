@@ -107,7 +107,9 @@ function taskHint(text) {
 
 export function DraftEditor({ record, meta, reload }) {
   const [notes, setNotes] = useState(record.summary_notes || '');
-  const [incoming, setIncoming] = useState(record.incoming_user_id || '');
+  // Phase 3: with roster duty on, the server suggests the receiver when the
+  // next shift rosters exactly one person (meta has no such field flag off).
+  const [incoming, setIncoming] = useState(record.incoming_user_id || meta.suggested_incoming_user_id || '');
   const [task, setTask] = useState({ description: '', priority: 'medium' });
   const [incident, setIncident] = useState({ title: '', description: '', severity: 'low', occurred_at: '' });
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -211,7 +213,9 @@ export function DraftEditor({ record, meta, reload }) {
               onChange={(e) => setIncoming(e.target.value)}
               placeholder="Select who takes over…"
               options={meta.incoming_staff.map((u) => ({ value: u.user_id, label: `${u.full_name} (${u.staff_number})` }))}
-              hint="They will be notified when you submit."
+              hint={meta.roster_based_incoming
+                ? 'From the next shift’s roster. They will be notified when you submit.'
+                : 'They will be notified when you submit.'}
             />
             <Textarea
               label={summaryField?.label ?? 'Summary notes'}

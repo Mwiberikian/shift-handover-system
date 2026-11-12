@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import api from '../api';
 import {
-  Badge, Button, Card, Checkbox, EmptyState, Modal, PageHeader, SkeletonTable, Table,
+  Badge, Button, Callout, Card, Checkbox, EmptyState, Modal, PageHeader, SkeletonTable, Table,
 } from '../components/ui';
 import { ROLE_LABEL, fmtDuration, fmtWeekdayEAT, formatEAT, shiftLabel } from '../lib/format';
 import { toastError } from '../lib/toast';
@@ -37,6 +37,16 @@ function AssignDialog({ shift, onClose, onSaved }) {
     if (ok) { onSaved(); onClose(); }
   };
 
+  // Phase 3 conflict warnings: people already assigned to a shift that
+  // overlaps this one in time. Advisory — saving is never blocked.
+  const conflictsByUser = new Map();
+  (data?.conflicts ?? []).forEach((c) => {
+    if (!conflictsByUser.has(c.user_id)) conflictsByUser.set(c.user_id, []);
+    conflictsByUser.get(c.user_id).push(c);
+  });
+  const chosenConflicts = [...chosen].filter((id) => conflictsByUser.has(id));
+  const conflictText = (c) => `${shiftLabel(c)} ${formatEAT(c.start_time, 'date')}, ${formatEAT(c.start_time, 'time')} – ${formatEAT(c.end_time, 'time')}`;
+
   return (
     <Modal
       open
@@ -62,7 +72,9 @@ function AssignDialog({ shift, onClose, onSaved }) {
               <li key={u.user_id} className="rounded-lg px-2 py-2 hover:bg-ink-50">
                 <Checkbox
                   label={u.full_name}
-                  description={ROLE_LABEL[u.role]}
+                  description={conflictsByUser.has(u.user_id)
+                    ? `${ROLE_LABEL[u.role]} — also on an overlapping shift`
+                    : ROLE_LABEL[u.role]}
                   checked={chosen.has(u.user_id)}
                   onChange={() => toggle(u.user_id)}
                 />
@@ -70,6 +82,21 @@ function AssignDialog({ shift, onClose, onSaved }) {
             ))}
           </ul>
           <p className="mt-3 text-meta text-ink-600">{chosen.size} selected</p>
+          {chosenConflicts.length > 0 && (
+            <Callout tone="warning" className="mt-3" title="Overlapping shifts">
+              <ul className="list-disc space-y-0.5 pl-5">
+                {chosenConflicts.map((id) => {
+                  const who = data.candidates.find((u) => u.user_id === id);
+                  return conflictsByUser.get(id).map((c) => (
+                    <li key={`${id}-${c.shift_id}`}>
+                      {who?.full_name ?? 'This person'} is also assigned to {conflictText(c)}.
+                    </li>
+                  ));
+                })}
+              </ul>
+              <p className="mt-1.5">You can still save — this is a warning, not a block.</p>
+            </Callout>
+          )}
         </fieldset>
       )}
     </Modal>

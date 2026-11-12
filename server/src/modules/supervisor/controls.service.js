@@ -14,6 +14,7 @@ const { writeAudit } = require('../../utils/audit');
 const { assertDepartmentAccess } = require('../../middleware/auth');
 const { notify } = require('../notifications/notify');
 const sessions = require('../sessions/sessions.service');
+const { rosterDutyEnabled } = require('../../config/flags');
 
 const WORKER_ROLES = ['outgoing_staff', 'incoming_staff'];
 const ROLE_LABELS = { outgoing_staff: 'Outgoing staff', incoming_staff: 'Incoming staff' };
@@ -68,6 +69,19 @@ async function switchRole(actor, userId, role) {
   return withTransaction(async (client) => {
     const worker = await findWorker(client, actor, userId, { lock: true });
     if (!worker.is_active) throw new AppError(409, 'This account is inactive; reactivate it before changing its duty.', { code: 'inactive_user' });
+    // Phase 3: once duty is derived from the roster (ROSTER_DUTY_ENABLED) and
+    // the department's current shift actually has a roster, this interim
+    // switch steps aside; it remains the fallback for departments without one.
+    if (rosterDutyEnabled()) {
+      const { rows: [rostered] } = await client.query(
+        `SELECT 1 FROM shift s JOIN shift_assignment sa ON sa.shift_id = s.shift_id
+          WHERE s.department_id = $1 AND s.start_time <= now() AND s.end_time > now() LIMIT 1`,
+        [worker.department_id],
+      );
+      if (rostered) {
+        throw new AppError(409, "Duty is derived from the roster in this department. Assign people on the Roster page instead of switching roles.", { code: 'roster_duty' });
+      }
+    }
     if (worker.role === role) return { changed: false, user_id: worker.user_id, role };
 
     await client.query('UPDATE app_user SET role = $2 WHERE user_id = $1', [userId, role]);

@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { ROLE_HOME, useAuth } from './auth/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import { useRosterDutyCheck } from './lib/useRosterDuty';
 
 // Each area is its own chunk, so a visitor to the landing page or sign-in does
 // not download every dashboard.
@@ -24,11 +25,25 @@ const PrintReport = lazy(() => import('./pages/PrintReport'));
 const LivePage = lazy(() => import('./pages/LivePage'));
 const MyWorkPage = lazy(() => import('./pages/MyWorkPage'));
 
-// Only lets a user into the dashboard for the role in their JWT.
+// Only lets a user into the dashboard for the role in their JWT. Phase 3:
+// with roster duty on, outgoing_staff and incoming_staff are the same staff
+// capability, so either may open both staff areas (people rotate duties
+// without changing roles). Only that case asks the server about the flag
+// (a failure or slow answer counts as off); while it is being asked, render
+// nothing rather than bouncing them to their fixed-role home.
+const STAFF_ROLES = ['outgoing_staff', 'incoming_staff'];
+
 export function RequireRole({ role }) {
   const { claims } = useAuth();
+  const staffSwap = !!claims && claims.role !== role
+    && STAFF_ROLES.includes(role) && STAFF_ROLES.includes(claims.role);
+  const duty = useRosterDutyCheck(staffSwap);
   if (!claims) return <Navigate to="/login" replace />;
-  if (claims.role !== role) return <Navigate to={ROLE_HOME[claims.role]} replace />;
+  if (claims.role !== role) {
+    if (!staffSwap) return <Navigate to={ROLE_HOME[claims.role]} replace />;
+    if (duty.loading) return null;
+    if (!duty.enabled) return <Navigate to={ROLE_HOME[claims.role]} replace />;
+  }
   return <Outlet />;
 }
 

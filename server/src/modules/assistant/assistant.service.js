@@ -23,6 +23,14 @@ const {
 const enabled = () => process.env.ASSISTANT_ENABLED !== 'false';
 const DAY = 24 * 3600 * 1000;
 
+// Phase 3: with roster duty on, both staff roles count as potential authors
+// (still restricted to their own records); flag off, only outgoing_staff, as
+// before. duty.js depends only on the flags module.
+const { rosterDutyEnabled } = require('../../config/flags');
+const { isStaff, canViewByRoster } = require('../handovers/duty');
+
+const isAuthorRole = (role) => role === 'outgoing_staff' || (rosterDutyEnabled() && role === 'incoming_staff');
+
 // ---------------------------------------------------------------------------
 // shared queries
 // ---------------------------------------------------------------------------
@@ -48,7 +56,14 @@ async function ownRecord(user, recordId) {
     [recordId],
   );
   if (!rec) throw new AppError(404, 'Handover record not found');
-  if (user.role === 'outgoing_staff') {
+  if (rosterDutyEnabled() && isStaff(user.role)) {
+    // Phase 3: the author, as before, plus the people the roster lets read
+    // this record (rostered on its shift, or receiving it from the next
+    // shift), whatever their fixed role. Nobody else, so a receiver gets the
+    // assistant on the handover they receive and not department-wide.
+    if (rec.outgoing_user_id === user.user_id) return rec;
+    if (!(await canViewByRoster(pool, user, rec))) throw new AppError(403, 'This is not your handover record');
+  } else if (user.role === 'outgoing_staff') {
     if (rec.outgoing_user_id !== user.user_id) throw new AppError(403, 'This is not your handover record');
   } else {
     assertDepartmentAccess(user, rec.department_id);
@@ -126,7 +141,9 @@ async function recurringForRecord(user, recordId) {
   const history = await departmentHistory(pool, rec.department_id, { days: RECURRING.historyDays, excludeRecordId: recordId });
   const found = findRecurring(items, history);
   const mine = new Set(history.filter((h) => h.outgoing_user_id === user.user_id).map((h) => h.record_id));
-  const sees = (recId) => user.role !== 'outgoing_staff' || mine.has(recId);
+  // Staff see links only to their own past records (flag on: either staff role).
+  const ownOnly = user.role === 'outgoing_staff' || (rosterDutyEnabled() && isStaff(user.role));
+  const sees = (recId) => !ownOnly || mine.has(recId);
   return {
     record_id: recordId,
     window_days: RECURRING.historyDays,
@@ -249,7 +266,9 @@ async function search(user, query) {
 
 async function suggestions(user, recordId) {
   const rec = await ownRecord(user, recordId);
-  if (user.role !== 'outgoing_staff') throw new AppError(403, 'Suggestions are for the outgoing author of a draft');
+  // Flag on: only the record's own author, whatever their fixed role.
+  const isAuthor = rosterDutyEnabled() ? rec.outgoing_user_id === user.user_id : user.role === 'outgoing_staff';
+  if (!isAuthor) throw new AppError(403, 'Suggestions are for the outgoing author of a draft');
   const { rows: history } = await pool.query(
     `SELECT t.record_id, t.description, t.priority::text AS priority, s.start_time AS shift_start
        FROM task t JOIN handover_record r ON r.record_id = t.record_id JOIN shift s ON s.shift_id = r.shift_id
@@ -287,7 +306,7 @@ async function incidentExamples(departmentId) {
 }
 
 async function suggestSeverity(user, { title, description }) {
-  if (user.role !== 'outgoing_staff') throw new AppError(403, 'Severity suggestions are for outgoing staff');
+  if (!isAuthorRole(user.role)) throw new AppError(403, 'Severity suggestions are for outgoing staff');
   const examples = await incidentExamples(user.department_id);
   const s = severity.suggest(examples, `${title} ${description || ''}`);
   // Only the aggregate result leaves the server, never another person's text.

@@ -12,7 +12,17 @@ router.use(requireAuth);
 
 const RECORD_STATUSES = ['draft', 'submitted', 'queried', 'acknowledged', 'under_review', 'escalated', 'closed'];
 const SHIFT_TYPES = ['day', 'night'];
-const outgoingOnly = requireRole('outgoing_staff');
+
+// Phase 3: with roster duty on, outgoing_staff and incoming_staff are the
+// same "staff" capability at the route; the services then decide from the
+// roster (and fall back to the fixed role for shifts with no roster). With
+// the flag off these gates behave exactly as before. Evaluated per request,
+// so flipping the flag needs no restart.
+const { rosterDutyEnabled } = require('../../config/flags');
+const staffOr = (role) => (req, res, next) => requireRole(
+  ...(rosterDutyEnabled() ? ['outgoing_staff', 'incoming_staff'] : [role]),
+)(req, res, next);
+const outgoingOnly = staffOr('outgoing_staff');
 const recordId = param('id').isUUID().withMessage('id must be a UUID');
 
 // DR-04: a task description is 10 to 1,000 characters (after trimming).
@@ -114,7 +124,7 @@ router.post(
 
 // ---- Phase 4 ---------------------------------------------------------------
 
-const incomingOnly = requireRole('incoming_staff');
+const incomingOnly = staffOr('incoming_staff');
 const supervisorOnly = requireRole('supervisor');
 const optionalComments = body('comments').optional({ values: 'null' }).isString().trim();
 const requiredComments = (what) => body('comments').isString().withMessage(`comments (${what}) are required`).bail()
