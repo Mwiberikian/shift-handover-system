@@ -20,5 +20,16 @@ lines.push(`Recurring issues ${r.recurring.items} draft items (${r.recurring.tru
 lines.push(`Severity         trained on ${r.severity.train_n}; seen phrasing accuracy ${r.severity.seen_phrasing.accuracy}; UNSEEN phrasing n=${sev.n}: accuracy ${sev.accuracy} (majority baseline ${sev.majority_baseline}), within one level ${sev.within_one}; answered ${sev.answered}, accuracy when answered ${sev.accuracy_when_answered}  [accuracy over majority >= ${CRITERIA.severity.minAccuracyOverMajority}, within one >= ${CRITERIA.severity.minWithinOne}: ${verdict(sev.accuracy - sev.majority_baseline >= CRITERIA.severity.minAccuracyOverMajority && sev.within_one >= CRITERIA.severity.minWithinOne)}]`);
 lines.push(`Search           ${r.search.queries} queries: hit@5 ${r.search.assistant_hit_at_5}, MRR ${r.search.assistant_mrr}; keyword baseline hit@5 ${r.search.baseline_keyword_hit_at_5}  [hit@5 >= ${CRITERIA.search.minHitAt5}: ${verdict(r.search.assistant_hit_at_5 >= CRITERIA.search.minHitAt5)}]`);
 lines.push(`Suggested tasks  ${r.suggest.truth} habitual tasks, ${r.suggest.suggested} suggested: precision ${r.suggest.precision}, recall ${r.suggest.recall}  (no pre-registered criterion)`);
+const rel = r.release;
+const relMet = rel.recall >= CRITERIA.release.recall && rel.precision >= CRITERIA.release.precision;
+lines.push(`Hazard holds     ${rel.cases} cases (${rel.truth_holds} should hold, ${rel.cases - rel.truth_holds} should release): recall of holds ${rel.recall}, precision of holds ${rel.precision}  (tp ${rel.tp}, fp ${rel.fp}, fn ${rel.fn}, tn ${rel.tn})`);
+lines.push(`                 criteria: recall >= ${CRITERIA.release.recall}: ${verdict(rel.recall >= CRITERIA.release.recall)}; precision >= ${CRITERIA.release.precision}: ${verdict(rel.precision >= CRITERIA.release.precision)}; overall: ${verdict(relMet)}`);
+const list = (title, count, items) => {
+  lines.push(`                 ${title}: ${count} case(s), ${items.length} distinct phrasing(s)`);
+  if (!items.length) lines.push('                   (none)');
+  items.forEach((t) => lines.push(`                   - ${t}`));
+};
+list('Missed hazards (false releases)', rel.fn, rel.missed_hazards);
+list('False holds', rel.fp, rel.false_holds);
 console.log(lines.join('\n'));
 if (opt('--out')) fs.writeFileSync(opt('--out'), JSON.stringify(r, null, 2));

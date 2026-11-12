@@ -119,8 +119,8 @@ function release(seed) {
   cases.forEach((c) => {
     const { hold } = evaluateRelease({ summary: c.summary, tasks: c.tasks, incidents: c.incidents });
     if (c.truth_hold && hold) tp += 1;
-    else if (c.truth_hold && !hold) { fn += 1; if (misses.length < 20) misses.push(c.event); }
-    else if (!c.truth_hold && hold) { fp += 1; if (falseHolds.length < 20) falseHolds.push(c.event); }
+    else if (c.truth_hold && !hold) { fn += 1; misses.push(c.event); }
+    else if (!c.truth_hold && hold) { fp += 1; falseHolds.push(c.event); }
     else tn += 1;
   });
   return {
